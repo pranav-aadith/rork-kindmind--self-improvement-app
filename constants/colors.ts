@@ -1,0 +1,46 @@
+const Colors = {
+  light: {
+    background: '#F5EFE8',
+    card: '#FFFFFF',
+    primary: '#B5A8D6',
+    secondary: '#8DC8C4',
+    accent: '#9FB8CC',
+    tertiary: '#B5D9B8',
+    cream: '#EDD9B8',
+    text: '#2C2C2C',
+    textSecondary: '#6B6B6B',
+    border: '#E8E0D5',
+    success: '#B5D9B8',
+    warning: '#EDD9B8',
+    error: '#D39B9B',
+    tint: '#B5A8D6',
+    gradient: {
+      start: '#B5A8D6',
+      middle: '#8DC8C4',
+      end: '#EDD9B8',
+    },
+  },
+  dark: {
+    background: '#1A1A1A',
+    card: '#2C2C2C',
+    primary: '#B5A8D6',
+    secondary: '#8DC8C4',
+    accent: '#9FB8CC',
+    tertiary: '#B5D9B8',
+    cream: '#EDD9B8',
+    text: '#F5F5F5',
+    textSecondary: '#A8A8A8',
+    border: '#3C3C3C',
+    success: '#B5D9B8',
+    warning: '#EDD9B8',
+    error: '#D39B9B',
+    tint: '#B5A8D6',
+    gradient: {
+      start: '#B5A8D6',
+      middle: '#8DC8C4',
+      end: '#EDD9B8',
+    },
+  },
+};
+
+export default Colors;

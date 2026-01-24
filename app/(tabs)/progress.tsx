@@ -676,12 +676,11 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {showExportView && Platform.OS !== 'web' && (
-        <View style={styles.exportOverlay} pointerEvents="none">
+        <View style={styles.exportOverlay}>
           <View 
             style={styles.exportViewWrapper} 
             ref={exportViewRef} 
             collapsable={false}
-            removeClippedSubviews={false}
           >
             {renderExportContent()}
           </View>
@@ -1315,12 +1314,9 @@ const styles = StyleSheet.create({
   },
   exportOverlay: {
     position: 'absolute',
-    top: 0,
+    top: -2000,
     left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-    opacity: 0,
+    zIndex: -1,
   },
   exportViewWrapper: {
     width: 400,

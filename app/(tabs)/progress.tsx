@@ -1,4 +1,4 @@
-import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, TrendingUp, TrendingDown, Minus, Heart, PenLine, Smile, Sun, Download } from 'lucide-react-native';
+import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, TrendingUp, TrendingDown, Minus, Heart, PenLine, Smile, Sun, Camera } from 'lucide-react-native';
 import React, { useEffect, useRef, useCallback } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import {
@@ -199,7 +199,7 @@ export default function ProgressScreen() {
     { id: 5, threshold: 30, title: 'Monthly Reflection View', description: 'Deep dive into monthly patterns', icon: BarChart3, color: '#10B981' },
   ];
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
-  const [isExporting, setIsExporting] = React.useState(false);
+  const [isTakingScreenshot, setIsTakingScreenshot] = React.useState(false);
   const [showExportView, setShowExportView] = React.useState(false);
   const exportViewRef = useRef<View>(null);
 
@@ -382,15 +382,15 @@ export default function ProgressScreen() {
     [escapeXml]
   );
 
-  const handleExport = React.useCallback(async () => {
-    setIsExporting(true);
+  const handleScreenshot = React.useCallback(async () => {
+    setIsTakingScreenshot(true);
     try {
-      console.log('[Progress] Export: generating report');
+      console.log('[Progress] Screenshot: generating report');
       const exportText = generateExportData();
       const exportSvg = buildExportSvg(exportText);
 
       if (Platform.OS === 'web') {
-        console.log('[Progress] Export: web download png via canvas');
+        console.log('[Progress] Screenshot: web download png via canvas');
         const svgBlob = new Blob([exportSvg], { type: 'image/svg+xml;charset=utf-8' });
         const svgUrl = URL.createObjectURL(svgBlob);
         
@@ -407,27 +407,27 @@ export default function ProgressScreen() {
                 const pngUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = pngUrl;
-                link.download = `kindmind-progress-${formatLocalDate(new Date())}.png`;
+                link.download = `kindmind-screenshot-${formatLocalDate(new Date())}.png`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(pngUrl);
               }
               URL.revokeObjectURL(svgUrl);
-              setIsExporting(false);
-              Alert.alert('Success', 'Your progress image has been downloaded!');
+              setIsTakingScreenshot(false);
+              Alert.alert('Success', 'Your screenshot has been saved!');
             }, 'image/png');
           }
         };
         img.onerror = () => {
           URL.revokeObjectURL(svgUrl);
-          setIsExporting(false);
-          Alert.alert('Error', 'Failed to generate image.');
+          setIsTakingScreenshot(false);
+          Alert.alert('Error', 'Failed to take screenshot.');
         };
         img.src = svgUrl;
         return;
       } else {
-        console.log('[Progress] Export: native capture view as png');
+        console.log('[Progress] Screenshot: native capture view as png');
         setShowExportView(true);
         
         setTimeout(async () => {
@@ -457,23 +457,23 @@ export default function ProgressScreen() {
                 Alert.alert('Saved', 'Your progress image has been saved. You can find it in your device storage.');
               }
             } else {
-              console.error('[Progress] Export view ref is null');
-              Alert.alert('Error', 'Could not capture the progress view.');
+              console.error('[Progress] Screenshot view ref is null');
+              Alert.alert('Error', 'Could not take screenshot.');
             }
           } catch (captureError) {
-            console.error('[Progress] Capture error:', captureError);
+            console.error('[Progress] Screenshot error:', captureError);
             setShowExportView(false);
-            Alert.alert('Error', 'Failed to capture image. Please try again.');
+            Alert.alert('Error', 'Failed to take screenshot. Please try again.');
           } finally {
-            setIsExporting(false);
+            setIsTakingScreenshot(false);
           }
         }, 500);
         return;
       }
     } catch (error) {
-      console.error('[Progress] Export error:', error);
-      Alert.alert('Error', 'Failed to export progress image. Please try again.');
-      setIsExporting(false);
+      console.error('[Progress] Screenshot error:', error);
+      Alert.alert('Error', 'Failed to take screenshot. Please try again.');
+      setIsTakingScreenshot(false);
     }
   }, [buildExportSvg, generateExportData]);
 
@@ -693,12 +693,12 @@ export default function ProgressScreen() {
               <Text style={styles.subtitle}>Track your emotional growth</Text>
             </View>
             <TouchableOpacity 
-              style={styles.exportButton} 
-              onPress={handleExport}
-              disabled={isExporting}
+              style={styles.screenshotButton} 
+              onPress={handleScreenshot}
+              disabled={isTakingScreenshot}
             >
-              <Download size={20} color={Colors.light.card} />
-              <Text style={styles.exportButtonText}>{isExporting ? 'Exporting...' : 'Export'}</Text>
+              <Camera size={20} color={Colors.light.card} />
+              <Text style={styles.screenshotButtonText}>{isTakingScreenshot ? 'Capturing...' : 'Screenshot'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.textSecondary,
   },
-  exportButton: {
+  screenshotButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -999,7 +999,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 4,
   },
-  exportButtonText: {
+  screenshotButtonText: {
     color: Colors.light.card,
     fontSize: 14,
     fontWeight: '600' as const,

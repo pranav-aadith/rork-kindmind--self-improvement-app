@@ -78,6 +78,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="meditation"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

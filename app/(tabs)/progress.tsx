@@ -1,4 +1,4 @@
-import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, TrendingUp, TrendingDown, Minus, Heart, PenLine, Smile, Sun, Camera } from 'lucide-react-native';
+import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, TrendingUp, TrendingDown, Minus, Heart, PenLine, Smile, Sun, Download } from 'lucide-react-native';
 import React, { useEffect, useRef, useCallback } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import {
@@ -693,12 +693,12 @@ export default function ProgressScreen() {
               <Text style={styles.subtitle}>Track your emotional growth</Text>
             </View>
             <TouchableOpacity 
-              style={styles.screenshotButton} 
+              style={styles.exportButton} 
               onPress={handleExport}
               disabled={isExporting}
             >
-              <Camera size={20} color={Colors.light.card} />
-              <Text style={styles.screenshotButtonText}>{isExporting ? 'Capturing...' : 'Screenshot'}</Text>
+              <Download size={20} color={Colors.light.card} />
+              <Text style={styles.exportButtonText}>{isExporting ? 'Exporting...' : 'Export'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.textSecondary,
   },
-  screenshotButton: {
+  exportButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -999,7 +999,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 4,
   },
-  screenshotButtonText: {
+  exportButtonText: {
     color: Colors.light.card,
     fontSize: 14,
     fontWeight: '600' as const,

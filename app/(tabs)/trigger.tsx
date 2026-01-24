@@ -77,6 +77,7 @@ export default function JournalScreen() {
   }, [step]);
 
   const animateStepChange = (nextStep: number) => {
+    const isForward = nextStep > step;
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -84,30 +85,33 @@ export default function JournalScreen() {
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
-        toValue: nextStep > step ? -30 : 30,
+        toValue: isForward ? -30 : 30,
         duration: 150,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setStep(nextStep);
-      slideAnim.setValue(nextStep > step ? 30 : -30);
+      slideAnim.setValue(isForward ? 30 : -30);
       iconBounce.setValue(0);
       if (nextStep === 3) {
         emotionAnims.forEach(anim => anim.setValue(0));
       }
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 50,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      setStep(nextStep);
+      
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 16);
     });
   };
 
@@ -270,10 +274,13 @@ export default function JournalScreen() {
                 {emotionOptions.map((emotion, index) => (
                   <Animated.View
                     key={emotion.label}
-                    style={{
-                      opacity: emotionAnims[index],
-                      transform: [{ scale: emotionAnims[index].interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
-                    }}
+                    style={[
+                      styles.emotionCardWrapper,
+                      {
+                        opacity: emotionAnims[index],
+                        transform: [{ scale: emotionAnims[index].interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+                      }
+                    ]}
                   >
                     <TouchableOpacity
                       style={[
@@ -439,8 +446,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  emotionCardWrapper: {
+    width: 100,
+  },
   emotionCard: {
-    width: '29%',
+    width: '100%',
     backgroundColor: Colors.light.card,
     borderRadius: 16,
     paddingVertical: 16,

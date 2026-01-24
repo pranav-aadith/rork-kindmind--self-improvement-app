@@ -77,12 +77,15 @@ function buildKoraPrompt(params: {
   ].join('\n');
 }
 
-function extractText(parts: { type: string; [key: string]: unknown }[]): string {
+function extractText(parts: unknown): string {
+  if (!Array.isArray(parts)) return '';
   const chunks: string[] = [];
   for (const part of parts) {
-    if (part.type === 'text') {
-      const text = (part as { type: 'text'; text?: string }).text;
-      if (typeof text === 'string' && text.length > 0) chunks.push(text);
+    if (part && typeof part === 'object' && 'type' in part && part.type === 'text') {
+      const textPart = part as { type: 'text'; text?: string };
+      if (typeof textPart.text === 'string' && textPart.text.length > 0) {
+        chunks.push(textPart.text);
+      }
     }
   }
   return chunks.join('');
@@ -123,14 +126,14 @@ export default function ResponsesScreen() {
     []
   );
 
-  const {
-    messages,
-    error,
-    sendMessage,
-    setMessages,
-  } = useRorkAgent({
+  const agentResult = useRorkAgent({
     tools: {},
   });
+
+  const messages = agentResult?.messages ?? [];
+  const error = agentResult?.error ?? null;
+  const sendMessage = agentResult?.sendMessage;
+  const setMessages = agentResult?.setMessages;
 
   const [input, setInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -143,7 +146,7 @@ export default function ResponsesScreen() {
   const send = useCallback(
     async (raw: string) => {
       const trimmed = raw.trim();
-      if (!trimmed) return;
+      if (!trimmed || !sendMessage) return;
 
       console.log('[Kora] send', { length: trimmed.length, hasAnswers: !!answers, username });
 
@@ -176,7 +179,9 @@ export default function ResponsesScreen() {
 
   const onReset = useCallback(() => {
     console.log('[Kora] reset');
-    setMessages([]);
+    if (setMessages) {
+      setMessages([]);
+    }
     setInput('');
   }, [setMessages]);
 
@@ -332,13 +337,18 @@ export default function ResponsesScreen() {
   }, [isRecording, startRecording, stopRecording]);
 
   const renderedMessages = useMemo(() => {
+    if (!messages || !Array.isArray(messages)) return [];
     return messages
-      .map(m => ({
-        id: m.id,
-        role: m.role,
-        text: extractText(m.parts as { type: string; [key: string]: unknown }[]),
-        hasToolPart: (m.parts as { type: string }[]).some(p => p.type === 'tool'),
-      }))
+      .filter(m => m && m.id && m.role && m.parts)
+      .map(m => {
+        const parts = Array.isArray(m.parts) ? m.parts : [];
+        return {
+          id: m.id,
+          role: m.role,
+          text: extractText(parts),
+          hasToolPart: parts.some((p: unknown) => p && typeof p === 'object' && 'type' in p && p.type === 'tool'),
+        };
+      })
       .filter(m => m.text.length > 0 || m.hasToolPart);
   }, [messages]);
 

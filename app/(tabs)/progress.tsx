@@ -13,7 +13,6 @@ import {
   Animated,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
 
@@ -434,35 +433,45 @@ export default function ProgressScreen() {
         setTimeout(async () => {
           try {
             if (exportViewRef.current) {
+              console.log('[Progress] Capturing view...');
               const uri = await captureRef(exportViewRef, {
                 format: 'png',
                 quality: 1,
+                result: 'tmpfile',
               });
               
+              console.log('[Progress] Captured URI:', uri);
               setShowExportView(false);
               
               const canShare = await Sharing.isAvailableAsync();
+              console.log('[Progress] Can share:', canShare);
+              
               if (canShare) {
                 await Sharing.shareAsync(uri, {
                   mimeType: 'image/png',
-                  dialogTitle: 'Export Progress Image',
+                  dialogTitle: 'Share KindMind Progress',
+                  UTI: 'public.png',
                 });
+                console.log('[Progress] Share complete');
               } else {
-                Alert.alert('Error', 'Sharing is not available on this device');
+                Alert.alert('Saved', 'Your progress image has been saved. You can find it in your device storage.');
               }
+            } else {
+              console.error('[Progress] Export view ref is null');
+              Alert.alert('Error', 'Could not capture the progress view.');
             }
           } catch (captureError) {
-            console.error('Capture error:', captureError);
+            console.error('[Progress] Capture error:', captureError);
             setShowExportView(false);
-            Alert.alert('Error', 'Failed to capture image.');
+            Alert.alert('Error', 'Failed to capture image. Please try again.');
           } finally {
             setIsExporting(false);
           }
-        }, 100);
+        }, 500);
         return;
       }
     } catch (error) {
-      console.error('Export error:', error);
+      console.error('[Progress] Export error:', error);
       Alert.alert('Error', 'Failed to export progress image. Please try again.');
       setIsExporting(false);
     }
@@ -663,8 +672,17 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {showExportView && Platform.OS !== 'web' && (
-        <View style={styles.exportViewWrapper} ref={exportViewRef} collapsable={false}>
-          {renderExportContent()}
+        <View 
+          style={styles.exportOverlay}
+          pointerEvents="none"
+        >
+          <View 
+            style={styles.exportViewWrapper} 
+            ref={exportViewRef} 
+            collapsable={false}
+          >
+            {renderExportContent()}
+          </View>
         </View>
       )}
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -1293,11 +1311,20 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 40,
   },
-  exportViewWrapper: {
+  exportOverlay: {
     position: 'absolute',
-    left: -9999,
     top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 9999,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  exportViewWrapper: {
     width: 400,
+    backgroundColor: '#0B1220',
   },
   exportContainer: {
     backgroundColor: '#0B1220',

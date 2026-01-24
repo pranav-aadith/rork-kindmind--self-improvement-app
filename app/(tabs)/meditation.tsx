@@ -214,7 +214,7 @@ export default function MeditationScreen() {
             <View style={styles.moonContainer}>
               <View style={styles.moonGlow} />
               <View style={styles.moonIcon}>
-                <Moon size={48} color="#6366F1" fill="#6366F1" />
+                <Moon size={48} color={Colors.light.primary} fill={Colors.light.primary} />
               </View>
             </View>
 
@@ -278,7 +278,7 @@ export default function MeditationScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.soundSelectorLeft}>
-                  <Volume2 size={20} color="#6366F1" />
+                  <Volume2 size={20} color={Colors.light.primary} />
                   <Text style={styles.soundSelectorText}>{selectedSound.label}</Text>
                 </View>
                 <ChevronDown size={20} color={Colors.light.textSecondary} />
@@ -289,7 +289,7 @@ export default function MeditationScreen() {
                   onPress={previewSound}
                   activeOpacity={0.7}
                 >
-                  <Play size={14} color="#6366F1" />
+                  <Play size={14} color={Colors.light.primary} />
                   <Text style={styles.previewButtonText}>Preview</Text>
                 </TouchableOpacity>
               )}
@@ -405,7 +405,7 @@ export default function MeditationScreen() {
                     <View style={styles.soundOptionLeft}>
                       <Volume2
                         size={20}
-                        color={selectedSound.id === sound.id ? '#6366F1' : Colors.light.textSecondary}
+                        color={selectedSound.id === sound.id ? Colors.light.primary : Colors.light.textSecondary}
                       />
                       <Text
                         style={[
@@ -417,7 +417,7 @@ export default function MeditationScreen() {
                       </Text>
                     </View>
                     {selectedSound.id === sound.id && (
-                      <Check size={20} color="#6366F1" />
+                      <Check size={20} color={Colors.light.primary} />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -476,7 +476,7 @@ export default function MeditationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F7FC',
+    backgroundColor: Colors.light.background,
   },
   container: {
     flex: 1,
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#E0E7FF',
+    backgroundColor: '#E8DFF5',
     top: -20,
     left: -20,
   },
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F5F0FA',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 56,
     fontWeight: '700' as const,
-    color: '#6366F1',
+    color: Colors.light.primary,
     letterSpacing: -2,
   },
   timeLabel: {
@@ -602,8 +602,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
   },
   presetButtonActive: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   presetText: {
     fontSize: 14,
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
   previewButtonText: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: '#6366F1',
+    color: Colors.light.primary,
   },
   modalOverlay: {
     flex: 1,
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
   modalCloseText: {
     fontSize: 16,
     fontWeight: '600' as const,
-    color: '#6366F1',
+    color: Colors.light.primary,
   },
   soundList: {
     paddingHorizontal: 16,
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   soundOptionActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F5F0FA',
   },
   soundOptionLeft: {
     flexDirection: 'row',
@@ -712,17 +712,17 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   soundOptionTextActive: {
-    color: '#6366F1',
+    color: Colors.light.primary,
     fontWeight: '600' as const,
   },
   startButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: Colors.light.primary,
     borderRadius: 16,
     paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: Colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    backgroundColor: '#C7D2FE',
+    backgroundColor: '#E8DFF5',
   },
   timerCircle: {
     width: 240,
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.card,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: Colors.light.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 24,
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#E0E7FF',
+    backgroundColor: '#F5F0FA',
   },
   timerInner: {
     alignItems: 'center',
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 48,
     fontWeight: '700' as const,
-    color: '#6366F1',
+    color: Colors.light.primary,
     letterSpacing: -1,
   },
   timerLabel: {
@@ -829,17 +829,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#6366F1',
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: Colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 6,
   },
   playButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.light.secondary,
   },
   completeContent: {
     flex: 1,
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#D5EBE0',
     top: -20,
     left: -20,
   },
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.light.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   anotherButton: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F5F0FA',
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -915,14 +915,14 @@ const styles = StyleSheet.create({
   anotherButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
-    color: '#6366F1',
+    color: Colors.light.primary,
   },
   doneButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.light.secondary,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
-    shadowColor: '#10B981',
+    shadowColor: Colors.light.secondary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

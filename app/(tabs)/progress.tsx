@@ -202,6 +202,7 @@ export default function ProgressScreen() {
   const [isTakingScreenshot, setIsTakingScreenshot] = React.useState(false);
   const [showExportView, setShowExportView] = React.useState(false);
   const exportViewRef = useRef<View>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const generateExportData = React.useCallback(() => {
     const now = new Date();
@@ -438,6 +439,8 @@ export default function ProgressScreen() {
                 format: 'png',
                 quality: 1,
                 result: 'tmpfile',
+                width: 400,
+                height: 600,
               });
               
               console.log('[Progress] Captured URI:', uri);
@@ -454,11 +457,12 @@ export default function ProgressScreen() {
                 });
                 console.log('[Progress] Share complete');
               } else {
-                Alert.alert('Saved', 'Your progress image has been saved. You can find it in your device storage.');
+                Alert.alert('Saved', 'Your progress screenshot is ready to share!');
               }
             } else {
               console.error('[Progress] Screenshot view ref is null');
-              Alert.alert('Error', 'Could not take screenshot.');
+              setShowExportView(false);
+              Alert.alert('Error', 'Could not take screenshot. Please try again.');
             }
           } catch (captureError) {
             console.error('[Progress] Screenshot error:', captureError);
@@ -467,7 +471,7 @@ export default function ProgressScreen() {
           } finally {
             setIsTakingScreenshot(false);
           }
-        }, 500);
+        }, 300);
         return;
       }
     } catch (error) {
@@ -672,10 +676,7 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {showExportView && Platform.OS !== 'web' && (
-        <View 
-          style={styles.exportOverlay}
-          pointerEvents="none"
-        >
+        <View style={styles.exportOverlay}>
           <View 
             style={styles.exportViewWrapper} 
             ref={exportViewRef} 
@@ -1313,28 +1314,27 @@ const styles = StyleSheet.create({
   },
   exportOverlay: {
     position: 'absolute',
-    top: 0,
+    top: -2000,
     left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
     zIndex: 9999,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   exportViewWrapper: {
     width: 400,
+    height: 600,
     backgroundColor: '#0B1220',
+    overflow: 'hidden',
   },
   exportContainer: {
     backgroundColor: '#0B1220',
-    padding: 24,
+    padding: 20,
     width: 400,
+    height: 600,
   },
   exportCard: {
     backgroundColor: '#0F1B2E',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
+    flex: 1,
   },
   exportTitle: {
     fontSize: 24,

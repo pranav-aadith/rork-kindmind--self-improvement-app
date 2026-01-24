@@ -431,47 +431,47 @@ export default function ProgressScreen() {
         console.log('[Progress] Screenshot: native capture view as png');
         setShowExportView(true);
         
-        setTimeout(async () => {
-          try {
-            if (exportViewRef.current) {
-              console.log('[Progress] Capturing view...');
-              const uri = await captureRef(exportViewRef, {
-                format: 'png',
-                quality: 1,
-                result: 'tmpfile',
-                width: 400,
-                height: 600,
-              });
-              
-              console.log('[Progress] Captured URI:', uri);
-              setShowExportView(false);
-              
-              const canShare = await Sharing.isAvailableAsync();
-              console.log('[Progress] Can share:', canShare);
-              
-              if (canShare) {
-                await Sharing.shareAsync(uri, {
-                  mimeType: 'image/png',
-                  dialogTitle: 'Share KindMind Progress',
-                  UTI: 'public.png',
+        requestAnimationFrame(() => {
+          setTimeout(async () => {
+            try {
+              if (exportViewRef.current) {
+                console.log('[Progress] Capturing view...');
+                const uri = await captureRef(exportViewRef, {
+                  format: 'png',
+                  quality: 1,
+                  result: 'tmpfile',
                 });
-                console.log('[Progress] Share complete');
+                
+                console.log('[Progress] Captured URI:', uri);
+                setShowExportView(false);
+                
+                const canShare = await Sharing.isAvailableAsync();
+                console.log('[Progress] Can share:', canShare);
+                
+                if (canShare) {
+                  await Sharing.shareAsync(uri, {
+                    mimeType: 'image/png',
+                    dialogTitle: 'Share KindMind Progress',
+                    UTI: 'public.png',
+                  });
+                  console.log('[Progress] Share complete');
+                } else {
+                  Alert.alert('Saved', 'Your progress screenshot is ready to share!');
+                }
               } else {
-                Alert.alert('Saved', 'Your progress screenshot is ready to share!');
+                console.error('[Progress] Screenshot view ref is null');
+                setShowExportView(false);
+                Alert.alert('Error', 'Could not take screenshot. Please try again.');
               }
-            } else {
-              console.error('[Progress] Screenshot view ref is null');
+            } catch (captureError) {
+              console.error('[Progress] Screenshot error:', captureError);
               setShowExportView(false);
-              Alert.alert('Error', 'Could not take screenshot. Please try again.');
+              Alert.alert('Error', 'Failed to take screenshot. Please try again.');
+            } finally {
+              setIsTakingScreenshot(false);
             }
-          } catch (captureError) {
-            console.error('[Progress] Screenshot error:', captureError);
-            setShowExportView(false);
-            Alert.alert('Error', 'Failed to take screenshot. Please try again.');
-          } finally {
-            setIsTakingScreenshot(false);
-          }
-        }, 300);
+          }, 500);
+        });
         return;
       }
     } catch (error) {
@@ -676,11 +676,12 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {showExportView && Platform.OS !== 'web' && (
-        <View style={styles.exportOverlay}>
+        <View style={styles.exportOverlay} pointerEvents="none">
           <View 
             style={styles.exportViewWrapper} 
             ref={exportViewRef} 
             collapsable={false}
+            removeClippedSubviews={false}
           >
             {renderExportContent()}
           </View>
@@ -1314,21 +1315,23 @@ const styles = StyleSheet.create({
   },
   exportOverlay: {
     position: 'absolute',
-    top: -2000,
+    top: 0,
     left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 9999,
+    opacity: 0,
   },
   exportViewWrapper: {
     width: 400,
-    height: 600,
+    height: 700,
     backgroundColor: '#0B1220',
-    overflow: 'hidden',
   },
   exportContainer: {
     backgroundColor: '#0B1220',
     padding: 20,
     width: 400,
-    height: 600,
+    height: 700,
   },
   exportCard: {
     backgroundColor: '#0F1B2E',

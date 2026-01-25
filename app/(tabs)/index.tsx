@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, Smile } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -11,9 +11,13 @@ import {
   Animated,
   Modal,
   Platform,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAudioPlayer } from 'expo-audio';
+import { Audio } from 'expo-av';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
 import { getDailyQuote } from '@/constants/quotes';
@@ -33,8 +37,19 @@ const END_SOUNDS = [
   { id: 'none', label: 'No Sound', url: '' },
 ];
 
+const EMOTIONS = [
+  { emoji: '😊', label: 'Happy' },
+  { emoji: '😌', label: 'Calm' },
+  { emoji: '😔', label: 'Sad' },
+  { emoji: '😤', label: 'Frustrated' },
+  { emoji: '😰', label: 'Anxious' },
+  { emoji: '🥰', label: 'Grateful' },
+  { emoji: '😴', label: 'Tired' },
+  { emoji: '🤔', label: 'Reflective' },
+];
+
 export default function HomeScreen() {
-  const { data, hasCheckedInToday } = useKindMind();
+  const { data, hasCheckedInToday, addJournalEntry } = useKindMind();
   const dailyQuote = getDailyQuote();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -54,6 +69,15 @@ export default function HomeScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [selectedSound, setSelectedSound] = useState(END_SOUNDS[0]);
   const [showSoundPicker, setShowSoundPicker] = useState(false);
+
+  const [showJournalModal, setShowJournalModal] = useState(false);
+  const [journalText, setJournalText] = useState('');
+  const [selectedEmotion, setSelectedEmotion] = useState<typeof EMOTIONS[0] | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const recordingPulse = useRef(new Animated.Value(1)).current;
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -276,6 +300,173 @@ export default function HomeScreen() {
     progressAnim.setValue(0);
   };
 
+  const startRecording = async () => {
+    try {
+      console.log('Requesting permissions..');
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        console.log('Permission not granted');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log('Starting recording..');
+      const { recording: newRecording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.wav',
+          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm',
+          bitsPerSecond: 128000,
+        },
+      });
+
+      setRecording(newRecording);
+      setIsRecording(true);
+      triggerHaptic();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(recordingPulse, {
+            toValue: 1.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(recordingPulse, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    console.log('Stopping recording..');
+    setIsRecording(false);
+    recordingPulse.stopAnimation();
+    recordingPulse.setValue(1);
+    triggerHaptic();
+
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+
+      const uri = recording.getURI();
+      console.log('Recording stopped and stored at', uri);
+      setRecording(null);
+
+      if (uri) {
+        await transcribeAudio(uri);
+      }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+      setRecording(null);
+    }
+  };
+
+  const transcribeAudio = async (uri: string) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      const uriParts = uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+
+      const audioFile = {
+        uri,
+        name: 'recording.' + fileType,
+        type: 'audio/' + fileType,
+      } as unknown as Blob;
+
+      formData.append('audio', audioFile);
+
+      const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const data = await response.json();
+      console.log('Transcription result:', data);
+
+      if (data.text) {
+        setJournalText(prev => prev ? prev + ' ' + data.text : data.text);
+      }
+    } catch (err) {
+      console.error('Transcription error:', err);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleMicPress = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const saveJournalEntry = () => {
+    if (!journalText.trim() || !selectedEmotion) return;
+
+    triggerHaptic();
+    addJournalEntry({
+      gratitude: journalText.trim(),
+      reflection: '',
+      emotion: selectedEmotion.label,
+      emotionEmoji: selectedEmotion.emoji,
+    });
+
+    setJournalText('');
+    setSelectedEmotion(null);
+    setShowJournalModal(false);
+  };
+
+  const closeJournalModal = () => {
+    if (isRecording && recording) {
+      recording.stopAndUnloadAsync();
+      setRecording(null);
+      setIsRecording(false);
+    }
+    setShowJournalModal(false);
+    setJournalText('');
+    setSelectedEmotion(null);
+    setInputMode('voice');
+  };
+
   const progress = 1 - timeRemaining / selectedTime;
 
   const glowOpacity = glowAnim.interpolate({
@@ -346,7 +537,7 @@ export default function HomeScreen() {
           <Animated.View style={{ opacity: card1Anim, transform: [{ scale: card1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
             <TouchableOpacity
               style={[styles.actionCard, styles.actionCardPrimary]}
-              onPress={() => animateButtonPress(() => router.push('/trigger'))}
+              onPress={() => setShowJournalModal(true)}
               activeOpacity={0.9}
             >
               <View style={[styles.actionIcon, styles.actionIconPrimary]}>
@@ -729,6 +920,152 @@ export default function HomeScreen() {
             </View>
           </View>
         </Modal>
+      </Modal>
+
+      <Modal
+        visible={showJournalModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeJournalModal}
+      >
+        <SafeAreaView style={styles.journalModalSafeArea}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.journalModalContainer}
+          >
+            <View style={styles.journalHeader}>
+              <TouchableOpacity onPress={closeJournalModal} style={styles.journalCloseBtn}>
+                <X size={24} color={Colors.light.text} />
+              </TouchableOpacity>
+              <Text style={styles.journalHeaderTitle}>Quick Journal</Text>
+              <TouchableOpacity 
+                onPress={saveJournalEntry} 
+                style={[styles.journalSaveBtn, (!journalText.trim() || !selectedEmotion) && styles.journalSaveBtnDisabled]}
+                disabled={!journalText.trim() || !selectedEmotion}
+              >
+                <Send size={20} color={journalText.trim() && selectedEmotion ? Colors.light.primary : Colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.journalContent} keyboardShouldPersistTaps="handled">
+              <View style={styles.emotionSection}>
+                <Text style={styles.emotionLabel}>How are you feeling?</Text>
+                <View style={styles.emotionGrid}>
+                  {EMOTIONS.map((emotion) => (
+                    <TouchableOpacity
+                      key={emotion.label}
+                      style={[
+                        styles.emotionChip,
+                        selectedEmotion?.label === emotion.label && styles.emotionChipSelected,
+                      ]}
+                      onPress={() => {
+                        triggerHaptic();
+                        setSelectedEmotion(emotion);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
+                      <Text style={[
+                        styles.emotionChipText,
+                        selectedEmotion?.label === emotion.label && styles.emotionChipTextSelected,
+                      ]}>{emotion.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.inputModeToggle}>
+                <TouchableOpacity
+                  style={[styles.modeBtn, inputMode === 'voice' && styles.modeBtnActive]}
+                  onPress={() => setInputMode('voice')}
+                >
+                  <Mic size={18} color={inputMode === 'voice' ? '#FFF' : Colors.light.textSecondary} />
+                  <Text style={[styles.modeBtnText, inputMode === 'voice' && styles.modeBtnTextActive]}>Voice</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modeBtn, inputMode === 'text' && styles.modeBtnActive]}
+                  onPress={() => setInputMode('text')}
+                >
+                  <Keyboard size={18} color={inputMode === 'text' ? '#FFF' : Colors.light.textSecondary} />
+                  <Text style={[styles.modeBtnText, inputMode === 'text' && styles.modeBtnTextActive]}>Type</Text>
+                </TouchableOpacity>
+              </View>
+
+              {inputMode === 'voice' ? (
+                <View style={styles.voiceSection}>
+                  <Text style={styles.voiceHint}>
+                    {isRecording ? 'Listening... tap to stop' : isTranscribing ? 'Processing...' : 'Tap to speak'}
+                  </Text>
+                  <Animated.View style={[
+                    styles.micButtonContainer,
+                    { transform: [{ scale: recordingPulse }] },
+                  ]}>
+                    <TouchableOpacity
+                      style={[
+                        styles.micButton,
+                        isRecording && styles.micButtonRecording,
+                      ]}
+                      onPress={handleMicPress}
+                      disabled={isTranscribing}
+                      activeOpacity={0.8}
+                    >
+                      {isTranscribing ? (
+                        <ActivityIndicator size="large" color="#FFF" />
+                      ) : isRecording ? (
+                        <MicOff size={48} color="#FFF" />
+                      ) : (
+                        <Mic size={48} color="#FFF" />
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                  {isRecording && (
+                    <View style={styles.recordingIndicator}>
+                      <View style={styles.recordingDot} />
+                      <Text style={styles.recordingText}>Recording</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.textSection}>
+                  <TextInput
+                    style={styles.journalTextInput}
+                    placeholder="What's on your mind?"
+                    placeholderTextColor={Colors.light.textSecondary}
+                    value={journalText}
+                    onChangeText={setJournalText}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
+              )}
+
+              {journalText.trim() !== '' && (
+                <View style={styles.previewSection}>
+                  <Text style={styles.previewLabel}>Your entry</Text>
+                  <View style={styles.previewCard}>
+                    {selectedEmotion && (
+                      <Text style={styles.previewEmotion}>{selectedEmotion.emoji} {selectedEmotion.label}</Text>
+                    )}
+                    <Text style={styles.previewText}>{journalText}</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {journalText.trim() && selectedEmotion && (
+              <View style={styles.journalFooter}>
+                <TouchableOpacity
+                  style={styles.saveEntryBtn}
+                  onPress={saveJournalEntry}
+                  activeOpacity={0.8}
+                >
+                  <Check size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.saveEntryBtnText}>Save Entry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -1474,5 +1811,227 @@ const styles = StyleSheet.create({
   analyticsText: {
     fontSize: 14,
     color: Colors.light.textSecondary,
+  },
+  journalModalSafeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  journalModalContainer: {
+    flex: 1,
+  },
+  journalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: Colors.light.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  journalCloseBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  journalHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+  },
+  journalSaveBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  journalSaveBtnDisabled: {
+    opacity: 0.5,
+  },
+  journalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  emotionSection: {
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  emotionLabel: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    marginBottom: 16,
+  },
+  emotionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  emotionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.light.card,
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
+    gap: 6,
+  },
+  emotionChipSelected: {
+    backgroundColor: '#F5F0FA',
+    borderColor: Colors.light.primary,
+  },
+  emotionEmoji: {
+    fontSize: 18,
+  },
+  emotionChipText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
+  },
+  emotionChipTextSelected: {
+    color: Colors.light.primary,
+    fontWeight: '600' as const,
+  },
+  inputModeToggle: {
+    flexDirection: 'row',
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  modeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  modeBtnActive: {
+    backgroundColor: Colors.light.primary,
+  },
+  modeBtnText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
+  },
+  modeBtnTextActive: {
+    color: '#FFF',
+  },
+  voiceSection: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  voiceHint: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    marginBottom: 32,
+  },
+  micButtonContainer: {
+    marginBottom: 24,
+  },
+  micButton: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  micButtonRecording: {
+    backgroundColor: '#EF4444',
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EF4444',
+  },
+  recordingText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#EF4444',
+  },
+  textSection: {
+    marginBottom: 24,
+  },
+  journalTextInput: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    color: Colors.light.text,
+    minHeight: 160,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    lineHeight: 24,
+  },
+  previewSection: {
+    marginBottom: 24,
+  },
+  previewLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
+    marginBottom: 12,
+  },
+  previewCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  previewEmotion: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.light.primary,
+    marginBottom: 8,
+  },
+  previewText: {
+    fontSize: 15,
+    color: Colors.light.text,
+    lineHeight: 22,
+  },
+  journalFooter: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: Colors.light.card,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+  },
+  saveEntryBtn: {
+    backgroundColor: Colors.light.secondary,
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.light.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  saveEntryBtnText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFF',
   },
 });

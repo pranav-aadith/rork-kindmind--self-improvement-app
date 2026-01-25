@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -38,7 +38,14 @@ export default function HomeScreen() {
   const dailyQuote = getDailyQuote();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const heartScale = useRef(new Animated.Value(1)).current;
+  const quoteAnim = useRef(new Animated.Value(0)).current;
+  const statsAnim = useRef(new Animated.Value(0)).current;
+  const actionsAnim = useRef(new Animated.Value(0)).current;
+  const card1Anim = useRef(new Animated.Value(0)).current;
+  const card2Anim = useRef(new Animated.Value(0)).current;
+  const card3Anim = useRef(new Animated.Value(0)).current;
 
   const [showMeditationModal, setShowMeditationModal] = useState(false);
   const [meditationPhase, setMeditationPhase] = useState<'setup' | 'meditating' | 'complete'>('setup');
@@ -64,15 +71,75 @@ export default function HomeScreen() {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 500,
+        duration: 600,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(200),
+      Animated.timing(quoteAnim, {
+        toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }),
     ]).start();
+
+    Animated.sequence([
+      Animated.delay(400),
+      Animated.timing(statsAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.stagger(150, [
+      Animated.sequence([
+        Animated.delay(600),
+        Animated.spring(card1Anim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.spring(card2Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.spring(card3Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(heartScale, {
+          toValue: 1.15,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heartScale, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+
+    return () => pulseAnimation.stop();
   }, []);
 
   useEffect(() => {
@@ -80,7 +147,7 @@ export default function HomeScreen() {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.05,
+            toValue: 1.08,
             duration: 4000,
             useNativeDriver: true,
           }),
@@ -213,143 +280,183 @@ export default function HomeScreen() {
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.3, 0.6],
+    outputRange: [0.3, 0.7],
   });
+
+  const animateButtonPress = (callback: () => void) => {
+    callback();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.greetingRow}>
-            <View style={styles.greetingText}>
-              <Text style={styles.greeting}>Hi, {data.username || 'there'} 👋</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Animated.View style={[styles.headerTop, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View>
+              <Text style={styles.greeting}>Hello {data.username || 'there'}</Text>
               <Text style={styles.subtitle}>How are you feeling today?</Text>
             </View>
-            <View style={styles.streakBadge}>
-              <Flower size={16} color={Colors.light.primary} />
-              <Text style={styles.streakText}>{data.currentStreak}</Text>
-            </View>
-          </View>
-        </Animated.View>
+            <Animated.View style={[styles.iconContainer, { transform: [{ scale: heartScale }] }]}>
+              <Heart size={32} color={Colors.light.primary} fill={Colors.light.primary} />
+            </Animated.View>
+          </Animated.View>
+        </View>
 
-        <Animated.View style={[styles.quoteCard, { opacity: fadeAnim }]}>
-          <Sparkles size={16} color={Colors.light.cream} />
+        <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
+          <View style={styles.quoteIconContainer}>
+            <Sparkles size={20} color={Colors.light.primary} />
+          </View>
           <Text style={styles.quoteText}>{dailyQuote}</Text>
         </Animated.View>
 
         {!hasCheckedInToday && (
           <TouchableOpacity
-            style={styles.checkInCard}
+            style={styles.checkInBanner}
             onPress={() => router.push('/checkin')}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.checkInLeft}>
-              <View style={styles.checkInIcon}>
-                <CheckCircle2 size={20} color={Colors.light.card} />
-              </View>
-              <View>
-                <Text style={styles.checkInTitle}>Daily Check-In</Text>
-                <Text style={styles.checkInSubtitle}>Take a moment to reflect</Text>
-              </View>
+            <View style={styles.bannerIcon}>
+              <CheckCircle2 size={24} color={Colors.light.primary} />
             </View>
-            <ChevronRight size={20} color={Colors.light.card} />
+            <View style={styles.bannerContent}>
+              <Text style={styles.bannerTitle}>Daily Check-In</Text>
+              <Text style={styles.bannerText}>Reflect on today</Text>
+            </View>
+            <View style={styles.bannerArrow}>
+              <Text style={styles.bannerArrowText}>→</Text>
+            </View>
           </TouchableOpacity>
         )}
 
-        <View style={styles.actionsSection}>
-          <Text style={styles.sectionLabel}>Quick Actions</Text>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: Colors.light.primary }]}
-              onPress={() => router.push('/trigger')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.actionIconCircle}>
-                <BookOpen size={22} color={Colors.light.primary} />
-              </View>
-              <Text style={styles.actionLabel}>Journal</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: Colors.light.secondary }]}
-              onPress={() => router.push('/pause')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.actionIconCircle}>
-                <Heart size={22} color={Colors.light.secondary} />
-              </View>
-              <Text style={styles.actionLabel}>Breathe</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: Colors.light.accent }]}
-              onPress={() => setShowMeditationModal(true)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.actionIconCircle}>
-                <Timer size={22} color={Colors.light.accent} />
-              </View>
-              <Text style={styles.actionLabel}>Meditate</Text>
-            </TouchableOpacity>
+        <Animated.View style={[styles.statsGrid, { opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Flower size={24} color={Colors.light.primary} />
+            </View>
+            <Text style={styles.statNumber}>{data.currentStreak}</Text>
+            <Text style={styles.statLabel}>Day Streak</Text>
           </View>
+        </Animated.View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.progressCard}
-          onPress={() => router.push('/progress')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.progressLeft}>
-            <View style={styles.progressIcon}>
-              <BarChart3 size={20} color={Colors.light.primary} />
-            </View>
-            <View>
-              <Text style={styles.progressTitle}>View Progress</Text>
-              <Text style={styles.progressSubtitle}>Track your emotional patterns</Text>
-            </View>
-          </View>
-          <ChevronRight size={20} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.actionsGrid}>
+          <Animated.View style={{ opacity: card1Anim, transform: [{ scale: card1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardPrimary]}
+              onPress={() => animateButtonPress(() => router.push('/trigger'))}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.actionIcon, styles.actionIconPrimary]}>
+                <BookOpen size={28} color={Colors.light.card} />
+              </View>
+              <Text style={styles.actionTitle}>Journal</Text>
+              <Text style={styles.actionDescription}>
+                Reflect on your day and emotions
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View style={{ opacity: card2Anim, transform: [{ scale: card2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardSecondary]}
+              onPress={() => animateButtonPress(() => router.push('/pause'))}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.actionIcon, styles.actionIconSecondary]}>
+                <Heart size={28} color={Colors.light.card} />
+              </View>
+              <Text style={styles.actionTitle}>Pause Practice</Text>
+              <Text style={styles.actionDescription}>
+                Take a mindful moment to breathe
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View style={{ opacity: card3Anim, transform: [{ scale: card3Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.actionCardMeditation]}
+              onPress={() => setShowMeditationModal(true)}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.actionIcon, styles.actionIconMeditation]}>
+                <Timer size={28} color={Colors.light.card} />
+              </View>
+              <Text style={styles.actionTitle}>Meditation Timer</Text>
+              <Text style={styles.actionDescription}>
+                Set a timer for mindful meditation
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
 
         {data.goals.filter(g => g.selected).length > 0 && (
-          <View style={styles.goalsSection}>
-            <Text style={styles.sectionLabel}>Your Goals</Text>
-            <View style={styles.goalsCard}>
-              {data.goals.filter(g => g.selected).map(goal => (
-                <View key={goal.id} style={styles.goalRow}>
-                  <View style={styles.goalDot} />
-                  <Text style={styles.goalText}>{goal.label}</Text>
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Goals</Text>
+            </View>
+
+            <View style={styles.goalsContainer}>
+              {data.goals
+                .filter(g => g.selected)
+                .map(goal => (
+                  <View key={goal.id} style={styles.goalItem}>
+                    <View style={styles.goalDot} />
+                    <Text style={styles.goalText}>{goal.label}</Text>
+                  </View>
+                ))}
+            </View>
+          </>
+        )}
+
+
+
+        <TouchableOpacity
+          style={styles.analyticsCard}
+          onPress={() => router.push('/progress')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.analyticsIcon}>
+            <BarChart3 size={24} color={Colors.light.primary} />
+          </View>
+          <View style={styles.analyticsContent}>
+            <Text style={styles.analyticsTitle}>View Analytics</Text>
+            <Text style={styles.analyticsText}>
+              Track your emotional patterns
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {data.journalEntries && data.journalEntries.length > 0 && (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Entries</Text>
+              <TouchableOpacity onPress={() => router.push('/progress')}>
+                <Text style={styles.sectionLink}>View All</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.triggersContainer}>
+              {data.journalEntries.slice(0, 3).map(entry => (
+                <View key={entry.id} style={styles.triggerCard}>
+                  <View style={styles.triggerHeader}>
+                    <Text style={styles.journalEmoji}>{entry.emotionEmoji} {entry.emotion}</Text>
+                    <Text style={styles.triggerTime}>
+                      {new Date(entry.timestamp).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                  <Text style={styles.triggerSituation} numberOfLines={2}>
+                    {entry.gratitude}
+                  </Text>
                 </View>
               ))}
             </View>
-          </View>
-        )}
-
-        {data.journalEntries && data.journalEntries.length > 0 && (
-          <View style={styles.recentSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionLabel}>Recent Entries</Text>
-              <TouchableOpacity onPress={() => router.push('/history')}>
-                <Text style={styles.seeAllLink}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            {data.journalEntries.slice(0, 2).map(entry => (
-              <View key={entry.id} style={styles.entryCard}>
-                <View style={styles.entryHeader}>
-                  <Text style={styles.entryEmoji}>{entry.emotionEmoji}</Text>
-                  <View style={styles.entryMeta}>
-                    <Text style={styles.entryEmotion}>{entry.emotion}</Text>
-                    <Text style={styles.entryDate}>
-                      {new Date(entry.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </Text>
-                  </View>
-                </View>
-                {entry.gratitude && (
-                  <Text style={styles.entryPreview} numberOfLines={2}>{entry.gratitude}</Text>
-                )}
-              </View>
-            ))}
-          </View>
+          </>
         )}
 
         <View style={styles.bottomSpacer} />
@@ -367,36 +474,54 @@ export default function HomeScreen() {
               <TouchableOpacity onPress={closeMeditationModal} style={styles.modalCloseBtn}>
                 <X size={24} color={Colors.light.text} />
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>Meditation</Text>
+              <Text style={styles.modalTitle}>Meditation Timer</Text>
               <View style={styles.modalCloseBtn} />
             </View>
 
             {meditationPhase === 'setup' && (
               <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
                 <View style={styles.timeDisplay}>
-                  <TouchableOpacity style={styles.adjustBtn} onPress={() => adjustTime(-60)} activeOpacity={0.7}>
-                    <Minus size={20} color={Colors.light.primary} />
+                  <TouchableOpacity
+                    style={styles.adjustButton}
+                    onPress={() => adjustTime(-60)}
+                    activeOpacity={0.7}
+                  >
+                    <Minus size={24} color={Colors.light.primary} />
                   </TouchableOpacity>
-                  <View style={styles.timeCenter}>
-                    <Text style={styles.timeValue}>{formatTime(selectedTime)}</Text>
-                    <Text style={styles.timeUnit}>minutes</Text>
+
+                  <View style={styles.timeTextContainer}>
+                    <Text style={styles.timeText}>{formatTime(selectedTime)}</Text>
+                    <Text style={styles.timeLabelText}>minutes</Text>
                   </View>
-                  <TouchableOpacity style={styles.adjustBtn} onPress={() => adjustTime(60)} activeOpacity={0.7}>
-                    <Plus size={20} color={Colors.light.primary} />
+
+                  <TouchableOpacity
+                    style={styles.adjustButton}
+                    onPress={() => adjustTime(60)}
+                    activeOpacity={0.7}
+                  >
+                    <Plus size={24} color={Colors.light.primary} />
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.presetsSection}>
+                <View style={styles.presetsContainer}>
                   <Text style={styles.presetsLabel}>Quick Select</Text>
-                  <View style={styles.presetsRow}>
-                    {PRESET_TIMES.map(preset => (
+                  <View style={styles.presetsGrid}>
+                    {PRESET_TIMES.map((preset) => (
                       <TouchableOpacity
                         key={preset.value}
-                        style={[styles.presetChip, selectedTime === preset.value && styles.presetChipActive]}
+                        style={[
+                          styles.presetButton,
+                          selectedTime === preset.value && styles.presetButtonActive,
+                        ]}
                         onPress={() => selectPreset(preset.value)}
                         activeOpacity={0.7}
                       >
-                        <Text style={[styles.presetChipText, selectedTime === preset.value && styles.presetChipTextActive]}>
+                        <Text
+                          style={[
+                            styles.presetText,
+                            selectedTime === preset.value && styles.presetTextActive,
+                          ]}
+                        >
                           {preset.label}
                         </Text>
                       </TouchableOpacity>
@@ -404,84 +529,148 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
-                <View style={styles.soundSection}>
+                <View style={styles.soundPickerContainer}>
                   <Text style={styles.presetsLabel}>End Sound</Text>
-                  <TouchableOpacity style={styles.soundSelector} onPress={() => setShowSoundPicker(true)} activeOpacity={0.7}>
-                    <View style={styles.soundLeft}>
-                      <Volume2 size={18} color={Colors.light.primary} />
-                      <Text style={styles.soundText}>{selectedSound.label}</Text>
+                  <TouchableOpacity
+                    style={styles.soundSelector}
+                    onPress={() => setShowSoundPicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.soundSelectorLeft}>
+                      <Volume2 size={20} color={Colors.light.primary} />
+                      <Text style={styles.soundSelectorText}>{selectedSound.label}</Text>
                     </View>
-                    <ChevronDown size={18} color={Colors.light.textSecondary} />
+                    <ChevronDown size={20} color={Colors.light.textSecondary} />
                   </TouchableOpacity>
                   {selectedSound.url && (
-                    <TouchableOpacity style={styles.previewBtn} onPress={previewSound} activeOpacity={0.7}>
-                      <Play size={12} color={Colors.light.primary} />
-                      <Text style={styles.previewBtnText}>Preview</Text>
+                    <TouchableOpacity
+                      style={styles.previewButton}
+                      onPress={previewSound}
+                      activeOpacity={0.7}
+                    >
+                      <Play size={14} color={Colors.light.primary} />
+                      <Text style={styles.previewButtonText}>Preview</Text>
                     </TouchableOpacity>
                   )}
                 </View>
 
-                <TouchableOpacity style={styles.startBtn} onPress={startMeditation} activeOpacity={0.8}>
-                  <Play size={20} color="#FFF" />
-                  <Text style={styles.startBtnText}>Begin</Text>
+                <TouchableOpacity
+                  style={styles.startButton}
+                  onPress={startMeditation}
+                  activeOpacity={0.8}
+                >
+                  <Play size={24} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.startButtonText}>Begin Meditation</Text>
                 </TouchableOpacity>
               </ScrollView>
             )}
 
             {meditationPhase === 'meditating' && (
               <View style={styles.meditatingContent}>
-                <Text style={styles.meditatingTitle}>{isRunning ? 'Be Present' : 'Paused'}</Text>
-                <Text style={styles.meditatingSubtitle}>{isRunning ? 'Focus on your breath' : 'Take your time'}</Text>
+                <Text style={styles.meditatingTitle}>
+                  {isRunning ? 'Be Present' : 'Paused'}
+                </Text>
+                <Text style={styles.meditatingSubtitle}>
+                  {isRunning ? 'Focus on your breath' : 'Take your time'}
+                </Text>
 
                 <View style={styles.timerContainer}>
-                  <Animated.View style={[styles.timerGlow, { opacity: glowOpacity }]} />
-                  <Animated.View style={[styles.timerCircle, { transform: [{ scale: pulseAnim }] }]}>
-                    <View style={styles.progressBg}>
-                      <View style={[styles.progressFill, { height: `${progress * 100}%` }]} />
+                  <Animated.View
+                    style={[
+                      styles.timerGlow,
+                      { opacity: glowOpacity },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.timerCircle,
+                      { transform: [{ scale: pulseAnim }] },
+                    ]}
+                  >
+                    <View style={styles.progressBackground}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            height: `${progress * 100}%`,
+                          },
+                        ]}
+                      />
                     </View>
                     <View style={styles.timerInner}>
-                      <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
-                      <Text style={styles.timerLabel}>remaining</Text>
+                      <Text style={styles.timerDisplayText}>{formatTime(timeRemaining)}</Text>
+                      <Text style={styles.timerLabelText}>remaining</Text>
                     </View>
                   </Animated.View>
                 </View>
 
-                <View style={styles.controlsRow}>
-                  <TouchableOpacity style={styles.controlBtn} onPress={resetMeditation} activeOpacity={0.7}>
-                    <RotateCcw size={22} color={Colors.light.textSecondary} />
-                  </TouchableOpacity>
+                <View style={styles.controlsContainer}>
                   <TouchableOpacity
-                    style={[styles.playPauseBtn, !isRunning && styles.playBtn]}
+                    style={styles.controlButton}
+                    onPress={resetMeditation}
+                    activeOpacity={0.7}
+                  >
+                    <RotateCcw size={24} color={Colors.light.textSecondary} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.playPauseButton,
+                      !isRunning && styles.playButton,
+                    ]}
                     onPress={togglePause}
                     activeOpacity={0.8}
                   >
-                    {isRunning ? <Pause size={28} color="#FFF" /> : <Play size={28} color="#FFF" style={{ marginLeft: 3 }} />}
+                    {isRunning ? (
+                      <Pause size={32} color="#FFF" />
+                    ) : (
+                      <Play size={32} color="#FFF" style={{ marginLeft: 4 }} />
+                    )}
                   </TouchableOpacity>
-                  <View style={styles.controlBtn} />
+
+                  <View style={styles.controlButton} />
                 </View>
               </View>
             )}
 
             {meditationPhase === 'complete' && (
               <View style={styles.completeContent}>
-                <View style={styles.completeIconWrap}>
-                  <Check size={40} color="#FFF" />
+                <View style={styles.completeIconContainer}>
+                  <View style={styles.completeIconGlow} />
+                  <View style={styles.completeIcon}>
+                    <Check size={48} color="#FFF" />
+                  </View>
                 </View>
+
                 <Text style={styles.completeTitle}>Well Done</Text>
-                <Text style={styles.completeSubtitle}>You completed {formatTime(selectedTime)} of meditation</Text>
+                <Text style={styles.completeSubtitle}>
+                  You completed {formatTime(selectedTime)} of meditation
+                </Text>
 
                 <View style={styles.completeCard}>
                   <Text style={styles.completeCardTitle}>How do you feel?</Text>
-                  <Text style={styles.completeCardText}>Notice any shifts in your mind and body.</Text>
+                  <Text style={styles.completeCardText}>
+                    Take a moment to notice any shifts in your mind and body.
+                    Carry this calm with you.
+                  </Text>
                 </View>
 
-                <View style={styles.completeActions}>
-                  <TouchableOpacity style={styles.againBtn} onPress={resetMeditation} activeOpacity={0.8}>
-                    <RotateCcw size={18} color={Colors.light.primary} />
-                    <Text style={styles.againBtnText}>Again</Text>
+                <View style={styles.completeButtons}>
+                  <TouchableOpacity
+                    style={styles.anotherButton}
+                    onPress={resetMeditation}
+                    activeOpacity={0.8}
+                  >
+                    <RotateCcw size={20} color={Colors.light.primary} style={{ marginRight: 8 }} />
+                    <Text style={styles.anotherButtonText}>Meditate Again</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.doneBtn} onPress={closeMeditationModal} activeOpacity={0.8}>
-                    <Text style={styles.doneBtnText}>Done</Text>
+
+                  <TouchableOpacity
+                    style={styles.doneButton}
+                    onPress={closeMeditationModal}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.doneButtonText}>Finish</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -489,31 +678,54 @@ export default function HomeScreen() {
           </View>
         </SafeAreaView>
 
-        <Modal visible={showSoundPicker} transparent animationType="slide" onRequestClose={() => setShowSoundPicker(false)}>
+        <Modal
+          visible={showSoundPicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowSoundPicker(false)}
+        >
           <View style={styles.soundModalOverlay}>
             <View style={styles.soundModalContent}>
               <View style={styles.soundModalHeader}>
-                <Text style={styles.soundModalTitle}>End Sound</Text>
-                <TouchableOpacity onPress={() => setShowSoundPicker(false)}>
-                  <Text style={styles.soundModalDone}>Done</Text>
+                <Text style={styles.soundModalTitle}>Select End Sound</Text>
+                <TouchableOpacity
+                  onPress={() => setShowSoundPicker(false)}
+                  style={styles.soundModalCloseButton}
+                >
+                  <Text style={styles.soundModalCloseText}>Done</Text>
                 </TouchableOpacity>
               </View>
-              {END_SOUNDS.map(sound => (
-                <TouchableOpacity
-                  key={sound.id}
-                  style={[styles.soundOption, selectedSound.id === sound.id && styles.soundOptionActive]}
-                  onPress={() => selectSound(sound)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.soundOptionLeft}>
-                    <Volume2 size={18} color={selectedSound.id === sound.id ? Colors.light.primary : Colors.light.textSecondary} />
-                    <Text style={[styles.soundOptionText, selectedSound.id === sound.id && styles.soundOptionTextActive]}>
-                      {sound.label}
-                    </Text>
-                  </View>
-                  {selectedSound.id === sound.id && <Check size={18} color={Colors.light.primary} />}
-                </TouchableOpacity>
-              ))}
+              <ScrollView style={styles.soundList}>
+                {END_SOUNDS.map((sound) => (
+                  <TouchableOpacity
+                    key={sound.id}
+                    style={[
+                      styles.soundOption,
+                      selectedSound.id === sound.id && styles.soundOptionActive,
+                    ]}
+                    onPress={() => selectSound(sound)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.soundOptionLeft}>
+                      <Volume2
+                        size={20}
+                        color={selectedSound.id === sound.id ? Colors.light.primary : Colors.light.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.soundOptionText,
+                          selectedSound.id === sound.id && styles.soundOptionTextActive,
+                        ]}
+                      >
+                        {sound.label}
+                      </Text>
+                    </View>
+                    {selectedSound.id === sound.id && (
+                      <Check size={20} color={Colors.light.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </View>
         </Modal>
@@ -531,242 +743,250 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: 24,
   },
   header: {
-    marginBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
-  greetingRow: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  greetingText: {
-    flex: 1,
+    alignItems: 'center',
   },
   greeting: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '700',
     color: Colors.light.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: Colors.light.textSecondary,
   },
-  streakBadge: {
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.light.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  checkInBanner: {
+    backgroundColor: '#FFF0ED',
+    borderRadius: 20,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: Colors.light.primary,
+  },
+  bannerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.light.card,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  bannerText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+  },
+  bannerArrow: {
+    marginLeft: 12,
+  },
+  bannerArrowText: {
+    fontSize: 24,
+    color: Colors.light.primary,
+    fontWeight: '700',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 32,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.light.card,
     borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  streakText: {
-    fontSize: 15,
+  statIconContainer: {
+    marginBottom: 12,
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+  },
+  section: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.light.text,
   },
-  quoteCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: Colors.light.primary,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  quoteText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 21,
-    color: Colors.light.card,
-    fontWeight: '500',
-  },
-  checkInCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.light.secondary,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  checkInLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  checkInIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkInTitle: {
+  sectionLink: {
     fontSize: 16,
+    color: Colors.light.primary,
     fontWeight: '600',
-    color: Colors.light.card,
   },
-  checkInSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  actionsSection: {
-    marginBottom: 20,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.light.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 12,
+  actionsGrid: {
+    gap: 16,
+    marginBottom: 32,
   },
   actionCard: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  actionIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.card,
+  actionCardPrimary: {
+    backgroundColor: Colors.light.primary,
+  },
+  actionCardSecondary: {
+    backgroundColor: Colors.light.secondary,
+  },
+  actionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
-  actionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+  actionIconPrimary: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  actionIconSecondary: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  actionCardMeditation: {
+    backgroundColor: '#6366F1',
+  },
+  actionIconMeditation: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  actionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
     color: Colors.light.card,
+    marginBottom: 8,
   },
-  progressCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  progressLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  progressIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.light.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  progressTitle: {
+  actionDescription: {
     fontSize: 15,
-    fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.light.card,
+    opacity: 0.9,
+    lineHeight: 22,
   },
-  progressSubtitle: {
-    fontSize: 13,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  goalsSection: {
-    marginBottom: 24,
-  },
-  goalsCard: {
+  goalsContainer: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 32,
     gap: 12,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  goalRow: {
+  goalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   goalDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.light.primary,
   },
   goalText: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 16,
     color: Colors.light.text,
     fontWeight: '500',
   },
-  recentSection: {
-    marginBottom: 24,
+  triggersContainer: {
+    gap: 12,
+    marginBottom: 32,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  seeAllLink: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.light.primary,
-  },
-  entryCard: {
+  triggerCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  entryHeader: {
+  triggerHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 10,
+    marginBottom: 8,
   },
-  entryEmoji: {
-    fontSize: 28,
+  triggerEmotion: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.light.primary,
   },
-  entryMeta: {
-    flex: 1,
-  },
-  entryEmotion: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  entryDate: {
-    fontSize: 12,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  entryPreview: {
+  triggerIntensity: {
     fontSize: 13,
     color: Colors.light.textSecondary,
-    marginTop: 10,
-    lineHeight: 19,
+    fontWeight: '600',
+  },
+  triggerSituation: {
+    fontSize: 15,
+    color: Colors.light.text,
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  triggerTime: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+  },
+  journalEmoji: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.light.primary,
   },
   bottomSpacer: {
-    height: 30,
+    height: 40,
   },
   modalSafeArea: {
     flex: 1,
@@ -779,7 +999,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
@@ -792,8 +1012,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700' as const,
     color: Colors.light.text,
   },
   modalContent: {
@@ -801,76 +1021,81 @@ const styles = StyleSheet.create({
   },
   modalContentContainer: {
     padding: 24,
-    paddingTop: 32,
+    paddingTop: 40,
   },
   timeDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
     marginBottom: 32,
+    gap: 24,
   },
-  adjustBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  adjustButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.light.card,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  timeCenter: {
+  timeTextContainer: {
     alignItems: 'center',
   },
-  timeValue: {
-    fontSize: 48,
-    fontWeight: '700',
+  timeText: {
+    fontSize: 56,
+    fontWeight: '700' as const,
     color: Colors.light.primary,
     letterSpacing: -2,
   },
-  timeUnit: {
-    fontSize: 13,
+  timeLabelText: {
+    fontSize: 14,
     color: Colors.light.textSecondary,
     marginTop: -4,
   },
-  presetsSection: {
+  presetsContainer: {
     marginBottom: 24,
   },
   presetsLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '600' as const,
     color: Colors.light.textSecondary,
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: 'center',
   },
-  presetsRow: {
+  presetsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
   },
-  presetChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+  presetButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 24,
     backgroundColor: Colors.light.card,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  presetChipActive: {
+  presetButtonActive: {
     backgroundColor: Colors.light.primary,
     borderColor: Colors.light.primary,
   },
-  presetChipText: {
-    fontSize: 13,
-    fontWeight: '600',
+  presetText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
     color: Colors.light.text,
   },
-  presetChipTextActive: {
+  presetTextActive: {
     color: '#FFF',
   },
-  soundSection: {
+  soundPickerContainer: {
     marginBottom: 32,
   },
   soundSelector: {
@@ -879,46 +1104,50 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: Colors.light.card,
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  soundLeft: {
+  soundSelectorLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
-  soundText: {
-    fontSize: 15,
-    fontWeight: '500',
+  soundSelectorText: {
+    fontSize: 16,
+    fontWeight: '500' as const,
     color: Colors.light.text,
   },
-  previewBtn: {
+  previewButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 6,
     marginTop: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
-  previewBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+  previewButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
     color: Colors.light.primary,
   },
-  startBtn: {
+  startButton: {
     backgroundColor: Colors.light.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  startBtnText: {
-    fontSize: 17,
-    fontWeight: '600',
+  startButtonText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
     color: '#FFF',
   },
   meditatingContent: {
@@ -928,49 +1157,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   meditatingTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '700' as const,
     color: Colors.light.text,
-    marginBottom: 6,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   meditatingSubtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.light.textSecondary,
-    marginBottom: 40,
+    textAlign: 'center',
+    marginBottom: 48,
   },
   timerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 50,
+    marginBottom: 60,
   },
   timerGlow: {
     position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: '#E8DFF5',
+  },
+  timerCircle: {
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: Colors.light.primary + '30',
-  },
-  timerCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
     backgroundColor: Colors.light.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 8,
     overflow: 'hidden',
   },
-  progressBg: {
+  progressBackground: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     top: 0,
-    borderRadius: 100,
+    borderRadius: 120,
     overflow: 'hidden',
   },
   progressFill: {
@@ -978,48 +1209,53 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.light.primary + '15',
+    backgroundColor: '#F5F0FA',
   },
   timerInner: {
     alignItems: 'center',
     zIndex: 1,
   },
-  timerText: {
-    fontSize: 42,
-    fontWeight: '700',
+  timerDisplayText: {
+    fontSize: 48,
+    fontWeight: '700' as const,
     color: Colors.light.primary,
     letterSpacing: -1,
   },
-  timerLabel: {
-    fontSize: 13,
+  timerLabelText: {
+    fontSize: 14,
     color: Colors.light.textSecondary,
-    marginTop: 2,
+    marginTop: 4,
   },
-  controlsRow: {
+  controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 28,
+    gap: 32,
   },
-  controlBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  controlButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.light.card,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  playPauseBtn: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  playPauseButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  playBtn: {
+  playButton: {
     backgroundColor: Colors.light.secondary,
   },
   completeContent: {
@@ -1028,118 +1264,142 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  completeIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  completeIconContainer: {
+    marginBottom: 32,
+  },
+  completeIconGlow: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#D5EBE0',
+    top: -20,
+    left: -20,
+  },
+  completeIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.light.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
   },
   completeTitle: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '700' as const,
     color: Colors.light.text,
+    textAlign: 'center',
     marginBottom: 8,
   },
   completeSubtitle: {
-    fontSize: 15,
+    fontSize: 17,
     color: Colors.light.textSecondary,
+    textAlign: 'center',
     marginBottom: 32,
   },
   completeCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 32,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 40,
     width: '100%',
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   completeCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700' as const,
     color: Colors.light.text,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   completeCardText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.light.textSecondary,
-    lineHeight: 20,
+    lineHeight: 24,
   },
-  completeActions: {
-    flexDirection: 'row',
+  completeButtons: {
     width: '100%',
     gap: 12,
   },
-  againBtn: {
-    flex: 1,
+  anotherButton: {
+    backgroundColor: '#F5F0FA',
+    borderRadius: 16,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.light.primary + '15',
-    borderRadius: 14,
-    paddingVertical: 14,
   },
-  againBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+  anotherButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.primary,
   },
-  doneBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  doneButton: {
     backgroundColor: Colors.light.secondary,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: Colors.light.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  doneBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+  doneButtonText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
     color: '#FFF',
   },
   soundModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   soundModalContent: {
     backgroundColor: Colors.light.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 34,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+    maxHeight: '60%',
   },
   soundModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
   },
   soundModalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700' as const,
     color: Colors.light.text,
   },
-  soundModalDone: {
-    fontSize: 15,
-    fontWeight: '600',
+  soundModalCloseButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  soundModalCloseText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.primary,
+  },
+  soundList: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   soundOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginVertical: 4,
   },
   soundOptionActive: {
-    backgroundColor: Colors.light.primary + '10',
+    backgroundColor: '#F5F0FA',
   },
   soundOptionLeft: {
     flexDirection: 'row',
@@ -1147,12 +1407,72 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   soundOptionText: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '500' as const,
     color: Colors.light.text,
   },
   soundOptionTextActive: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontWeight: '600' as const,
+  },
+  quoteCard: {
+    backgroundColor: '#FFF9F5',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#FFE8DC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  quoteIconContainer: {
+    marginBottom: 12,
+  },
+  quoteText: {
+    fontSize: 17,
+    lineHeight: 26,
+    color: Colors.light.text,
+    fontWeight: '500',
+    fontStyle: 'italic' as const,
+  },
+  analyticsCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  analyticsIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF0ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analyticsContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  analyticsTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  analyticsText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
   },
 });

@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Home, LineChart, BookOpen, User, History } from 'lucide-react-native';
+import { Home, LineChart, BookOpen, User } from 'lucide-react-native';
 import React from 'react';
 import Colors from '@/constants/colors';
 import { useKindMind } from '@/providers/KindMindProvider';
@@ -21,17 +21,14 @@ export default function TabLayout() {
           backgroundColor: Colors.light.card,
           borderTopColor: Colors.light.border,
           borderTopWidth: 1,
-          paddingTop: 6,
-          paddingBottom: 6,
-          height: 56,
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 64,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-          marginTop: 2,
-        },
-        tabBarIconStyle: {
-          marginBottom: -2,
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
         },
       }}
     >
@@ -39,35 +36,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <Home color={color} size={22} />,
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
           title: 'Progress',
-          tabBarIcon: ({ color, size }) => <LineChart color={color} size={22} />,
+          tabBarIcon: ({ color, size }) => <LineChart color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="responses"
         options={{
           title: 'Kora',
-          tabBarIcon: ({ color, size }) => <BookOpen color={color} size={22} />,
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color, size }) => <History color={color} size={22} />,
+          tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User color={color} size={22} />,
+          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
       <Tabs.Screen

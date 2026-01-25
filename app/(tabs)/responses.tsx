@@ -1,8 +1,9 @@
-import { Sparkles, RotateCcw, Send, Mic, MicOff } from 'lucide-react-native';
+import { Sparkles, RotateCcw, Send, Mic, MicOff, Keyboard, X } from 'lucide-react-native';
 import { Audio } from 'expo-av';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -21,6 +22,7 @@ import { useRorkAgent } from '@rork-ai/toolkit-sdk';
 type QuickPrompt = {
   id: string;
   title: string;
+  emoji: string;
   prompt: string;
 };
 
@@ -68,7 +70,7 @@ function buildKoraPrompt(params: {
     context,
     '',
     'Personalization rules:',
-    '1) If reaction speed is instant/quick, start with a tiny pause cue like “Take a breath…” or “One second…”',
+    '1) If reaction speed is instant/quick, start with a tiny pause cue like "Take a breath…" or "One second…"',
     '2) If the situation touches a listed trigger, be extra non-defensive and validating.',
     '3) If awareness is after/rarely, keep it very simple and memorable.',
     '',
@@ -94,6 +96,7 @@ function extractText(parts: unknown): string {
 export default function ResponsesScreen() {
   const { data } = useKindMind();
   const scrollRef = useRef<ScrollView | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const username = data.username ?? '';
   const answers = data.onboardingAnswers ?? null;
@@ -103,24 +106,26 @@ export default function ResponsesScreen() {
       {
         id: 'q1',
         title: 'Gentle reply',
-        prompt:
-          'Help me write a kind response to a message that upset me. Ask 1 question first if needed.',
+        emoji: '💬',
+        prompt: 'Help me write a kind response to a message that upset me. Ask 1 question first if needed.',
       },
       {
         id: 'q2',
         title: 'Repair',
+        emoji: '🤝',
         prompt: 'I snapped earlier. Help me repair with a short apology + next step.',
       },
       {
         id: 'q3',
         title: 'Boundaries',
+        emoji: '🛡️',
         prompt: 'Help me set a boundary without sounding harsh.',
       },
       {
         id: 'q4',
         title: 'Before I text',
-        prompt:
-          'I want to respond but I am activated. Help me pause and choose kinder words. Keep it simple.',
+        emoji: '⏸️',
+        prompt: 'I want to respond but I am activated. Help me pause and choose kinder words. Keep it simple.',
       },
     ],
     []
@@ -139,9 +144,33 @@ export default function ResponsesScreen() {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
+  const [showKeyboard, setShowKeyboard] = useState<boolean>(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    if (isRecording) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.15,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isRecording, pulseAnim]);
 
   const send = useCallback(
     async (raw: string) => {
@@ -160,6 +189,7 @@ export default function ResponsesScreen() {
 
         await sendMessage(prompt);
         setInput('');
+        setShowKeyboard(false);
       } catch (e) {
         console.error('[Kora] send error', e);
       } finally {
@@ -183,6 +213,7 @@ export default function ResponsesScreen() {
       setMessages([]);
     }
     setInput('');
+    setShowKeyboard(false);
   }, [setMessages]);
 
   const startRecording = useCallback(async () => {
@@ -319,14 +350,17 @@ export default function ResponsesScreen() {
       console.log('[Kora] Transcription result:', result);
       
       if (result.text) {
-        setInput(prev => prev ? prev + ' ' + result.text : result.text);
+        const transcribedText = result.text.trim();
+        if (transcribedText) {
+          void send(transcribedText);
+        }
       }
     } catch (error) {
       console.error('[Kora] Failed to transcribe:', error);
     } finally {
       setIsTranscribing(false);
     }
-  }, []);
+  }, [send]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -361,188 +395,238 @@ export default function ResponsesScreen() {
         style={styles.container}
         testID="responses-kb"
       >
-        <View style={styles.bgOrbs} pointerEvents="none">
-          <View style={[styles.orb, styles.orb1]} />
-          <View style={[styles.orb, styles.orb2]} />
-          <View style={[styles.orb, styles.orb3]} />
-        </View>
-
         <View style={styles.header} testID="kora-header">
-          <View style={styles.headerTopRow}>
-            <View style={styles.koraBadge} testID="kora-badge">
-              <View style={styles.koraDot} />
-              <Text style={styles.koraBadgeText}>Kora</Text>
-              <View style={styles.koraBadgeDivider} />
-              <Text style={styles.koraBadgeSub}>Kindness coach</Text>
+          <View style={styles.headerRow}>
+            <View style={styles.titleSection}>
+              <View style={styles.koraIndicator}>
+                <View style={styles.koraIndicatorDot} />
+              </View>
+              <View>
+                <Text style={styles.title}>Kora</Text>
+                <Text style={styles.subtitle}>Your kindness coach</Text>
+              </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={onReset}
-              activeOpacity={0.8}
-              testID="kora-reset"
-              accessibilityLabel="Reset chat"
-            >
-              <RotateCcw size={18} color={Colors.light.textSecondary} />
-            </TouchableOpacity>
+            {hasAnyMessages && (
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={onReset}
+                activeOpacity={0.7}
+                testID="kora-reset"
+              >
+                <RotateCcw size={18} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
+        </View>
 
-          <Text style={styles.title} testID="kora-title">
-            Talk to Kora
-          </Text>
-          <Text style={styles.subtitle} testID="kora-subtitle">
-            Cozy support + gentle guidance 🌱
-          </Text>
-
-          {!hasAnyMessages && (
-            <View style={styles.welcomeCard} testID="kora-welcome">
-              <View style={styles.welcomeRow}>
-                <View style={styles.sparkleBubble}>
-                  <Sparkles size={18} color={Colors.light.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.welcomeTitle}>
-                    I’m here with you{(username?.trim() ?? '').length > 0 ? `, ${username.trim()}` : ''} 💛
-                  </Text>
-                  <Text style={styles.welcomeText}>
-                    Tell me what happened. I’ll listen first, then help you find kinder words.
-                  </Text>
+        {!hasAnyMessages ? (
+          <ScrollView 
+            style={styles.emptyState}
+            contentContainerStyle={styles.emptyStateContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.welcomeSection}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <Sparkles size={32} color={Colors.light.primary} />
                 </View>
               </View>
+              
+              <Text style={styles.welcomeTitle}>
+                Hey{username ? `, ${username}` : ''} 💛
+              </Text>
+              <Text style={styles.welcomeSubtitle}>
+                Tell me what's on your mind. I'll listen first, then help you find kinder words.
+              </Text>
+            </View>
 
-              <View style={styles.quickRow} testID="kora-quick-prompts">
+            <View style={styles.mainActionSection}>
+              <Animated.View style={[styles.micButtonContainer, { transform: [{ scale: pulseAnim }] }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.bigMicButton,
+                    isRecording && styles.bigMicButtonRecording,
+                    isTranscribing && styles.bigMicButtonTranscribing,
+                  ]}
+                  onPress={toggleRecording}
+                  disabled={isSending || isTranscribing}
+                  activeOpacity={0.85}
+                  testID="kora-big-mic"
+                >
+                  {isTranscribing ? (
+                    <ActivityIndicator color={Colors.light.card} size="large" />
+                  ) : isRecording ? (
+                    <MicOff size={40} color={Colors.light.card} />
+                  ) : (
+                    <Mic size={40} color={Colors.light.card} />
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+              
+              <Text style={styles.micHint}>
+                {isTranscribing ? 'Processing...' : isRecording ? 'Tap to stop' : 'Tap to speak'}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.typeInsteadButton}
+                onPress={() => setShowKeyboard(true)}
+                activeOpacity={0.7}
+              >
+                <Keyboard size={16} color={Colors.light.textSecondary} />
+                <Text style={styles.typeInsteadText}>Type instead</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.quickPromptsSection}>
+              <Text style={styles.quickPromptsTitle}>Quick starts</Text>
+              <View style={styles.quickPromptsGrid}>
                 {quickPrompts.map(p => (
                   <TouchableOpacity
                     key={p.id}
-                    style={styles.quickChip}
+                    style={styles.quickCard}
                     onPress={() => onPressQuickPrompt(p)}
-                    activeOpacity={0.85}
+                    activeOpacity={0.8}
                     testID={`kora-quick-${p.id}`}
                   >
-                    <Text style={styles.quickChipText}>{p.title}</Text>
+                    <Text style={styles.quickCardEmoji}>{p.emoji}</Text>
+                    <Text style={styles.quickCardTitle}>{p.title}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
-          )}
 
-          {!!error && (
-            <View style={styles.errorCard} testID="kora-error">
-              <Text style={styles.errorTitle}>Kora couldn’t reply</Text>
-              <Text style={styles.errorText}>
-                Check your connection and try again.
-              </Text>
-            </View>
-          )}
-        </View>
+            {!!error && (
+              <View style={styles.errorCard} testID="kora-error">
+                <Text style={styles.errorTitle}>Connection issue</Text>
+                <Text style={styles.errorText}>Check your connection and try again.</Text>
+              </View>
+            )}
+          </ScrollView>
+        ) : (
+          <ScrollView
+            ref={scrollRef}
+            style={styles.thread}
+            contentContainerStyle={styles.threadContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+            testID="kora-thread"
+          >
+            {renderedMessages.map(m => {
+              const isUser = m.role === 'user';
 
-        <ScrollView
-          ref={scrollRef}
-          style={styles.thread}
-          contentContainerStyle={styles.threadContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-          testID="kora-thread"
-        >
-          {renderedMessages.map(m => {
-            const isUser = m.role === 'user';
-            const bubbleStyle = isUser ? styles.userBubble : styles.koraBubble;
-            const textStyle = isUser ? styles.userText : styles.koraText;
-            const meta = isUser ? 'You' : 'Kora';
-
-            return (
-              <View
-                key={m.id}
-                style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}
-                testID={`kora-msg-${m.role}-${m.id}`}
-              >
-                <View style={[styles.bubble, bubbleStyle]}>
-                  <Text style={styles.metaText}>{meta}</Text>
-                  {m.text.length > 0 ? (
-                    <Text style={[styles.messageText, textStyle]}>{m.text}</Text>
-                  ) : (
-                    <View style={styles.thinkingRow}>
-                      <ActivityIndicator size="small" color={Colors.light.textSecondary} />
-                      <Text style={styles.thinkingText}>Thinking…</Text>
+              return (
+                <View
+                  key={m.id}
+                  style={[styles.messageRow, isUser ? styles.messageRowRight : styles.messageRowLeft]}
+                  testID={`kora-msg-${m.role}-${m.id}`}
+                >
+                  {!isUser && (
+                    <View style={styles.messageAvatar}>
+                      <Sparkles size={14} color={Colors.light.primary} />
                     </View>
                   )}
+                  <View style={[styles.bubble, isUser ? styles.userBubble : styles.koraBubble]}>
+                    {m.text.length > 0 ? (
+                      <Text style={[styles.messageText, isUser ? styles.userText : styles.koraText]}>
+                        {m.text}
+                      </Text>
+                    ) : (
+                      <View style={styles.thinkingRow}>
+                        <ActivityIndicator size="small" color={Colors.light.textSecondary} />
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })}
 
-          {isSending && (
-            <View style={[styles.messageRow, styles.messageRowRight]} testID="kora-sending">
-              <View style={[styles.bubble, styles.userBubble]}>
-                <Text style={styles.metaText}>You</Text>
-                <View style={styles.thinkingRow}>
-                  <ActivityIndicator size="small" color={Colors.light.card} />
-                  <Text style={[styles.thinkingText, { color: Colors.light.card }]}>Sending…</Text>
+            {isSending && (
+              <View style={[styles.messageRow, styles.messageRowLeft]} testID="kora-thinking">
+                <View style={styles.messageAvatar}>
+                  <Sparkles size={14} color={Colors.light.primary} />
+                </View>
+                <View style={[styles.bubble, styles.koraBubble]}>
+                  <View style={styles.thinkingRow}>
+                    <ActivityIndicator size="small" color={Colors.light.textSecondary} />
+                    <Text style={styles.thinkingText}>Thinking...</Text>
+                  </View>
                 </View>
               </View>
+            )}
+
+            <View style={{ height: 20 }} />
+          </ScrollView>
+        )}
+
+        {(showKeyboard || hasAnyMessages) && (
+          <View style={styles.composerWrap} testID="kora-composer">
+            <View style={styles.composer}>
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder="Type your message..."
+                placeholderTextColor={Colors.light.textSecondary}
+                style={styles.input}
+                multiline
+                maxLength={600}
+                testID="kora-input"
+              />
+
+              <TouchableOpacity
+                style={[
+                  styles.composerMicButton,
+                  isRecording && styles.composerMicButtonRecording,
+                ]}
+                onPress={toggleRecording}
+                disabled={isSending || isTranscribing}
+                activeOpacity={0.8}
+                testID="kora-mic"
+              >
+                {isTranscribing ? (
+                  <ActivityIndicator color={Colors.light.primary} size="small" />
+                ) : isRecording ? (
+                  <MicOff size={20} color={Colors.light.card} />
+                ) : (
+                  <Mic size={20} color={Colors.light.primary} />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!input.trim() || isSending) && styles.sendButtonDisabled,
+                ]}
+                onPress={() => void send(input)}
+                disabled={!input.trim() || isSending}
+                activeOpacity={0.8}
+                testID="kora-send"
+              >
+                {isSending ? (
+                  <ActivityIndicator color={Colors.light.card} size="small" />
+                ) : (
+                  <Send size={20} color={Colors.light.card} />
+                )}
+              </TouchableOpacity>
             </View>
-          )}
 
-          <View style={{ height: 12 }} />
-        </ScrollView>
-
-        <View style={styles.composerWrap} testID="kora-composer">
-          <View style={styles.composer}>
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="What’s going on?"
-              placeholderTextColor={Colors.light.textSecondary}
-              style={styles.input}
-              multiline
-              maxLength={600}
-              testID="kora-input"
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.micButton,
-                isRecording && styles.micButtonRecording,
-              ]}
-              onPress={toggleRecording}
-              disabled={isSending || isTranscribing}
-              activeOpacity={0.85}
-              testID="kora-mic"
-              accessibilityLabel={isRecording ? 'Stop recording' : 'Start voice input'}
-            >
-              {isTranscribing ? (
-                <ActivityIndicator color={Colors.light.primary} size="small" />
-              ) : isRecording ? (
-                <MicOff size={18} color={Colors.light.card} />
-              ) : (
-                <Mic size={18} color={Colors.light.primary} />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                (!input.trim() || isSending) && styles.sendButtonDisabled,
-              ]}
-              onPress={() => void send(input)}
-              disabled={!input.trim() || isSending}
-              activeOpacity={0.85}
-              testID="kora-send"
-              accessibilityLabel="Send message"
-            >
-              {isSending ? (
-                <ActivityIndicator color={Colors.light.card} size="small" />
-              ) : (
-                <Send size={18} color={Colors.light.card} />
-              )}
-            </TouchableOpacity>
+            {!hasAnyMessages && (
+              <TouchableOpacity
+                style={styles.closeKeyboardButton}
+                onPress={() => setShowKeyboard(false)}
+                activeOpacity={0.7}
+              >
+                <X size={14} color={Colors.light.textSecondary} />
+                <Text style={styles.closeKeyboardText}>Back to voice</Text>
+              </TouchableOpacity>
+            )}
           </View>
+        )}
 
-          <Text style={styles.disclaimer} testID="kora-disclaimer">
-            Kora is supportive, not a substitute for professional care.
-          </Text>
-        </View>
+        <Text style={styles.disclaimer} testID="kora-disclaimer">
+          Kora is supportive, not a substitute for professional care.
+        </Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -556,174 +640,201 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  bgOrbs: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  orb: {
-    position: 'absolute',
-    borderRadius: 999,
-    opacity: 0.22,
-  },
-  orb1: {
-    width: 260,
-    height: 260,
-    backgroundColor: '#FFD9C9',
-    top: -90,
-    left: -80,
-  },
-  orb2: {
-    width: 220,
-    height: 220,
-    backgroundColor: '#FFF3B0',
-    top: 120,
-    right: -110,
-  },
-  orb3: {
-    width: 300,
-    height: 300,
-    backgroundColor: '#E7D9FF',
-    bottom: -160,
-    left: 40,
-  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  headerTopRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  koraBadge: {
+  titleSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.light.card,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    gap: 8,
+    gap: 12,
   },
-  koraDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  koraIndicator: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  koraIndicatorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: Colors.light.primary,
   },
-  koraBadgeText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.light.text,
-  },
-  koraBadgeDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: Colors.light.border,
-    opacity: 0.8,
-  },
-  koraBadgeSub: {
-    fontSize: 13,
+  title: {
+    fontSize: 22,
     fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
     color: Colors.light.textSecondary,
+    marginTop: 1,
   },
   resetButton: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: 20,
     backgroundColor: Colors.light.card,
     borderWidth: 1,
     borderColor: Colors.light.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: Colors.light.text,
-    marginTop: 12,
+  emptyState: {
+    flex: 1,
   },
-  subtitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.light.textSecondary,
-    marginTop: 6,
+  emptyStateContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  welcomeCard: {
-    marginTop: 14,
-    backgroundColor: Colors.light.card,
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+  welcomeSection: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 32,
   },
-  welcomeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
+  avatarContainer: {
+    marginBottom: 16,
   },
-  sparkleBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FFF0ED',
-    borderWidth: 1,
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
     borderColor: Colors.light.primary + '30',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   welcomeTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '700',
     color: Colors.light.text,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  welcomeText: {
-    marginTop: 6,
+  welcomeSubtitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  mainActionSection: {
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  micButtonContainer: {
+    marginBottom: 12,
+  },
+  bigMicButton: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  bigMicButtonRecording: {
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
+  },
+  bigMicButtonTranscribing: {
+    backgroundColor: Colors.light.secondary,
+    shadowColor: Colors.light.secondary,
+  },
+  micHint: {
     fontSize: 14,
-    lineHeight: 20,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    marginBottom: 16,
+  },
+  typeInsteadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.light.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  typeInsteadText: {
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.light.textSecondary,
   },
-  quickRow: {
+  quickPromptsSection: {
+    marginBottom: 20,
+  },
+  quickPromptsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.light.textSecondary,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  quickPromptsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginTop: 14,
   },
-  quickChip: {
-    backgroundColor: '#FFF0ED',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  quickCard: {
+    width: '48%',
+    flexGrow: 1,
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: Colors.light.primary + '30',
+    borderColor: Colors.light.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  quickChipText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.light.primary,
+  quickCardEmoji: {
+    fontSize: 20,
+  },
+  quickCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+    flex: 1,
   },
   errorCard: {
-    marginTop: 12,
-    backgroundColor: '#FFF2F2',
-    borderRadius: 18,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#FFCCCC',
+    borderColor: '#FECACA',
   },
   errorTitle: {
     fontSize: 14,
-    fontWeight: '900',
-    color: '#B42318',
+    fontWeight: '700',
+    color: '#B91C1C',
   },
   errorText: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 13,
-    fontWeight: '600',
-    color: '#7A271A',
-    lineHeight: 18,
+    fontWeight: '500',
+    color: '#DC2626',
   },
   thread: {
     flex: 1,
@@ -734,8 +845,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   messageRow: {
-    marginBottom: 10,
+    marginBottom: 12,
     flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   messageRowLeft: {
     justifyContent: 'flex-start',
@@ -743,31 +855,35 @@ const styles = StyleSheet.create({
   messageRowRight: {
     justifyContent: 'flex-end',
   },
+  messageAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
   bubble: {
-    maxWidth: '86%',
-    borderRadius: 18,
-    paddingHorizontal: 14,
+    maxWidth: '80%',
+    borderRadius: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1,
   },
   koraBubble: {
     backgroundColor: Colors.light.card,
+    borderWidth: 1,
     borderColor: Colors.light.border,
+    borderBottomLeftRadius: 6,
   },
   userBubble: {
     backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  metaText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: 'rgba(0,0,0,0.35)',
-    marginBottom: 6,
+    borderBottomRightRadius: 6,
   },
   messageText: {
     fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
+    lineHeight: 22,
+    fontWeight: '500',
   },
   koraText: {
     color: Colors.light.text,
@@ -782,41 +898,49 @@ const styles = StyleSheet.create({
   },
   thinkingText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.light.textSecondary,
   },
   composerWrap: {
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: Colors.light.background,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: Colors.light.card,
-    borderRadius: 18,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    padding: 10,
-    gap: 10,
+    padding: 6,
+    gap: 6,
   },
   input: {
     flex: 1,
-    minHeight: 42,
-    maxHeight: 120,
+    minHeight: 40,
+    maxHeight: 100,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.light.text,
-    paddingHorizontal: 10,
+    paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  composerMicButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  composerMicButtonRecording: {
+    backgroundColor: '#EF4444',
+  },
   sendButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -824,25 +948,26 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: Colors.light.border,
   },
-  micButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#FFF0ED',
-    borderWidth: 1,
-    borderColor: Colors.light.primary + '30',
-    justifyContent: 'center',
+  closeKeyboardButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  micButtonRecording: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
-  },
-  disclaimer: {
+    justifyContent: 'center',
+    gap: 6,
     marginTop: 10,
-    fontSize: 12,
+    paddingVertical: 8,
+  },
+  closeKeyboardText: {
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.light.textSecondary,
+  },
+  disclaimer: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
     textAlign: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    opacity: 0.7,
   },
 });

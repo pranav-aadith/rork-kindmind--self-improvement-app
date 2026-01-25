@@ -1043,9 +1043,6 @@ export default function HomeScreen() {
                 <View style={styles.previewSection}>
                   <Text style={styles.previewLabel}>Your entry</Text>
                   <View style={styles.previewCard}>
-                    {selectedEmotion && (
-                      <Text style={styles.previewEmotion}>{selectedEmotion.emoji} {selectedEmotion.label}</Text>
-                    )}
                     <Text style={styles.previewText}>{journalText}</Text>
                   </View>
                 </View>

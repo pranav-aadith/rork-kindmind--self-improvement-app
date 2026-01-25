@@ -314,7 +314,7 @@ export default function JournalScreen() {
               {selectedEmotion && (
                 <Animated.View style={[styles.selectedPreview, { opacity: fadeAnim }]}>
                   <Text style={styles.selectedPreviewText}>
-                    You're feeling {selectedEmotion.emoji} {selectedEmotion.label}
+                    You&apos;re feeling {selectedEmotion.emoji} {selectedEmotion.label}
                   </Text>
                 </Animated.View>
               )}

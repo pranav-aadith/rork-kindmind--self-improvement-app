@@ -733,7 +733,7 @@ export default function ProgressScreen() {
         </Animated.View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Analytics</Text>
+          <Text style={styles.sectionTitle}>This Week&apos;s Analytics</Text>
           <Text style={styles.sectionSubtitle}>Your emotional wellness snapshot</Text>
         </View>
 

@@ -331,7 +331,7 @@ export default function PauseScreen() {
                 onPress={() => router.back()}
                 activeOpacity={0.8}
               >
-                <Text style={styles.doneButtonText}>I'm Done</Text>
+                <Text style={styles.doneButtonText}>I&apos;m Done</Text>
               </TouchableOpacity>
             </View>
 

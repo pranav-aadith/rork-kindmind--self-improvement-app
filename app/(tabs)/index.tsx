@@ -14,6 +14,7 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAudioPlayer } from 'expo-audio';
@@ -303,9 +304,34 @@ export default function HomeScreen() {
   const startRecording = async () => {
     try {
       console.log('Requesting permissions..');
+      
+      if (Platform.OS === 'web') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        } catch (webErr) {
+          const errorName = (webErr as Error)?.name || '';
+          console.error('Web permission error:', errorName, webErr);
+          if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+            Alert.alert(
+              'Microphone Access',
+              'Please allow microphone access to use voice input. You can also type your entry instead.',
+              [{ text: 'OK' }]
+            );
+            setInputMode('text');
+          }
+          return;
+        }
+      }
+      
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
         console.log('Permission not granted');
+        Alert.alert(
+          'Microphone Access',
+          'Please allow microphone access in your device settings to use voice input.',
+          [{ text: 'OK' }]
+        );
         return;
       }
 
@@ -363,6 +389,11 @@ export default function HomeScreen() {
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
+      Alert.alert(
+        'Recording Error',
+        'Could not start recording. Please try typing instead.',
+        [{ text: 'OK' }]
+      );
     }
   };
 

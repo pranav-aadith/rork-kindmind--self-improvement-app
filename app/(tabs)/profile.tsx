@@ -1,4 +1,4 @@
-import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight } from 'lucide-react-native';
+import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight, Bell, Check } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -12,13 +12,24 @@ import {
 } from 'react-native';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
+import type { NotificationFrequency } from '@/types';
+
+const FREQUENCY_OPTIONS: { value: NotificationFrequency; label: string; description: string }[] = [
+  { value: 'off', label: 'Off', description: 'No reminders' },
+  { value: 'daily', label: 'Once daily', description: '9:00 AM' },
+  { value: 'twice_daily', label: 'Twice daily', description: '9:00 AM & 8:00 PM' },
+  { value: 'three_times', label: 'Three times', description: '9:00 AM, 2:00 PM & 8:00 PM' },
+];
 
 export default function ProfileScreen() {
-  const { data, updateUsername, logout } = useKindMind();
+  const { data, updateUsername, logout, updateNotificationSettings } = useKindMind();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(data.username || '');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedFrequency, setSelectedFrequency] = useState<NotificationFrequency>(data.notificationSettings?.frequency || 'off');
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
 
   const handleSaveUsername = () => {
     const trimmed = (tempUsername || '').trim();
@@ -31,6 +42,23 @@ export default function ProfileScreen() {
   const handleCancelEdit = () => {
     setTempUsername(data.username || '');
     setIsEditingUsername(false);
+  };
+
+  const handleSaveNotificationSettings = async () => {
+    setIsSavingNotifications(true);
+    try {
+      await updateNotificationSettings(selectedFrequency);
+      setShowNotificationModal(false);
+    } catch (error) {
+      console.error('Failed to save notification settings:', error);
+    } finally {
+      setIsSavingNotifications(false);
+    }
+  };
+
+  const getFrequencyLabel = (frequency: NotificationFrequency): string => {
+    const option = FREQUENCY_OPTIONS.find(o => o.value === frequency);
+    return option?.label || 'Off';
   };
 
   const joinedDate = new Date().toLocaleDateString('en-US', {
@@ -127,6 +155,26 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <TouchableOpacity
             style={styles.menuItem}
+            onPress={() => {
+              setSelectedFrequency(data.notificationSettings?.frequency || 'off');
+              setShowNotificationModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIcon, { backgroundColor: '#FFF0ED' }]}>
+                <Bell size={20} color={Colors.light.primary} />
+              </View>
+              <View style={styles.menuItemTextContainer}>
+                <Text style={styles.menuItemText}>Notification Reminders</Text>
+                <Text style={styles.menuItemSubtext}>{getFrequencyLabel(data.notificationSettings?.frequency || 'off')}</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={Colors.light.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => setShowPrivacyModal(true)}
             activeOpacity={0.7}
           >
@@ -140,7 +188,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomWidth: 0 }]}
             onPress={() => setShowVersionModal(true)}
             activeOpacity={0.7}
           >
@@ -262,6 +310,74 @@ export default function ProfileScreen() {
             >
               <Text style={styles.versionCloseButtonText}>Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showNotificationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowNotificationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.notificationModalContent}>
+            <View style={styles.notificationModalHeader}>
+              <View style={styles.notificationIconContainer}>
+                <Bell size={28} color={Colors.light.primary} />
+              </View>
+              <Text style={styles.notificationModalTitle}>Reminder Frequency</Text>
+              <Text style={styles.notificationModalSubtitle}>How often would you like to be reminded to check in?</Text>
+            </View>
+
+            <View style={styles.frequencyOptions}>
+              {FREQUENCY_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.frequencyOption,
+                    selectedFrequency === option.value && styles.frequencyOptionSelected,
+                  ]}
+                  onPress={() => setSelectedFrequency(option.value)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.frequencyOptionContent}>
+                    <Text style={[
+                      styles.frequencyOptionLabel,
+                      selectedFrequency === option.value && styles.frequencyOptionLabelSelected,
+                    ]}>{option.label}</Text>
+                    <Text style={[
+                      styles.frequencyOptionDescription,
+                      selectedFrequency === option.value && styles.frequencyOptionDescriptionSelected,
+                    ]}>{option.description}</Text>
+                  </View>
+                  {selectedFrequency === option.value && (
+                    <View style={styles.checkIcon}>
+                      <Check size={20} color={Colors.light.card} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.notificationModalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowNotificationModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saveButton, isSavingNotifications && styles.saveButtonDisabled]}
+                onPress={handleSaveNotificationSettings}
+                disabled={isSavingNotifications}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.saveButtonText}>{isSavingNotifications ? 'Saving...' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -605,7 +721,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.light.text,
+  },
+  menuItemTextContainer: {
     flex: 1,
+  },
+  menuItemSubtext: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
   },
   fullModalOverlay: {
     flex: 1,
@@ -723,5 +846,85 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.light.card,
+  },
+  notificationModalContent: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  notificationModalHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  notificationIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFF0ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  notificationModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 8,
+  },
+  notificationModalSubtitle: {
+    fontSize: 15,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+  frequencyOptions: {
+    gap: 10,
+    marginBottom: 24,
+  },
+  frequencyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.background,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: Colors.light.border,
+  },
+  frequencyOptionSelected: {
+    backgroundColor: Colors.light.primary + '15',
+    borderColor: Colors.light.primary,
+  },
+  frequencyOptionContent: {
+    flex: 1,
+  },
+  frequencyOptionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  frequencyOptionLabelSelected: {
+    color: Colors.light.primary,
+  },
+  frequencyOptionDescription: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  frequencyOptionDescriptionSelected: {
+    color: Colors.light.primary + 'CC',
+  },
+  checkIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });

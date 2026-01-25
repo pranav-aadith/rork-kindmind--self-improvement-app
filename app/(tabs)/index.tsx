@@ -20,6 +20,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Audio } from 'expo-av';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
+import { trpcClient } from '@/lib/trpc';
 import { getDailyQuote } from '@/constants/quotes';
 
 const PRESET_TIMES = [
@@ -397,28 +398,30 @@ export default function HomeScreen() {
   const transcribeAudio = async (uri: string) => {
     setIsTranscribing(true);
     try {
-      const formData = new FormData();
       const uriParts = uri.split('.');
       const fileType = uriParts[uriParts.length - 1];
 
-      const audioFile = {
-        uri,
-        name: 'recording.' + fileType,
-        type: 'audio/' + fileType,
-      } as unknown as Blob;
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(blob);
+      
+      const audioBase64 = await base64Promise;
+      console.log('Audio converted to base64, sending to backend...');
 
-      formData.append('audio', audioFile);
-
-      const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
-        method: 'POST',
-        body: formData,
+      const data = await trpcClient.speechToText.transcribe.mutate({
+        audioBase64,
+        fileType,
       });
 
-      if (!response.ok) {
-        throw new Error('Transcription failed');
-      }
-
-      const data = await response.json();
       console.log('Transcription result:', data);
 
       if (data.text) {

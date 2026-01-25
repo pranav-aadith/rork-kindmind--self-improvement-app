@@ -318,16 +318,16 @@ export default function HomeScreen() {
       const { recording: newRecording } = await Audio.Recording.createAsync({
         android: {
           extension: '.m4a',
-          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
           sampleRate: 44100,
           numberOfChannels: 2,
           bitRate: 128000,
         },
         ios: {
           extension: '.wav',
-          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
-          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
           sampleRate: 44100,
           numberOfChannels: 1,
           bitRate: 128000,

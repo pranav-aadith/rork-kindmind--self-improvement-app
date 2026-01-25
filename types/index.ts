@@ -40,14 +40,6 @@ export interface DailyCheckIn {
   feltRelaxed: boolean;
 }
 
-export type NotificationFrequency = 'off' | 'daily' | 'twice_daily' | 'three_times' | 'custom';
-
-export interface NotificationSettings {
-  enabled: boolean;
-  frequency: NotificationFrequency;
-  times: string[]; // Array of times in HH:mm format
-}
-
 export interface UserData {
   hasCompletedOnboarding: boolean;
   username: string;
@@ -58,7 +50,6 @@ export interface UserData {
   checkIns: DailyCheckIn[];
   currentStreak: number;
   longestStreak: number;
-  notificationSettings: NotificationSettings;
 }
 
 export interface KindResponse {

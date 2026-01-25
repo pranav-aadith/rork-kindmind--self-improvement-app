@@ -1,19 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Platform } from 'react-native';
-import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, NotificationSettings, NotificationFrequency } from '@/types';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import { useState, useEffect, useMemo } from 'react';
+import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry } from '@/types';
 
 const STORAGE_KEY = 'kindmind_data';
 
@@ -61,12 +49,6 @@ const defaultGoals: UserGoal[] = [
   { id: '5', label: 'I want to pause before reacting', selected: false },
 ];
 
-const defaultNotificationSettings: NotificationSettings = {
-  enabled: false,
-  frequency: 'off',
-  times: ['09:00'],
-};
-
 const initialData: UserData = {
   hasCompletedOnboarding: false,
   username: '',
@@ -77,101 +59,15 @@ const initialData: UserData = {
   checkIns: [],
   currentStreak: 0,
   longestStreak: 0,
-  notificationSettings: defaultNotificationSettings,
-};
-
-const REMINDER_MESSAGES = [
-  { title: 'Time for a check-in 🌟', body: 'How are you feeling? Take a moment to reflect.' },
-  { title: 'KindMind Reminder 💭', body: 'A quick check-in can make a big difference.' },
-  { title: 'Pause & Reflect ✨', body: 'Your emotional wellness matters. Check in now.' },
-  { title: 'Mindful Moment 🧘', body: 'Take a breath and check in with yourself.' },
-  { title: 'Self-Care Check 💚', body: "How's your day going? Log your feelings." },
-];
-
-const getTimesForFrequency = (frequency: NotificationFrequency): string[] => {
-  switch (frequency) {
-    case 'daily':
-      return ['09:00'];
-    case 'twice_daily':
-      return ['09:00', '20:00'];
-    case 'three_times':
-      return ['09:00', '14:00', '20:00'];
-    default:
-      return [];
-  }
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
   const [data, setData] = useState<UserData>(initialData);
   const [isLoading, setIsLoading] = useState(true);
-  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
-
-  const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
-    try {
-      if (Platform.OS === 'web') {
-        console.log('Notifications not fully supported on web');
-        return false;
-      }
-      
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      
-      const granted = finalStatus === 'granted';
-      setNotificationPermission(granted);
-      return granted;
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
-      return false;
-    }
-  }, []);
-
-  const scheduleNotifications = useCallback(async (settings: NotificationSettings) => {
-    try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      
-      if (!settings.enabled || settings.frequency === 'off' || settings.times.length === 0) {
-        console.log('Notifications disabled or no times set');
-        return;
-      }
-
-      if (Platform.OS === 'web') {
-        console.log('Scheduled notifications not supported on web');
-        return;
-      }
-
-      for (const timeStr of settings.times) {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const randomMessage = REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
-        
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: randomMessage.title,
-            body: randomMessage.body,
-            sound: true,
-          },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DAILY,
-            hour: hours,
-            minute: minutes,
-          },
-        });
-        
-        console.log(`Scheduled notification for ${timeStr}`);
-      }
-    } catch (error) {
-      console.error('Error scheduling notifications:', error);
-    }
-  }, []);
 
   useEffect(() => {
     loadData();
-    requestNotificationPermission();
-  }, [requestNotificationPermission]);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -182,7 +78,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         const accurateStreak = calculateAccurateStreak(checkIns);
         const newLongest = Math.max(accurateStreak, parsed.longestStreak || 0);
         
-        const loadedData: UserData = {
+        const loadedData = {
           ...initialData,
           ...parsed,
           username: parsed.username || '',
@@ -192,14 +88,9 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           journalEntries: parsed.journalEntries || [],
           currentStreak: accurateStreak,
           longestStreak: newLongest,
-          notificationSettings: parsed.notificationSettings || defaultNotificationSettings,
         };
         
         setData(loadedData);
-        
-        if (loadedData.notificationSettings.enabled) {
-          scheduleNotifications(loadedData.notificationSettings);
-        }
         
         if (accurateStreak !== parsed.currentStreak) {
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
@@ -333,37 +224,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
 
   const logout = async () => {
     try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
       await AsyncStorage.removeItem(STORAGE_KEY);
       setData(initialData);
     } catch (error) {
       console.error('Failed to logout:', error);
     }
-  };
-
-  const updateNotificationSettings = async (frequency: NotificationFrequency, customTimes?: string[]) => {
-    const hasPermission = await requestNotificationPermission();
-    
-    if (!hasPermission && frequency !== 'off') {
-      console.log('Notification permission not granted');
-      return false;
-    }
-
-    const times = customTimes || getTimesForFrequency(frequency);
-    const newSettings: NotificationSettings = {
-      enabled: frequency !== 'off',
-      frequency,
-      times,
-    };
-
-    const newData = {
-      ...data,
-      notificationSettings: newSettings,
-    };
-
-    await saveData(newData);
-    await scheduleNotifications(newSettings);
-    return true;
   };
 
   return {
@@ -379,8 +244,5 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     updateUsername,
     logout,
     checkInsLast30Days,
-    updateNotificationSettings,
-    notificationPermission,
-    requestNotificationPermission,
   };
 });

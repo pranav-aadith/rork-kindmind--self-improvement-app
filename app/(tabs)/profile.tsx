@@ -40,246 +40,149 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Your KindMind journey</Text>
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <User size={48} color={Colors.light.primary} />
+          <View style={styles.avatarCircle}>
+            <User size={32} color={Colors.light.primary} />
           </View>
-          
-          <View style={styles.usernameContainer}>
-            <Text style={styles.username}>{data.username || 'User'}</Text>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setIsEditingUsername(true)}
-              activeOpacity={0.7}
-            >
-              <Edit3 size={16} color={Colors.light.primary} />
-              <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.joinedContainer}>
-            <Calendar size={16} color={Colors.light.textSecondary} />
-            <Text style={styles.joinedText}>Joined {joinedDate}</Text>
+          <View style={styles.profileInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.username}>{data.username || 'User'}</Text>
+              <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditingUsername(true)} activeOpacity={0.7}>
+                <Edit3 size={14} color={Colors.light.primary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.joinedRow}>
+              <Calendar size={12} color={Colors.light.textSecondary} />
+              <Text style={styles.joinedText}>Joined {joinedDate}</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF0ED' }]}>
-              <Heart size={24} color={Colors.light.primary} />
-            </View>
-            <Text style={styles.statNumber}>{data.triggers.length}</Text>
-            <Text style={styles.statLabel}>Triggers Logged</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Heart size={18} color={Colors.light.primary} />
+            <Text style={styles.statValue}>{data.triggers.length}</Text>
+            <Text style={styles.statLabel}>Triggers</Text>
           </View>
-
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#E8F5F0' }]}>
-              <Target size={24} color={Colors.light.secondary} />
-            </View>
-            <Text style={styles.statNumber}>{data.checkIns.length}</Text>
-            <Text style={styles.statLabel}>Check-Ins</Text>
+          <View style={styles.statBox}>
+            <Target size={18} color={Colors.light.secondary} />
+            <Text style={styles.statValue}>{data.checkIns.length}</Text>
+            <Text style={styles.statLabel}>Check-ins</Text>
           </View>
-
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF4E8' }]}>
-              <Award size={24} color={Colors.light.accent} />
-            </View>
-            <Text style={styles.statNumber}>{data.longestStreak}</Text>
-            <Text style={styles.statLabel}>Longest Streak</Text>
+          <View style={styles.statBox}>
+            <Award size={18} color={Colors.light.accent} />
+            <Text style={styles.statValue}>{data.longestStreak}</Text>
+            <Text style={styles.statLabel}>Best Streak</Text>
           </View>
         </View>
 
         {data.goals.filter(g => g.selected).length > 0 && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your Goals</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Your Goals</Text>
+            <View style={styles.goalsCard}>
+              {data.goals.filter(g => g.selected).map(goal => (
+                <View key={goal.id} style={styles.goalRow}>
+                  <View style={styles.goalDot} />
+                  <Text style={styles.goalText}>{goal.label}</Text>
+                </View>
+              ))}
             </View>
-
-            <View style={styles.goalsContainer}>
-              {data.goals
-                .filter(g => g.selected)
-                .map(goal => (
-                  <View key={goal.id} style={styles.goalItem}>
-                    <View style={styles.goalIcon}>
-                      <Target size={20} color={Colors.light.primary} />
-                    </View>
-                    <Text style={styles.goalText}>{goal.label}</Text>
-                  </View>
-                ))}
-            </View>
-          </>
+          </View>
         )}
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>About KindMind</Text>
-          <Text style={styles.infoText}>
-            KindMind is your personal tool for building emotional awareness and kinder communication. 
-            Track your triggers, practice mindful responses, and watch your progress grow.
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>About</Text>
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutText}>
+              KindMind helps you build emotional awareness and kinder communication through journaling and reflection.
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.menuSection}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => setShowPrivacyModal(true)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#E8F5F0' }]}>
-                <Shield size={20} color={Colors.light.secondary} />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Settings</Text>
+          <View style={styles.menuCard}>
+            <TouchableOpacity style={styles.menuRow} onPress={() => setShowPrivacyModal(true)} activeOpacity={0.6}>
+              <View style={styles.menuLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: Colors.light.secondary + '20' }]}>
+                  <Shield size={16} color={Colors.light.secondary} />
+                </View>
+                <Text style={styles.menuText}>Privacy & Data</Text>
               </View>
-              <Text style={styles.menuItemText}>Privacy & Data Protection</Text>
-            </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => setShowVersionModal(true)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#FFF4E8' }]}>
-                <Info size={20} color={Colors.light.accent} />
+              <ChevronRight size={18} color={Colors.light.textSecondary} />
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity style={styles.menuRow} onPress={() => setShowVersionModal(true)} activeOpacity={0.6}>
+              <View style={styles.menuLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: Colors.light.accent + '20' }]}>
+                  <Info size={16} color={Colors.light.accent} />
+                </View>
+                <Text style={styles.menuText}>Version</Text>
               </View>
-              <Text style={styles.menuItemText}>Version</Text>
-            </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
-          </TouchableOpacity>
+              <ChevronRight size={18} color={Colors.light.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={logout}
-          activeOpacity={0.7}
-        >
-          <LogOut size={20} color={Colors.light.error} />
-          <Text style={styles.logoutButtonText}>Logout</Text>
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
+          <LogOut size={18} color={Colors.light.error} />
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      <Modal
-        visible={showPrivacyModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPrivacyModal(false)}
-      >
+      <Modal visible={showPrivacyModal} transparent animationType="slide" onRequestClose={() => setShowPrivacyModal(false)}>
         <View style={styles.fullModalOverlay}>
           <SafeAreaView style={styles.fullModalSafeArea}>
             <View style={styles.fullModalHeader}>
-              <Text style={styles.fullModalTitle}>Privacy & Data Protection</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowPrivacyModal(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.fullModalTitle}>Privacy & Data</Text>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowPrivacyModal(false)} activeOpacity={0.7}>
+                <Text style={styles.closeBtnText}>Done</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.fullModalScroll} contentContainerStyle={styles.fullModalContent}>
               <Text style={styles.privacyIntro}>
-                Your emotional well-being is personal. We are committed to protecting your privacy and being transparent about how your data is handled.
+                Your emotional well-being is personal. We are committed to protecting your privacy.
               </Text>
-
               <Text style={styles.privacyHeading}>What We Collect</Text>
-              <Text style={styles.privacyText}>
-                We only collect what&apos;s necessary to support your emotional awareness journey:
-              </Text>
-              <Text style={styles.privacyBullet}>• Check-in responses (yes/no answers, mood selections)</Text>
-              <Text style={styles.privacyBullet}>• Optional notes or reflections you choose to add</Text>
-              <Text style={styles.privacyBullet}>• App usage data (feature usage, crash reports) to improve performance</Text>
-
-              <Text style={styles.privacyHeading}>What We Do NOT Collect</Text>
-              <Text style={styles.privacyBullet}>• No audio or video recordings</Text>
-              <Text style={styles.privacyBullet}>• No contacts, photos, or files</Text>
-              <Text style={styles.privacyBullet}>• No precise location data</Text>
-              <Text style={styles.privacyBullet}>• No social media data</Text>
-
-              <Text style={styles.privacyHeading}>How Your Data Is Used</Text>
-              <Text style={styles.privacyText}>Your data is used to:</Text>
-              <Text style={styles.privacyBullet}>• Show personal insights, trends, and summaries</Text>
-              <Text style={styles.privacyBullet}>• Personalize your experience</Text>
-              <Text style={styles.privacyBullet}>• Improve app reliability and features</Text>
-              <Text style={styles.privacyText}>
-                Your data is never used for advertising or sold to third parties.
-              </Text>
-
-              <Text style={styles.privacyHeading}>Data Storage & Security</Text>
-              <Text style={styles.privacyBullet}>• Data is stored securely using industry-standard encryption</Text>
-              <Text style={styles.privacyBullet}>• Access is limited to essential systems only</Text>
-
+              <Text style={styles.privacyText}>Check-in responses, optional notes, and app usage data.</Text>
+              <Text style={styles.privacyHeading}>What We Don't Collect</Text>
+              <Text style={styles.privacyText}>No audio, video, contacts, photos, or precise location.</Text>
               <Text style={styles.privacyHeading}>Your Control</Text>
-              <Text style={styles.privacyText}>You are always in control of your data:</Text>
-              <Text style={styles.privacyBullet}>• Edit or delete entries at any time</Text>
-              <Text style={styles.privacyBullet}>• Export your data (if enabled)</Text>
-              <Text style={styles.privacyBullet}>• Delete your account and all associated data</Text>
-
-              <Text style={styles.privacyHeading}>AI & Insights</Text>
-              <Text style={styles.privacyText}>If the app provides AI-generated insights:</Text>
-              <Text style={styles.privacyBullet}>• Insights are informational, not medical advice</Text>
-              <Text style={styles.privacyBullet}>• AI does not diagnose conditions</Text>
-              <Text style={styles.privacyBullet}>• Data used for insights is handled securely</Text>
-
-              <Text style={styles.privacyHeading}>Changes to This Privacy Screen</Text>
-              <Text style={styles.privacyText}>
-                We may update this screen as the app evolves. Significant changes will be clearly communicated.
-              </Text>
-
+              <Text style={styles.privacyText}>Edit or delete entries anytime. Your data is never sold.</Text>
               <View style={styles.privacyBottomSpacer} />
             </ScrollView>
           </SafeAreaView>
         </View>
       </Modal>
 
-      <Modal
-        visible={showVersionModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowVersionModal(false)}
-      >
+      <Modal visible={showVersionModal} transparent animationType="fade" onRequestClose={() => setShowVersionModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.versionModalContent}>
-            <View style={styles.versionIconContainer}>
-              <Info size={32} color={Colors.light.primary} />
+          <View style={styles.versionModal}>
+            <View style={styles.versionIcon}>
+              <Info size={24} color={Colors.light.primary} />
             </View>
             <Text style={styles.versionTitle}>KindMind</Text>
-            <Text style={styles.versionNumber}>Version 1</Text>
-            <Text style={styles.versionDescription}>
-              Your personal tool for building emotional awareness and kinder communication.
-            </Text>
-            <TouchableOpacity
-              style={styles.versionCloseButton}
-              onPress={() => setShowVersionModal(false)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.versionCloseButtonText}>Close</Text>
+            <Text style={styles.versionNumber}>Version 1.0</Text>
+            <TouchableOpacity style={styles.versionCloseBtn} onPress={() => setShowVersionModal(false)} activeOpacity={0.7}>
+              <Text style={styles.versionCloseBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal
-        visible={isEditingUsername}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCancelEdit}
-      >
+      <Modal visible={isEditingUsername} transparent animationType="fade" onRequestClose={handleCancelEdit}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Username</Text>
-            </View>
-
+          <View style={styles.editModal}>
+            <Text style={styles.editModalTitle}>Edit Username</Text>
             <TextInput
-              style={styles.input}
+              style={styles.editInput}
               value={tempUsername}
               onChangeText={setTempUsername}
               placeholder="Enter username"
@@ -289,26 +192,17 @@ export default function ProfileScreen() {
               maxLength={20}
               autoFocus
             />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancelEdit}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+            <View style={styles.editBtns}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelEdit} activeOpacity={0.7}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  (tempUsername || '').trim().length === 0 && styles.saveButtonDisabled,
-                ]}
+                style={[styles.saveBtn, (tempUsername || '').trim().length === 0 && styles.saveBtnDisabled]}
                 onPress={handleSaveUsername}
                 disabled={(tempUsername || '').trim().length === 0}
                 activeOpacity={0.7}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveBtnText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -327,285 +221,253 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.light.textSecondary,
-  },
-  profileCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  avatarContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
   },
-  usernameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  username: {
-    fontSize: 28,
+  title: {
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.light.text,
   },
-  editButton: {
+  profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#FFF0ED',
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.primary,
+  avatarCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
-  joinedContainer: {
+  profileInfo: {
+    flex: 1,
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    marginBottom: 4,
+  },
+  username: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  editBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  joinedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   joinedText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.light.textSecondary,
   },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
+    gap: 10,
+    marginBottom: 24,
   },
-  statItem: {
+  statBox: {
     flex: 1,
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 14,
+    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
+  statValue: {
     fontSize: 22,
     fontWeight: '700',
     color: Colors.light.text,
+    marginTop: 8,
+    marginBottom: 2,
   },
-  goalsContainer: {
+  statLabel: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  goalsCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    gap: 16,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  goalItem: {
+  goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
-  goalIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
+  goalDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.light.primary,
   },
   goalText: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.text,
     fontWeight: '500',
   },
-  infoCard: {
-    backgroundColor: '#FFF0ED',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.primary + '30',
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 12,
-  },
-  infoText: {
-    fontSize: 15,
-    color: Colors.light.text,
-    lineHeight: 22,
-  },
-  bottomSpacer: {
-    height: 40,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 24,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  input: {
-    backgroundColor: Colors.light.background,
-    borderRadius: 16,
+  aboutCard: {
+    backgroundColor: Colors.light.primary + '12',
+    borderRadius: 14,
     padding: 16,
-    fontSize: 17,
+  },
+  aboutText: {
+    fontSize: 14,
     color: Colors.light.text,
-    borderWidth: 2,
-    borderColor: Colors.light.border,
-    marginBottom: 24,
+    lineHeight: 21,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: Colors.light.border,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.textSecondary,
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: Colors.light.primary,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: Colors.light.border,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.card,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+  menuCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: Colors.light.error + '40',
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.error,
-  },
-  menuSection: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    marginBottom: 24,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.light.border,
     overflow: 'hidden',
   },
-  menuItem: {
+  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    padding: 14,
   },
-  menuItemLeft: {
+  menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    flex: 1,
+    gap: 12,
   },
   menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: '600',
+  menuText: {
+    fontSize: 15,
+    fontWeight: '500',
     color: Colors.light.text,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: Colors.light.border,
+    marginLeft: 58,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.light.card,
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.error + '30',
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.error,
+  },
+  bottomSpacer: {
+    height: 30,
+  },
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  editModal: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 340,
+  },
+  editModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 16,
+  },
+  editInput: {
+    backgroundColor: Colors.light.background,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: Colors.light.text,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: 16,
+  },
+  editBtns: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: Colors.light.border,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+  },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  saveBtnDisabled: {
+    backgroundColor: Colors.light.border,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.card,
   },
   fullModalOverlay: {
     flex: 1,
@@ -618,26 +480,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
     backgroundColor: Colors.light.card,
   },
   fullModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '600',
     color: Colors.light.text,
-    flex: 1,
   },
-  closeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
+  closeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 10,
     backgroundColor: Colors.light.primary,
   },
-  closeButtonText: {
-    fontSize: 15,
+  closeBtnText: {
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.light.card,
   },
@@ -645,83 +506,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fullModalContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    padding: 20,
   },
   privacyIntro: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: Colors.light.text,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   privacyHeading: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  privacyText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: Colors.light.textSecondary,
+  },
+  privacyBottomSpacer: {
+    height: 30,
+  },
+  versionModal: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 280,
+    alignItems: 'center',
+  },
+  versionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  versionTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: Colors.light.text,
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  privacyText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.light.text,
-    marginBottom: 12,
-  },
-  privacyBullet: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.light.text,
-    marginBottom: 8,
-    paddingLeft: 8,
-  },
-  privacyBottomSpacer: {
-    height: 40,
-  },
-  versionModalContent: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 24,
-    padding: 32,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  versionIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  versionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   versionNumber: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.light.primary,
-    marginBottom: 16,
-  },
-  versionDescription: {
     fontSize: 15,
-    lineHeight: 22,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    marginBottom: 24,
+    fontWeight: '500',
+    color: Colors.light.primary,
+    marginBottom: 20,
   },
-  versionCloseButton: {
+  versionCloseBtn: {
     backgroundColor: Colors.light.primary,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
   },
-  versionCloseButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
+  versionCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
     color: Colors.light.card,
   },
 });

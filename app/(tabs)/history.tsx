@@ -17,24 +17,16 @@ import type { JournalEntry } from '@/types';
 export default function HistoryScreen() {
   const { data } = useKindMind();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
   
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const formatDate = (timestamp: number): string => {
@@ -75,7 +67,6 @@ export default function HistoryScreen() {
     
     data.journalEntries.forEach(entry => {
       const date = new Date(entry.timestamp);
-      const key = `${date.getFullYear()}-${date.getMonth()}`;
       const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       
       if (!groups[label]) {
@@ -92,9 +83,9 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.title}>Journal History</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+          <Text style={styles.title}>History</Text>
           <Text style={styles.subtitle}>
             {data.journalEntries.length} {data.journalEntries.length === 1 ? 'entry' : 'entries'}
           </Text>
@@ -103,60 +94,38 @@ export default function HistoryScreen() {
         {data.journalEntries.length === 0 ? (
           <Animated.View style={[styles.emptyState, { opacity: fadeAnim }]}>
             <View style={styles.emptyIcon}>
-              <Calendar size={48} color={Colors.light.textSecondary} />
+              <Calendar size={32} color={Colors.light.textSecondary} />
             </View>
             <Text style={styles.emptyTitle}>No entries yet</Text>
-            <Text style={styles.emptyText}>
-              Start journaling to see your entries here
-            </Text>
+            <Text style={styles.emptyText}>Start journaling to see your entries here</Text>
           </Animated.View>
         ) : (
           <Animated.View style={{ opacity: fadeAnim }}>
-            {monthKeys.map((month, monthIndex) => (
+            {monthKeys.map((month) => (
               <View key={month} style={styles.monthSection}>
-                <Text style={styles.monthHeader}>{month}</Text>
-                <View style={styles.entriesContainer}>
+                <Text style={styles.monthLabel}>{month}</Text>
+                <View style={styles.entriesCard}>
                   {groupedEntries[month].map((entry, index) => (
-                    <Animated.View
+                    <TouchableOpacity
                       key={entry.id}
-                      style={{
-                        opacity: fadeAnim,
-                        transform: [{
-                          translateY: fadeAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [20 * (index + 1), 0],
-                          }),
-                        }],
-                      }}
+                      style={[
+                        styles.entryRow,
+                        index < groupedEntries[month].length - 1 && styles.entryRowBorder,
+                      ]}
+                      onPress={() => openEntryDetail(entry)}
+                      activeOpacity={0.6}
                     >
-                      <TouchableOpacity
-                        style={styles.entryCard}
-                        onPress={() => openEntryDetail(entry)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.entryHeader}>
-                          <View style={styles.entryEmoji}>
-                            <Text style={styles.emojiText}>{entry.emotionEmoji}</Text>
-                          </View>
-                          <View style={styles.entryMeta}>
-                            <Text style={styles.entryEmotion}>{entry.emotion}</Text>
-                            <Text style={styles.entryDate}>
-                              {formatShortDate(entry.timestamp)} · {formatTime(entry.timestamp)}
-                            </Text>
-                          </View>
-                          <ChevronRight size={20} color={Colors.light.textSecondary} />
+                      <View style={styles.entryLeft}>
+                        <Text style={styles.entryEmoji}>{entry.emotionEmoji}</Text>
+                        <View style={styles.entryInfo}>
+                          <Text style={styles.entryEmotion}>{entry.emotion}</Text>
+                          <Text style={styles.entryTime}>
+                            {formatShortDate(entry.timestamp)} · {formatTime(entry.timestamp)}
+                          </Text>
                         </View>
-                        
-                        {entry.gratitude && (
-                          <View style={styles.entryContent}>
-                            <Text style={styles.entryLabel}>Grateful for</Text>
-                            <Text style={styles.entryText} numberOfLines={2}>
-                              {entry.gratitude}
-                            </Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    </Animated.View>
+                      </View>
+                      <ChevronRight size={18} color={Colors.light.textSecondary} />
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
@@ -179,35 +148,32 @@ export default function HistoryScreen() {
               <TouchableOpacity onPress={closeDetailModal} style={styles.modalCloseBtn}>
                 <X size={24} color={Colors.light.text} />
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>Journal Entry</Text>
+              <Text style={styles.modalTitle}>Entry</Text>
               <View style={styles.modalCloseBtn} />
             </View>
 
             {selectedEntry && (
               <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
                 <View style={styles.detailHeader}>
-                  <View style={styles.detailEmojiContainer}>
-                    <Text style={styles.detailEmoji}>{selectedEntry.emotionEmoji}</Text>
-                  </View>
+                  <Text style={styles.detailEmoji}>{selectedEntry.emotionEmoji}</Text>
                   <Text style={styles.detailEmotion}>{selectedEntry.emotion}</Text>
                   <Text style={styles.detailDate}>{formatDate(selectedEntry.timestamp)}</Text>
-                  <Text style={styles.detailTime}>{formatTime(selectedEntry.timestamp)}</Text>
                 </View>
 
                 {selectedEntry.gratitude && (
                   <View style={styles.detailSection}>
-                    <Text style={styles.detailSectionTitle}>Grateful For</Text>
+                    <Text style={styles.detailLabel}>Grateful For</Text>
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardText}>{selectedEntry.gratitude}</Text>
+                      <Text style={styles.detailText}>{selectedEntry.gratitude}</Text>
                     </View>
                   </View>
                 )}
 
                 {selectedEntry.reflection && (
                   <View style={styles.detailSection}>
-                    <Text style={styles.detailSectionTitle}>Reflection</Text>
+                    <Text style={styles.detailLabel}>Reflection</Text>
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardText}>{selectedEntry.reflection}</Text>
+                      <Text style={styles.detailText}>{selectedEntry.reflection}</Text>
                     </View>
                   </View>
                 )}
@@ -229,20 +195,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700' as const,
+    fontSize: 26,
+    fontWeight: '700',
     color: Colors.light.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.textSecondary,
   },
   emptyState: {
@@ -250,101 +216,80 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: Colors.light.card,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700' as const,
+    fontSize: 18,
+    fontWeight: '600',
     color: Colors.light.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.textSecondary,
     textAlign: 'center',
   },
   monthSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  monthHeader: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.light.text,
-    marginBottom: 12,
+  monthLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
   },
-  entriesContainer: {
-    gap: 12,
-  },
-  entryCard: {
+  entriesCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: 'hidden',
   },
-  entryHeader: {
+  entryRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
+  entryRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  entryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   entryEmoji: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontSize: 28,
+    marginRight: 12,
   },
-  emojiText: {
-    fontSize: 24,
-  },
-  entryMeta: {
+  entryInfo: {
     flex: 1,
-    marginLeft: 12,
   },
   entryEmotion: {
-    fontSize: 17,
-    fontWeight: '600' as const,
+    fontSize: 15,
+    fontWeight: '600',
     color: Colors.light.text,
     marginBottom: 2,
   },
-  entryDate: {
-    fontSize: 14,
+  entryTime: {
+    fontSize: 12,
     color: Colors.light.textSecondary,
   },
-  entryContent: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
-  },
-  entryLabel: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: Colors.light.primary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  entryText: {
-    fontSize: 15,
-    color: Colors.light.text,
-    lineHeight: 22,
-  },
   bottomSpacer: {
-    height: 40,
+    height: 30,
   },
   modalSafeArea: {
     flex: 1,
@@ -357,7 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
@@ -370,8 +315,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 17,
+    fontWeight: '600',
     color: Colors.light.text,
   },
   modalContent: {
@@ -382,61 +327,43 @@ const styles = StyleSheet.create({
   },
   detailHeader: {
     alignItems: 'center',
-    marginBottom: 32,
-  },
-  detailEmojiContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    marginBottom: 28,
   },
   detailEmoji: {
-    fontSize: 40,
+    fontSize: 48,
+    marginBottom: 12,
   },
   detailEmotion: {
-    fontSize: 24,
-    fontWeight: '700' as const,
+    fontSize: 22,
+    fontWeight: '700',
     color: Colors.light.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   detailDate: {
-    fontSize: 16,
-    color: Colors.light.textSecondary,
-    marginBottom: 2,
-  },
-  detailTime: {
     fontSize: 14,
     color: Colors.light.textSecondary,
   },
   detailSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  detailSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.light.primary,
-    textTransform: 'uppercase' as const,
+  detailLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  detailCardText: {
-    fontSize: 16,
+  detailText: {
+    fontSize: 15,
     color: Colors.light.text,
-    lineHeight: 26,
+    lineHeight: 23,
   },
 });

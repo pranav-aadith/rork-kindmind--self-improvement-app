@@ -3,7 +3,6 @@ import { Audio } from 'expo-av';
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   KeyboardAvoidingView,
   Platform,
@@ -222,41 +221,23 @@ export default function ResponsesScreen() {
       console.log('[Kora] Starting recording...');
       
       if (Platform.OS === 'web') {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const mediaRecorder = new MediaRecorder(stream);
-          audioChunksRef.current = [];
-          
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-              audioChunksRef.current.push(event.data);
-            }
-          };
-          
-          mediaRecorderRef.current = mediaRecorder;
-          mediaRecorder.start();
-          setIsRecording(true);
-        } catch (webErr) {
-          const errorName = (webErr as Error)?.name || '';
-          console.error('[Kora] Web recording error:', errorName, webErr);
-          if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-            Alert.alert(
-              'Microphone Access',
-              'Please allow microphone access to use voice input. You can also type your message instead.',
-              [{ text: 'OK' }]
-            );
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
           }
-          return;
-        }
+        };
+        
+        mediaRecorderRef.current = mediaRecorder;
+        mediaRecorder.start();
+        setIsRecording(true);
       } else {
         const { status } = await Audio.requestPermissionsAsync();
         if (status !== 'granted') {
           console.error('[Kora] Audio permission denied');
-          Alert.alert(
-            'Microphone Access',
-            'Please allow microphone access in your device settings to use voice input.',
-            [{ text: 'OK' }]
-          );
           return;
         }
         
@@ -296,11 +277,6 @@ export default function ResponsesScreen() {
       }
     } catch (error) {
       console.error('[Kora] Failed to start recording:', error);
-      Alert.alert(
-        'Recording Error',
-        'Could not start recording. Please try typing your message instead.',
-        [{ text: 'OK' }]
-      );
     }
   }, []);
 

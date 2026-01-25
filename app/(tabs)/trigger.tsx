@@ -337,7 +337,7 @@ export default function JournalScreen() {
               disabled={!canContinue()}
               activeOpacity={0.8}
             >
-              <Text style={styles.continueButtonText}>
+            <Text style={styles.continueButtonText}>
                 {step === 3 ? 'Save Entry' : 'Continue'}
               </Text>
               {step < 3 ? (

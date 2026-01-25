@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Home, LineChart, BookOpen, User } from 'lucide-react-native';
+import { Home, LineChart, BookOpen, User, History } from 'lucide-react-native';
 import React from 'react';
 import Colors from '@/constants/colors';
 import { useKindMind } from '@/providers/KindMindProvider';
@@ -51,6 +51,13 @@ export default function TabLayout() {
         options={{
           title: 'Kora',
           tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
         }}
       />
       <Tabs.Screen

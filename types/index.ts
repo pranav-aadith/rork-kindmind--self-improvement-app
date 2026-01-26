@@ -58,3 +58,12 @@ export interface KindResponse {
   situation: string;
   response: string;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  completed: boolean;
+  createdAt: number;
+}

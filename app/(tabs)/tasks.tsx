@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  Animated,
   Platform,
   KeyboardAvoidingView,
   Alert,
@@ -31,6 +30,94 @@ import { useTasks } from '@/providers/TaskProvider';
 import type { Task } from '@/types';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const getDaysInMonth = (date: Date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return { firstDay, daysInMonth };
+};
+
+const formatLocalDateUtil = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+function DatePicker({ value, onChange }: { value: string; onChange: (date: string) => void }) {
+  const selectedDateObj = new Date(value + 'T00:00:00');
+  const [pickerYear, setPickerYear] = useState(selectedDateObj.getFullYear());
+  const [pickerMonth, setPickerMonth] = useState(selectedDateObj.getMonth());
+  
+  const pickerInfo = getDaysInMonth(new Date(pickerYear, pickerMonth, 1));
+
+  return (
+    <View style={styles.datePickerContainer}>
+      <View style={styles.datePickerHeader}>
+        <TouchableOpacity onPress={() => {
+          if (pickerMonth === 0) {
+            setPickerMonth(11);
+            setPickerYear(pickerYear - 1);
+          } else {
+            setPickerMonth(pickerMonth - 1);
+          }
+        }}>
+          <ChevronLeft size={20} color={Colors.light.text} />
+        </TouchableOpacity>
+        <Text style={styles.datePickerTitle}>
+          {MONTHS[pickerMonth]} {pickerYear}
+        </Text>
+        <TouchableOpacity onPress={() => {
+          if (pickerMonth === 11) {
+            setPickerMonth(0);
+            setPickerYear(pickerYear + 1);
+          } else {
+            setPickerMonth(pickerMonth + 1);
+          }
+        }}>
+          <ChevronRight size={20} color={Colors.light.text} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.datePickerDaysHeader}>
+        {DAYS.map(day => (
+          <Text key={day} style={styles.datePickerDayLabel}>{day}</Text>
+        ))}
+      </View>
+
+      <View style={styles.datePickerGrid}>
+        {Array(pickerInfo.firstDay).fill(null).map((_, i) => (
+          <View key={`empty-${i}`} style={styles.datePickerDay} />
+        ))}
+        {Array(pickerInfo.daysInMonth).fill(null).map((_, i) => {
+          const day = i + 1;
+          const dateStr = formatLocalDateUtil(new Date(pickerYear, pickerMonth, day));
+          const isSelected = dateStr === value;
+
+          return (
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.datePickerDay,
+                isSelected && styles.datePickerDaySelected,
+              ]}
+              onPress={() => onChange(dateStr)}
+            >
+              <Text style={[
+                styles.datePickerDayText,
+                isSelected && styles.datePickerDayTextSelected,
+              ]}>
+                {day}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -59,15 +146,6 @@ export default function TasksScreen() {
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState(formatLocalDate(new Date()));
 
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    return { firstDay, daysInMonth };
-  };
 
   const { firstDay, daysInMonth } = getDaysInMonth(currentDate);
 
@@ -213,7 +291,7 @@ export default function TasksScreen() {
   };
 
   const renderTask = (task: Task) => (
-    <Animated.View 
+    <View 
       key={task.id} 
       style={[styles.taskCard, task.completed && styles.taskCardCompleted]}
     >
@@ -264,81 +342,10 @@ export default function TasksScreen() {
           <Trash2 size={18} color={Colors.light.error} />
         </TouchableOpacity>
       </View>
-    </Animated.View>
+    </View>
   );
 
-  const renderDatePicker = (value: string, onChange: (date: string) => void) => {
-    const selectedDateObj = new Date(value + 'T00:00:00');
-    const [pickerYear, setPickerYear] = useState(selectedDateObj.getFullYear());
-    const [pickerMonth, setPickerMonth] = useState(selectedDateObj.getMonth());
-    
-    const pickerInfo = getDaysInMonth(new Date(pickerYear, pickerMonth, 1));
 
-    return (
-      <View style={styles.datePickerContainer}>
-        <View style={styles.datePickerHeader}>
-          <TouchableOpacity onPress={() => {
-            if (pickerMonth === 0) {
-              setPickerMonth(11);
-              setPickerYear(pickerYear - 1);
-            } else {
-              setPickerMonth(pickerMonth - 1);
-            }
-          }}>
-            <ChevronLeft size={20} color={Colors.light.text} />
-          </TouchableOpacity>
-          <Text style={styles.datePickerTitle}>
-            {MONTHS[pickerMonth]} {pickerYear}
-          </Text>
-          <TouchableOpacity onPress={() => {
-            if (pickerMonth === 11) {
-              setPickerMonth(0);
-              setPickerYear(pickerYear + 1);
-            } else {
-              setPickerMonth(pickerMonth + 1);
-            }
-          }}>
-            <ChevronRight size={20} color={Colors.light.text} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.datePickerDaysHeader}>
-          {DAYS.map(day => (
-            <Text key={day} style={styles.datePickerDayLabel}>{day}</Text>
-          ))}
-        </View>
-
-        <View style={styles.datePickerGrid}>
-          {Array(pickerInfo.firstDay).fill(null).map((_, i) => (
-            <View key={`empty-${i}`} style={styles.datePickerDay} />
-          ))}
-          {Array(pickerInfo.daysInMonth).fill(null).map((_, i) => {
-            const day = i + 1;
-            const dateStr = formatLocalDate(new Date(pickerYear, pickerMonth, day));
-            const isSelected = dateStr === value;
-
-            return (
-              <TouchableOpacity
-                key={day}
-                style={[
-                  styles.datePickerDay,
-                  isSelected && styles.datePickerDaySelected,
-                ]}
-                onPress={() => onChange(dateStr)}
-              >
-                <Text style={[
-                  styles.datePickerDayText,
-                  isSelected && styles.datePickerDayTextSelected,
-                ]}>
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -465,7 +472,7 @@ export default function TasksScreen() {
               />
 
               <Text style={styles.inputLabel}>Due Date</Text>
-              {renderDatePicker(newDueDate, setNewDueDate)}
+              <DatePicker value={newDueDate} onChange={setNewDueDate} />
 
               <TouchableOpacity
                 style={styles.saveButton}
@@ -520,7 +527,7 @@ export default function TasksScreen() {
               />
 
               <Text style={styles.inputLabel}>Due Date</Text>
-              {renderDatePicker(newDueDate, setNewDueDate)}
+              <DatePicker value={newDueDate} onChange={setNewDueDate} />
 
               <TouchableOpacity
                 style={styles.saveButton}

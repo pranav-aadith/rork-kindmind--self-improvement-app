@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -22,41 +21,15 @@ import {
   Calendar,
   Trash2,
   Edit3,
-  Flame,
-  Trophy,
-  Target,
-  Sparkles,
+  Circle,
+  CheckCircle2,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import Colors from '@/constants/colors';
 import { useTasks } from '@/providers/TaskProvider';
 import type { Task } from '@/types';
 
-const DUOLINGO = {
-  green: '#58CC02',
-  greenDark: '#46A302',
-  greenLight: '#89E219',
-  blue: '#1CB0F6',
-  blueDark: '#1899D6',
-  orange: '#FF9600',
-  red: '#FF4B4B',
-  purple: '#CE82FF',
-  yellow: '#FFC800',
-  white: '#FFFFFF',
-  gray100: '#F7F7F7',
-  gray200: '#E5E5E5',
-  gray300: '#AFAFAF',
-  gray400: '#777777',
-  gray500: '#4B4B4B',
-  background: '#131F24',
-  cardBg: '#1A2C35',
-  cardBorder: '#37464F',
-};
-
-const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const getDaysInMonth = (date: Date) => {
   const year = date.getFullYear();
@@ -83,42 +56,34 @@ function DatePicker({ value, onChange }: { value: string; onChange: (date: strin
   return (
     <View style={styles.datePickerContainer}>
       <View style={styles.datePickerHeader}>
-        <TouchableOpacity 
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            if (pickerMonth === 0) {
-              setPickerMonth(11);
-              setPickerYear(pickerYear - 1);
-            } else {
-              setPickerMonth(pickerMonth - 1);
-            }
-          }}
-          style={styles.dateNavBtn}
-        >
-          <ChevronLeft size={18} color={DUOLINGO.white} />
+        <TouchableOpacity onPress={() => {
+          if (pickerMonth === 0) {
+            setPickerMonth(11);
+            setPickerYear(pickerYear - 1);
+          } else {
+            setPickerMonth(pickerMonth - 1);
+          }
+        }}>
+          <ChevronLeft size={20} color={Colors.light.text} />
         </TouchableOpacity>
         <Text style={styles.datePickerTitle}>
           {MONTHS[pickerMonth]} {pickerYear}
         </Text>
-        <TouchableOpacity 
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            if (pickerMonth === 11) {
-              setPickerMonth(0);
-              setPickerYear(pickerYear + 1);
-            } else {
-              setPickerMonth(pickerMonth + 1);
-            }
-          }}
-          style={styles.dateNavBtn}
-        >
-          <ChevronRight size={18} color={DUOLINGO.white} />
+        <TouchableOpacity onPress={() => {
+          if (pickerMonth === 11) {
+            setPickerMonth(0);
+            setPickerYear(pickerYear + 1);
+          } else {
+            setPickerMonth(pickerMonth + 1);
+          }
+        }}>
+          <ChevronRight size={20} color={Colors.light.text} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.datePickerDaysHeader}>
-        {DAYS.map((day, i) => (
-          <Text key={i} style={styles.datePickerDayLabel}>{day}</Text>
+        {DAYS.map(day => (
+          <Text key={day} style={styles.datePickerDayLabel}>{day}</Text>
         ))}
       </View>
 
@@ -138,10 +103,7 @@ function DatePicker({ value, onChange }: { value: string; onChange: (date: strin
                 styles.datePickerDay,
                 isSelected && styles.datePickerDaySelected,
               ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onChange(dateStr);
-              }}
+              onPress={() => onChange(dateStr)}
             >
               <Text style={[
                 styles.datePickerDayText,
@@ -156,123 +118,10 @@ function DatePicker({ value, onChange }: { value: string; onChange: (date: strin
     </View>
   );
 }
-
-function TaskCard({ 
-  task, 
-  onToggle, 
-  onEdit, 
-  onDelete 
-}: { 
-  task: Task; 
-  onToggle: () => void; 
-  onEdit: () => void; 
-  onDelete: () => void;
-}) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const checkScaleAnim = useRef(new Animated.Value(task.completed ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(checkScaleAnim, {
-      toValue: task.completed ? 1 : 0,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 8,
-    }).start();
-  }, [task.completed]);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 10,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 10,
-    }).start();
-  };
-
-  const handleToggle = () => {
-    if (!task.completed) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    onToggle();
-  };
-
-  return (
-    <Animated.View style={[styles.taskCard, { transform: [{ scale: scaleAnim }] }]}>
-      <TouchableOpacity
-        style={styles.taskCardInner}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={handleToggle}
-        activeOpacity={1}
-      >
-        <View style={[
-          styles.checkbox,
-          task.completed && styles.checkboxCompleted,
-        ]}>
-          <Animated.View style={{
-            transform: [{ scale: checkScaleAnim }],
-            opacity: checkScaleAnim,
-          }}>
-            <Check size={18} color={DUOLINGO.white} strokeWidth={3} />
-          </Animated.View>
-        </View>
-
-        <View style={styles.taskContent}>
-          <Text style={[
-            styles.taskTitle,
-            task.completed && styles.taskTitleCompleted,
-          ]}>
-            {task.title}
-          </Text>
-          {task.description ? (
-            <Text style={[
-              styles.taskDescription,
-              task.completed && styles.taskDescriptionCompleted,
-            ]} numberOfLines={1}>
-              {task.description}
-            </Text>
-          ) : null}
-          <View style={styles.taskMeta}>
-            <Calendar size={12} color={DUOLINGO.gray300} />
-            <Text style={styles.taskDate}>{task.dueDate}</Text>
-          </View>
-        </View>
-
-        <View style={styles.taskActions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onEdit();
-            }}
-          >
-            <Edit3 size={16} color={DUOLINGO.blue} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onDelete();
-            }}
-          >
-            <Trash2 size={16} color={DUOLINGO.red} />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 export default function TasksScreen() {
   const { 
@@ -284,8 +133,6 @@ export default function TasksScreen() {
     getTasksByDate,
     tasksWithDates,
     formatLocalDate,
-    completedTasks,
-    pendingTasks,
   } = useTasks();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -299,14 +146,8 @@ export default function TasksScreen() {
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState(formatLocalDate(new Date()));
 
-  const addButtonAnim = useRef(new Animated.Value(1)).current;
 
   const { firstDay, daysInMonth } = getDaysInMonth(currentDate);
-  const today = formatLocalDate(new Date());
-  
-  const completionRate = tasks.length > 0 
-    ? Math.round((completedTasks.length / tasks.length) * 100) 
-    : 0;
 
   const goToPreviousMonth = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -319,7 +160,7 @@ export default function TasksScreen() {
   };
 
   const handleDateSelect = (day: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const selected = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDate(formatLocalDate(selected));
     setViewMode('today');
@@ -327,8 +168,7 @@ export default function TasksScreen() {
 
   const handleAddTask = () => {
     if (!newTitle.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Oops!', 'Please enter a task title');
+      Alert.alert('Error', 'Please enter a task title');
       return;
     }
 
@@ -347,8 +187,7 @@ export default function TasksScreen() {
 
   const handleEditTask = () => {
     if (!editingTask || !newTitle.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Oops!', 'Please enter a task title');
+      Alert.alert('Error', 'Please enter a task title');
       return;
     }
 
@@ -368,24 +207,25 @@ export default function TasksScreen() {
   const handleDeleteTask = (id: string) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      'Delete Task?',
-      'This action cannot be undone.',
+      'Delete Task',
+      'Are you sure you want to delete this task?',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            deleteTask(id);
-          },
+          onPress: () => deleteTask(id),
         },
       ]
     );
   };
 
+  const handleToggleComplete = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleComplete(id);
+  };
+
   const openEditModal = (task: Task) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingTask(task);
     setNewTitle(task.title);
     setNewDescription(task.description);
@@ -394,11 +234,6 @@ export default function TasksScreen() {
   };
 
   const openAddModal = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Animated.sequence([
-      Animated.timing(addButtonAnim, { toValue: 0.8, duration: 100, useNativeDriver: true }),
-      Animated.spring(addButtonAnim, { toValue: 1, useNativeDriver: true, tension: 300, friction: 10 }),
-    ]).start();
     setNewTitle('');
     setNewDescription('');
     setNewDueDate(selectedDate);
@@ -409,10 +244,7 @@ export default function TasksScreen() {
     ? getTasksByDate(selectedDate)
     : tasks;
 
-  const sortedTasks = [...displayedTasks].sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return b.createdAt - a.createdAt;
-  });
+  const today = formatLocalDate(new Date());
 
   const renderCalendarDays = () => {
     const days = [];
@@ -445,8 +277,11 @@ export default function TasksScreen() {
           ]}>
             {day}
           </Text>
-          {hasTasks && !isSelected && (
-            <View style={styles.taskDot} />
+          {hasTasks && (
+            <View style={[
+              styles.taskDot,
+              isSelected && styles.taskDotSelected,
+            ]} />
           )}
         </TouchableOpacity>
       );
@@ -455,132 +290,146 @@ export default function TasksScreen() {
     return days;
   };
 
+  const renderTask = (task: Task) => (
+    <View 
+      key={task.id} 
+      style={[styles.taskCard, task.completed && styles.taskCardCompleted]}
+    >
+      <TouchableOpacity
+        style={styles.checkboxContainer}
+        onPress={() => handleToggleComplete(task.id)}
+        activeOpacity={0.7}
+      >
+        {task.completed ? (
+          <CheckCircle2 size={26} color={Colors.light.success} />
+        ) : (
+          <Circle size={26} color={Colors.light.textSecondary} />
+        )}
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.taskContent}
+        onPress={() => openEditModal(task)}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>
+          {task.title}
+        </Text>
+        {task.description ? (
+          <Text style={[styles.taskDescription, task.completed && styles.taskDescriptionCompleted]}>
+            {task.description}
+          </Text>
+        ) : null}
+        <View style={styles.taskMeta}>
+          <Calendar size={12} color={Colors.light.textSecondary} />
+          <Text style={styles.taskDate}>{task.dueDate}</Text>
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.taskActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => openEditModal(task)}
+          activeOpacity={0.7}
+        >
+          <Edit3 size={18} color={Colors.light.accent} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDeleteTask(task.id)}
+          activeOpacity={0.7}
+        >
+          <Trash2 size={18} color={Colors.light.error} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+
+
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>My Tasks</Text>
-            <Text style={styles.headerSubtitle}>Stay on track!</Text>
-          </View>
-          <Animated.View style={{ transform: [{ scale: addButtonAnim }] }}>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={openAddModal}
-              activeOpacity={0.9}
-            >
-              <Plus size={24} color={DUOLINGO.white} strokeWidth={3} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Tasks</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={openAddModal}
+          activeOpacity={0.8}
+        >
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.calendarCard}>
+          <View style={styles.calendarHeader}>
+            <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
+              <ChevronLeft size={24} color={Colors.light.text} />
             </TouchableOpacity>
-          </Animated.View>
+            <Text style={styles.monthTitle}>
+              {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </Text>
+            <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
+              <ChevronRight size={24} color={Colors.light.text} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.daysHeader}>
+            {DAYS.map(day => (
+              <Text key={day} style={styles.dayLabel}>{day}</Text>
+            ))}
+          </View>
+
+          <View style={styles.daysGrid}>
+            {renderCalendarDays()}
+          </View>
         </View>
 
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: DUOLINGO.orange + '20' }]}>
-                <Flame size={20} color={DUOLINGO.orange} />
-              </View>
-              <Text style={styles.statValue}>{pendingTasks.length}</Text>
-              <Text style={styles.statLabel}>Pending</Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: DUOLINGO.green + '20' }]}>
-                <Trophy size={20} color={DUOLINGO.green} />
-              </View>
-              <Text style={styles.statValue}>{completedTasks.length}</Text>
-              <Text style={styles.statLabel}>Done</Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: DUOLINGO.purple + '20' }]}>
-                <Target size={20} color={DUOLINGO.purple} />
-              </View>
-              <Text style={styles.statValue}>{completionRate}%</Text>
-              <Text style={styles.statLabel}>Rate</Text>
-            </View>
-          </View>
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.toggleButton, viewMode === 'today' && styles.toggleButtonActive]}
+            onPress={() => setViewMode('today')}
+          >
+            <Text style={[styles.toggleText, viewMode === 'today' && styles.toggleTextActive]}>
+              {selectedDate === today ? 'Today' : selectedDate}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleButton, viewMode === 'all' && styles.toggleButtonActive]}
+            onPress={() => setViewMode('all')}
+          >
+            <Text style={[styles.toggleText, viewMode === 'all' && styles.toggleTextActive]}>
+              All Tasks
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.calendarCard}>
-            <View style={styles.calendarHeader}>
-              <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
-                <ChevronLeft size={22} color={DUOLINGO.white} />
-              </TouchableOpacity>
-              <Text style={styles.monthTitle}>
-                {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
+        <View style={styles.tasksList}>
+          {displayedTasks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Calendar size={48} color={Colors.light.textSecondary} />
+              <Text style={styles.emptyTitle}>No tasks</Text>
+              <Text style={styles.emptySubtitle}>
+                {viewMode === 'today' 
+                  ? 'No tasks for this date' 
+                  : 'Add your first task to get started'}
               </Text>
-              <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-                <ChevronRight size={22} color={DUOLINGO.white} />
-              </TouchableOpacity>
             </View>
+          ) : (
+            displayedTasks
+              .sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                return b.createdAt - a.createdAt;
+              })
+              .map(renderTask)
+          )}
+        </View>
 
-            <View style={styles.daysHeader}>
-              {DAYS.map((day, i) => (
-                <Text key={i} style={styles.dayLabel}>{day}</Text>
-              ))}
-            </View>
-
-            <View style={styles.daysGrid}>
-              {renderCalendarDays()}
-            </View>
-          </View>
-
-          <View style={styles.viewToggle}>
-            <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'today' && styles.toggleButtonActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setViewMode('today');
-              }}
-            >
-              <Text style={[styles.toggleText, viewMode === 'today' && styles.toggleTextActive]}>
-                {selectedDate === today ? 'Today' : 'Selected'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'all' && styles.toggleButtonActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setViewMode('all');
-              }}
-            >
-              <Text style={[styles.toggleText, viewMode === 'all' && styles.toggleTextActive]}>
-                All Tasks
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tasksList}>
-            {sortedTasks.length === 0 ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIcon}>
-                  <Sparkles size={40} color={DUOLINGO.yellow} />
-                </View>
-                <Text style={styles.emptyTitle}>No tasks yet!</Text>
-                <Text style={styles.emptySubtitle}>
-                  {viewMode === 'today' 
-                    ? 'Tap + to add a task for this day' 
-                    : 'Start adding tasks to stay organized'}
-                </Text>
-              </View>
-            ) : (
-              sortedTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onToggle={() => toggleComplete(task.id)}
-                  onEdit={() => openEditModal(task)}
-                  onDelete={() => handleDeleteTask(task.id)}
-                />
-              ))
-            )}
-          </View>
-
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </SafeAreaView>
+        <View style={styles.bottomPadding} />
+      </ScrollView>
 
       <Modal
         visible={showAddModal}
@@ -593,50 +442,44 @@ export default function TasksScreen() {
           style={styles.modalOverlay}
         >
           <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>New Task</Text>
-              <TouchableOpacity 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowAddModal(false);
-                }}
-                style={styles.closeBtn}
-              >
-                <X size={22} color={DUOLINGO.gray300} />
+              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                <X size={24} color={Colors.light.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>What do you need to do?</Text>
+              <Text style={styles.inputLabel}>Title</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter task title..."
-                placeholderTextColor={DUOLINGO.gray400}
+                placeholder="What needs to be done?"
+                placeholderTextColor={Colors.light.textSecondary}
                 value={newTitle}
                 onChangeText={setNewTitle}
                 autoFocus
               />
 
-              <Text style={styles.inputLabel}>Details (optional)</Text>
+              <Text style={styles.inputLabel}>Description (optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Add more details..."
-                placeholderTextColor={DUOLINGO.gray400}
+                placeholder="Add details..."
+                placeholderTextColor={Colors.light.textSecondary}
                 value={newDescription}
                 onChangeText={setNewDescription}
                 multiline
                 numberOfLines={3}
               />
 
-              <Text style={styles.inputLabel}>When is it due?</Text>
+              <Text style={styles.inputLabel}>Due Date</Text>
               <DatePicker value={newDueDate} onChange={setNewDueDate} />
 
               <TouchableOpacity
                 style={styles.saveButton}
                 onPress={handleAddTask}
-                activeOpacity={0.9}
+                activeOpacity={0.8}
               >
+                <Check size={20} color="#FFF" />
                 <Text style={styles.saveButtonText}>Add Task</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -655,66 +498,57 @@ export default function TasksScreen() {
           style={styles.modalOverlay}
         >
           <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Task</Text>
-              <TouchableOpacity 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowEditModal(false);
-                }}
-                style={styles.closeBtn}
-              >
-                <X size={22} color={DUOLINGO.gray300} />
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <X size={24} color={Colors.light.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>What do you need to do?</Text>
+              <Text style={styles.inputLabel}>Title</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter task title..."
-                placeholderTextColor={DUOLINGO.gray400}
+                placeholder="What needs to be done?"
+                placeholderTextColor={Colors.light.textSecondary}
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
 
-              <Text style={styles.inputLabel}>Details (optional)</Text>
+              <Text style={styles.inputLabel}>Description (optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Add more details..."
-                placeholderTextColor={DUOLINGO.gray400}
+                placeholder="Add details..."
+                placeholderTextColor={Colors.light.textSecondary}
                 value={newDescription}
                 onChangeText={setNewDescription}
                 multiline
                 numberOfLines={3}
               />
 
-              <Text style={styles.inputLabel}>When is it due?</Text>
+              <Text style={styles.inputLabel}>Due Date</Text>
               <DatePicker value={newDueDate} onChange={setNewDueDate} />
 
               <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: DUOLINGO.blue }]}
+                style={styles.saveButton}
                 onPress={handleEditTask}
-                activeOpacity={0.9}
+                activeOpacity={0.8}
               >
+                <Check size={20} color="#FFF" />
                 <Text style={styles.saveButtonText}>Save Changes</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: DUOLINGO.background,
-  },
-  safeArea: {
-    flex: 1,
+    backgroundColor: Colors.light.background,
   },
   header: {
     flexDirection: 'row',
@@ -725,76 +559,35 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '800' as const,
-    color: DUOLINGO.white,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: DUOLINGO.gray300,
-    marginTop: 2,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
   },
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: DUOLINGO.green,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: DUOLINGO.green,
+    shadowColor: Colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6,
-    borderBottomWidth: 4,
-    borderBottomColor: DUOLINGO.greenDark,
+    elevation: 4,
   },
   content: {
     flex: 1,
   },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: DUOLINGO.cardBg,
-    borderRadius: 16,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '800' as const,
-    color: DUOLINGO.white,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: DUOLINGO.gray300,
-    marginTop: 2,
-  },
   calendarCard: {
-    backgroundColor: DUOLINGO.cardBg,
+    backgroundColor: Colors.light.card,
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 16,
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -803,17 +596,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: DUOLINGO.background,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   monthTitle: {
-    fontSize: 17,
-    fontWeight: '700' as const,
-    color: DUOLINGO.white,
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
   },
   daysHeader: {
     flexDirection: 'row',
@@ -822,9 +615,9 @@ const styles = StyleSheet.create({
   dayLabel: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '700' as const,
-    color: DUOLINGO.gray400,
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
   },
   daysGrid: {
     flexDirection: 'row',
@@ -838,114 +631,107 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   selectedDay: {
-    backgroundColor: DUOLINGO.green,
-    borderRadius: 14,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 20,
   },
   todayCell: {
     borderWidth: 2,
-    borderColor: DUOLINGO.blue,
-    borderRadius: 14,
+    borderColor: Colors.light.secondary,
+    borderRadius: 20,
   },
   dayText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: DUOLINGO.white,
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: Colors.light.text,
   },
   selectedDayText: {
-    color: DUOLINGO.white,
-    fontWeight: '800' as const,
+    color: '#FFF',
+    fontWeight: '600' as const,
   },
   todayText: {
-    color: DUOLINGO.blue,
-    fontWeight: '700' as const,
+    color: Colors.light.secondary,
+    fontWeight: '600' as const,
   },
   taskDot: {
     position: 'absolute',
-    bottom: 6,
+    bottom: 4,
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: DUOLINGO.orange,
+    backgroundColor: Colors.light.primary,
+  },
+  taskDotSelected: {
+    backgroundColor: '#FFF',
   },
   viewToggle: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: 20,
-    marginBottom: 16,
-    backgroundColor: DUOLINGO.cardBg,
-    borderRadius: 14,
+    marginBottom: 12,
+    backgroundColor: Colors.light.card,
+    borderRadius: 12,
     padding: 4,
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 10,
     alignItems: 'center',
   },
   toggleButtonActive: {
-    backgroundColor: DUOLINGO.green,
+    backgroundColor: Colors.light.primary,
   },
   toggleText: {
     fontSize: 14,
-    fontWeight: '700' as const,
-    color: DUOLINGO.gray400,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
   },
   toggleTextActive: {
-    color: DUOLINGO.white,
+    color: '#FFF',
   },
   tasksList: {
     paddingHorizontal: 16,
   },
   taskCard: {
-    marginBottom: 12,
-  },
-  taskCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: DUOLINGO.cardBg,
+    backgroundColor: Colors.light.card,
     borderRadius: 16,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
-    borderBottomWidth: 4,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 3,
-    borderColor: DUOLINGO.gray400,
-    justifyContent: 'center',
-    alignItems: 'center',
+  taskCardCompleted: {
+    opacity: 0.7,
+    backgroundColor: Colors.light.background,
+  },
+  checkboxContainer: {
     marginRight: 12,
-  },
-  checkboxCompleted: {
-    backgroundColor: DUOLINGO.green,
-    borderColor: DUOLINGO.green,
   },
   taskContent: {
     flex: 1,
   },
   taskTitle: {
     fontSize: 16,
-    fontWeight: '700' as const,
-    color: DUOLINGO.white,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
     marginBottom: 4,
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: DUOLINGO.gray400,
+    color: Colors.light.textSecondary,
   },
   taskDescription: {
-    fontSize: 13,
-    color: DUOLINGO.gray300,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
     marginBottom: 6,
   },
   taskDescriptionCompleted: {
     textDecorationLine: 'line-through',
-    color: DUOLINGO.gray400,
   },
   taskMeta: {
     flexDirection: 'row',
@@ -954,17 +740,17 @@ const styles = StyleSheet.create({
   },
   taskDate: {
     fontSize: 12,
-    color: DUOLINGO.gray400,
+    color: Colors.light.textSecondary,
   },
   taskActions: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
-  actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: DUOLINGO.background,
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -972,49 +758,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 48,
   },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: DUOLINGO.yellow + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '800' as const,
-    color: DUOLINGO.white,
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: DUOLINGO.gray400,
+    color: Colors.light.textSecondary,
+    marginTop: 4,
     textAlign: 'center',
-    paddingHorizontal: 40,
   },
   bottomPadding: {
     height: 20,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: DUOLINGO.cardBg,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    backgroundColor: Colors.light.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '90%',
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: DUOLINGO.gray400,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1023,44 +792,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '800' as const,
-    color: DUOLINGO.white,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: DUOLINGO.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '700' as const,
-    color: DUOLINGO.gray300,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
-    backgroundColor: DUOLINGO.background,
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: Colors.light.background,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
-    color: DUOLINGO.white,
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
+    color: Colors.light.text,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
   },
   datePickerContainer: {
-    backgroundColor: DUOLINGO.background,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: DUOLINGO.cardBorder,
+    backgroundColor: Colors.light.background,
+    borderRadius: 12,
+    padding: 12,
   },
   datePickerHeader: {
     flexDirection: 'row',
@@ -1068,18 +827,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  dateNavBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: DUOLINGO.cardBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   datePickerTitle: {
-    fontSize: 14,
-    fontWeight: '700' as const,
-    color: DUOLINGO.white,
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
   },
   datePickerDaysHeader: {
     flexDirection: 'row',
@@ -1088,9 +839,9 @@ const styles = StyleSheet.create({
   datePickerDayLabel: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '700' as const,
-    color: DUOLINGO.gray400,
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
   },
   datePickerGrid: {
     flexDirection: 'row',
@@ -1103,32 +854,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datePickerDaySelected: {
-    backgroundColor: DUOLINGO.green,
-    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 16,
   },
   datePickerDayText: {
     fontSize: 13,
-    fontWeight: '600' as const,
-    color: DUOLINGO.white,
+    color: Colors.light.text,
   },
   datePickerDayTextSelected: {
-    color: DUOLINGO.white,
-    fontWeight: '800' as const,
+    color: '#FFF',
+    fontWeight: '600' as const,
   },
   saveButton: {
-    backgroundColor: DUOLINGO.green,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     padding: 16,
-    alignItems: 'center',
     marginTop: 24,
     marginBottom: 20,
-    borderBottomWidth: 4,
-    borderBottomColor: DUOLINGO.greenDark,
+    gap: 8,
   },
   saveButtonText: {
-    fontSize: 17,
-    fontWeight: '800' as const,
-    color: DUOLINGO.white,
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFF',
   },
 });

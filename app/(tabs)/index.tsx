@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Share2 } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Download } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -14,10 +14,12 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Share,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { useAudioPlayer } from 'expo-audio';
 import { Audio } from 'expo-av';
 import { useKindMind } from '@/providers/KindMindProvider';
@@ -84,6 +86,8 @@ export default function HomeScreen() {
   const [showWidgetModal, setShowWidgetModal] = useState(false);
   const [selectedWidgetStyle, setSelectedWidgetStyle] = useState(0);
   const [copiedToast, setCopiedToast] = useState(false);
+  const [isExportingWidget, setIsExportingWidget] = useState(false);
+  const widgetPreviewRef = useRef<View>(null);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -489,15 +493,141 @@ export default function HomeScreen() {
     setTimeout(() => setCopiedToast(false), 2000);
   };
 
-  const shareQuote = async () => {
+  const shareQuoteAsImage = async () => {
     triggerHaptic();
+    setIsExportingWidget(true);
+    
     try {
-      await Share.share({
-        message: `"${dailyQuote}"\n\n— Quote of the Day from KindMind`,
-      });
+      if (Platform.OS === 'web') {
+        console.log('[Widget] Generating PNG for web');
+        const style = WIDGET_STYLES[selectedWidgetStyle];
+        const svg = generateWidgetSvg(dailyQuote, style);
+        
+        const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const pngUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = pngUrl;
+                link.download = `kindmind-quote-${new Date().toISOString().split('T')[0]}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(pngUrl);
+              }
+              URL.revokeObjectURL(svgUrl);
+              setIsExportingWidget(false);
+              setCopiedToast(true);
+              setTimeout(() => setCopiedToast(false), 2000);
+            }, 'image/png');
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(svgUrl);
+          setIsExportingWidget(false);
+          Alert.alert('Error', 'Failed to generate image.');
+        };
+        img.src = svgUrl;
+      } else {
+        console.log('[Widget] Capturing view for native');
+        if (widgetPreviewRef.current) {
+          const uri = await captureRef(widgetPreviewRef, {
+            format: 'png',
+            quality: 1,
+            result: 'tmpfile',
+          });
+          
+          console.log('[Widget] Captured URI:', uri);
+          
+          const canShare = await Sharing.isAvailableAsync();
+          if (canShare) {
+            await Sharing.shareAsync(uri, {
+              mimeType: 'image/png',
+              dialogTitle: 'Share Quote',
+              UTI: 'public.png',
+            });
+          } else {
+            Alert.alert('Saved', 'Your quote image is ready!');
+          }
+        }
+        setIsExportingWidget(false);
+      }
     } catch (error) {
-      console.log('Share error:', error);
+      console.error('[Widget] Export error:', error);
+      setIsExportingWidget(false);
+      Alert.alert('Error', 'Failed to export quote image.');
     }
+  };
+
+  const generateWidgetSvg = (quote: string, style: typeof WIDGET_STYLES[0]) => {
+    const width = 800;
+    const height = 500;
+    const padding = 48;
+    
+    const maxCharsPerLine = 45;
+    const words = quote.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
+        currentLine = (currentLine + ' ' + word).trim();
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) lines.push(currentLine);
+    
+    const escapeXml = (str: string) => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+    
+    const quoteLines = lines.map((line, i) => {
+      const y = 200 + i * 36;
+      return `<text x="${padding + 24}" y="${y}" fill="${style.textColor}" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-style="italic">"${escapeXml(line)}${i === lines.length - 1 ? '"' : ''}</text>`;
+    }).join('');
+    
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${style.bg[0]}" />
+      <stop offset="100%" stop-color="${style.bg[1]}" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="0.1" />
+    </filter>
+  </defs>
+  
+  <rect x="0" y="0" width="${width}" height="${height}" fill="url(#bg)" rx="32" />
+  
+  <rect x="${padding}" y="${padding}" width="${width - padding * 2}" height="${height - padding * 2}" fill="${style.bg[1]}" rx="24" filter="url(#shadow)" />
+  
+  <rect x="${padding}" y="${padding}" width="8" height="${height - padding * 2}" fill="${style.accent}" rx="4" />
+  
+  <circle cx="${padding + 44}" cy="120" r="20" fill="${style.accent}" opacity="0.2" />
+  <text x="${padding + 44}" y="128" fill="${style.accent}" font-family="Arial" font-size="24" text-anchor="middle">✦</text>
+  
+  ${quoteLines}
+  
+  <text x="${padding + 24}" y="${height - padding - 24}" fill="${style.textColor}" font-family="Arial, sans-serif" font-size="14" opacity="0.6">Quote of the Day • KindMind</text>
+</svg>`;
   };
 
   const progress = 1 - timeRemaining / selectedTime;
@@ -1130,6 +1260,8 @@ export default function HomeScreen() {
             <ScrollView style={styles.widgetModalContent} contentContainerStyle={styles.widgetModalContentContainer}>
               <Text style={styles.widgetSectionTitle}>Preview</Text>
               <View 
+                ref={widgetPreviewRef}
+                collapsable={false}
                 style={[
                   styles.widgetPreview,
                   { backgroundColor: WIDGET_STYLES[selectedWidgetStyle].bg[0] }
@@ -1155,7 +1287,7 @@ export default function HomeScreen() {
                       styles.widgetDateText,
                       { color: WIDGET_STYLES[selectedWidgetStyle].textColor, opacity: 0.6 }
                     ]}>
-                      Quote of the Day
+                      Quote of the Day • KindMind
                     </Text>
                   </View>
                 </View>
@@ -1195,23 +1327,30 @@ export default function HomeScreen() {
                   activeOpacity={0.7}
                 >
                   <Copy size={20} color={Colors.light.primary} />
-                  <Text style={styles.widgetActionText}>Copy Quote</Text>
+                  <Text style={styles.widgetActionText}>Copy Text</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.widgetActionBtn, styles.widgetShareBtn]}
-                  onPress={shareQuote}
+                  onPress={shareQuoteAsImage}
                   activeOpacity={0.7}
+                  disabled={isExportingWidget}
                 >
-                  <Share2 size={20} color="#FFF" />
-                  <Text style={styles.widgetShareText}>Share</Text>
+                  {isExportingWidget ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Download size={20} color="#FFF" />
+                      <Text style={styles.widgetShareText}>Save Image</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
 
               <View style={styles.widgetInfoCard}>
-                <Text style={styles.widgetInfoTitle}>About Widgets</Text>
+                <Text style={styles.widgetInfoTitle}>Share as Image</Text>
                 <Text style={styles.widgetInfoText}>
-                  Screenshot this preview to save as a wallpaper or share your daily inspiration with friends. The quote changes every day!
+                  Tap Save Image to export your quote as a beautiful PNG with your selected style. Share it with friends or use it as a wallpaper! The quote changes every day.
                 </Text>
               </View>
             </ScrollView>
@@ -2406,5 +2545,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600' as const,
     color: '#FFF',
+  },
+  widgetShareBtnDisabled: {
+    opacity: 0.7,
   },
 });

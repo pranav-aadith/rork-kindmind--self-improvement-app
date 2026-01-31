@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, Smile } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Share2 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -14,8 +14,10 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Share,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { useAudioPlayer } from 'expo-audio';
 import { Audio } from 'expo-av';
 import { useKindMind } from '@/providers/KindMindProvider';
@@ -78,6 +80,10 @@ export default function HomeScreen() {
   const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const recordingPulse = useRef(new Animated.Value(1)).current;
+
+  const [showWidgetModal, setShowWidgetModal] = useState(false);
+  const [selectedWidgetStyle, setSelectedWidgetStyle] = useState(0);
+  const [copiedToast, setCopiedToast] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -467,6 +473,33 @@ export default function HomeScreen() {
     setInputMode('voice');
   };
 
+  const WIDGET_STYLES = [
+    { id: 0, name: 'Warm Sunrise', bg: ['#FFF9F5', '#FFE8DC'], accent: '#FF6B6B', textColor: '#2D3436' },
+    { id: 1, name: 'Ocean Calm', bg: ['#E8F4F8', '#D0E8F2'], accent: '#4ECDC4', textColor: '#2D3436' },
+    { id: 2, name: 'Lavender Dream', bg: ['#F5F0FA', '#E8DFF5'], accent: '#9B59B6', textColor: '#2D3436' },
+    { id: 3, name: 'Forest Green', bg: ['#E8F5E9', '#C8E6C9'], accent: '#27AE60', textColor: '#2D3436' },
+    { id: 4, name: 'Midnight', bg: ['#1A1A2E', '#16213E'], accent: '#E94560', textColor: '#FFFFFF' },
+    { id: 5, name: 'Golden Hour', bg: ['#FFF3E0', '#FFE0B2'], accent: '#FF9800', textColor: '#2D3436' },
+  ];
+
+  const copyQuote = async () => {
+    await Clipboard.setStringAsync(dailyQuote);
+    triggerHaptic();
+    setCopiedToast(true);
+    setTimeout(() => setCopiedToast(false), 2000);
+  };
+
+  const shareQuote = async () => {
+    triggerHaptic();
+    try {
+      await Share.share({
+        message: `"${dailyQuote}"\n\n— Quote of the Day from KindMind`,
+      });
+    } catch (error) {
+      console.log('Share error:', error);
+    }
+  };
+
   const progress = 1 - timeRemaining / selectedTime;
 
   const glowOpacity = glowAnim.interpolate({
@@ -494,8 +527,18 @@ export default function HomeScreen() {
         </View>
 
         <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
-          <View style={styles.quoteIconContainer}>
-            <Sparkles size={20} color={Colors.light.primary} />
+          <View style={styles.quoteHeader}>
+            <View style={styles.quoteIconContainer}>
+              <Sparkles size={20} color={Colors.light.primary} />
+            </View>
+            <TouchableOpacity 
+              style={styles.widgetButton}
+              onPress={() => setShowWidgetModal(true)}
+              activeOpacity={0.7}
+            >
+              <LayoutGrid size={18} color={Colors.light.primary} />
+              <Text style={styles.widgetButtonText}>Widget</Text>
+            </TouchableOpacity>
           </View>
           <Text style={styles.quoteText}>{dailyQuote}</Text>
         </Animated.View>
@@ -1065,6 +1108,121 @@ export default function HomeScreen() {
               </View>
             )}
           </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showWidgetModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowWidgetModal(false)}
+      >
+        <SafeAreaView style={styles.widgetModalSafeArea}>
+          <View style={styles.widgetModalContainer}>
+            <View style={styles.widgetModalHeader}>
+              <TouchableOpacity onPress={() => setShowWidgetModal(false)} style={styles.widgetCloseBtn}>
+                <X size={24} color={Colors.light.text} />
+              </TouchableOpacity>
+              <Text style={styles.widgetModalTitle}>Quote Widget</Text>
+              <View style={styles.widgetCloseBtn} />
+            </View>
+
+            <ScrollView style={styles.widgetModalContent} contentContainerStyle={styles.widgetModalContentContainer}>
+              <Text style={styles.widgetSectionTitle}>Preview</Text>
+              <View 
+                style={[
+                  styles.widgetPreview,
+                  { backgroundColor: WIDGET_STYLES[selectedWidgetStyle].bg[0] }
+                ]}
+              >
+                <View style={[
+                  styles.widgetPreviewInner,
+                  { backgroundColor: WIDGET_STYLES[selectedWidgetStyle].bg[1] }
+                ]}>
+                  <View style={[
+                    styles.widgetAccentBar,
+                    { backgroundColor: WIDGET_STYLES[selectedWidgetStyle].accent }
+                  ]} />
+                  <View style={styles.widgetPreviewContent}>
+                    <Sparkles size={24} color={WIDGET_STYLES[selectedWidgetStyle].accent} />
+                    <Text style={[
+                      styles.widgetQuoteText,
+                      { color: WIDGET_STYLES[selectedWidgetStyle].textColor }
+                    ]}>
+                      {`"${dailyQuote}"`}
+                    </Text>
+                    <Text style={[
+                      styles.widgetDateText,
+                      { color: WIDGET_STYLES[selectedWidgetStyle].textColor, opacity: 0.6 }
+                    ]}>
+                      Quote of the Day
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <Text style={styles.widgetSectionTitle}>Choose Style</Text>
+              <View style={styles.widgetStylesGrid}>
+                {WIDGET_STYLES.map((style) => (
+                  <TouchableOpacity
+                    key={style.id}
+                    style={[
+                      styles.widgetStyleOption,
+                      { backgroundColor: style.bg[0] },
+                      selectedWidgetStyle === style.id && styles.widgetStyleOptionSelected,
+                    ]}
+                    onPress={() => {
+                      triggerHaptic();
+                      setSelectedWidgetStyle(style.id);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.widgetStyleInner, { backgroundColor: style.bg[1] }]}>
+                      <View style={[styles.widgetStyleAccent, { backgroundColor: style.accent }]} />
+                    </View>
+                    <Text style={[
+                      styles.widgetStyleName,
+                      selectedWidgetStyle === style.id && styles.widgetStyleNameSelected
+                    ]}>{style.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.widgetActions}>
+                <TouchableOpacity
+                  style={styles.widgetActionBtn}
+                  onPress={copyQuote}
+                  activeOpacity={0.7}
+                >
+                  <Copy size={20} color={Colors.light.primary} />
+                  <Text style={styles.widgetActionText}>Copy Quote</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.widgetActionBtn, styles.widgetShareBtn]}
+                  onPress={shareQuote}
+                  activeOpacity={0.7}
+                >
+                  <Share2 size={20} color="#FFF" />
+                  <Text style={styles.widgetShareText}>Share</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.widgetInfoCard}>
+                <Text style={styles.widgetInfoTitle}>About Widgets</Text>
+                <Text style={styles.widgetInfoText}>
+                  Screenshot this preview to save as a wallpaper or share your daily inspiration with friends. The quote changes every day!
+                </Text>
+              </View>
+            </ScrollView>
+
+            {copiedToast && (
+              <View style={styles.copiedToast}>
+                <Check size={18} color="#FFF" />
+                <Text style={styles.copiedToastText}>Quote copied!</Text>
+              </View>
+            )}
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -1765,8 +1923,27 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  quoteIconContainer: {
+  quoteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  quoteIconContainer: {
+  },
+  widgetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0ED',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  widgetButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.light.primary,
   },
   quoteText: {
     fontSize: 17,
@@ -2032,6 +2209,202 @@ const styles = StyleSheet.create({
   saveEntryBtnText: {
     fontSize: 16,
     fontWeight: '700' as const,
+    color: '#FFF',
+  },
+  widgetModalSafeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  widgetModalContainer: {
+    flex: 1,
+  },
+  widgetModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+    backgroundColor: Colors.light.card,
+  },
+  widgetCloseBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  widgetModalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+  },
+  widgetModalContent: {
+    flex: 1,
+  },
+  widgetModalContentContainer: {
+    padding: 24,
+  },
+  widgetSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.light.textSecondary,
+    marginBottom: 16,
+  },
+  widgetPreview: {
+    borderRadius: 24,
+    padding: 4,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  widgetPreviewInner: {
+    borderRadius: 20,
+    padding: 24,
+    minHeight: 200,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  widgetAccentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  widgetPreviewContent: {
+    paddingLeft: 12,
+    gap: 16,
+  },
+  widgetQuoteText: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    lineHeight: 28,
+    fontStyle: 'italic' as const,
+  },
+  widgetDateText: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+  },
+  widgetStylesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 32,
+  },
+  widgetStyleOption: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  widgetStyleOptionSelected: {
+    borderColor: Colors.light.primary,
+  },
+  widgetStyleInner: {
+    flex: 1,
+    borderRadius: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  widgetStyleAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  widgetStyleName: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  widgetStyleNameSelected: {
+    color: Colors.light.primary,
+    fontWeight: '600' as const,
+  },
+  widgetActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  widgetActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: Colors.light.card,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  widgetActionText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.light.primary,
+  },
+  widgetShareBtn: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  widgetShareText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#FFF',
+  },
+  widgetInfoCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  widgetInfoTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    marginBottom: 8,
+  },
+  widgetInfoText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 22,
+  },
+  copiedToast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    right: 24,
+    backgroundColor: Colors.light.secondary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  copiedToastText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
     color: '#FFF',
   },
 });

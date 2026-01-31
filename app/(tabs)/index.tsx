@@ -133,48 +133,7 @@ export default function HomeScreen() {
       }),
     ]).start();
 
-    Animated.stagger(150, [
-      Animated.sequence([
-        Animated.delay(600),
-        Animated.spring(card1Anim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.spring(card2Anim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(card3Anim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
 
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(heartScale, {
-          toValue: 1.15,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(heartScale, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimation.start();
-
-    return () => pulseAnimation.stop();
-  }, []);
 
   useEffect(() => {
     if (meditationPhase === 'meditating' && isRunning) {

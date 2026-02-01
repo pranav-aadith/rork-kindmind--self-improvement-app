@@ -61,7 +61,7 @@ export default function HomeScreen() {
   const heartScale = useRef(new Animated.Value(1)).current;
   const quoteAnim = useRef(new Animated.Value(0)).current;
   const statsAnim = useRef(new Animated.Value(0)).current;
-  const actionsAnim = useRef(new Animated.Value(0)).current;
+
   const card1Anim = useRef(new Animated.Value(0)).current;
   const card2Anim = useRef(new Animated.Value(0)).current;
   const card3Anim = useRef(new Animated.Value(0)).current;
@@ -174,6 +174,7 @@ export default function HomeScreen() {
     pulseAnimation.start();
 
     return () => pulseAnimation.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

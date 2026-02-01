@@ -11,10 +11,12 @@ import {
   Modal,
 } from 'react-native';
 import { useKindMind } from '@/providers/KindMindProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import Colors from '@/constants/colors';
 
 export default function ProfileScreen() {
-  const { data, updateUsername, logout } = useKindMind();
+  const { data, updateUsername, logout: clearLocalData } = useKindMind();
+  const { signOut } = useAuth();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(data.username || '');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -156,7 +158,10 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={logout}
+          onPress={async () => {
+            await clearLocalData();
+            await signOut();
+          }}
           activeOpacity={0.7}
         >
           <LogOut size={20} color={Colors.light.error} />

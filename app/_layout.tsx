@@ -23,14 +23,15 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === 'auth';
     const inOnboarding = segments[0] === 'onboarding';
+    const inWelcome = segments[0] === 'welcome';
     const inTabs = segments[0] === '(tabs)';
 
     if (!session) {
-      if (!inAuthGroup) {
-        router.replace('/auth/login');
+      if (!inAuthGroup && !inWelcome) {
+        router.replace('/welcome');
       }
     } else {
-      if (inAuthGroup) {
+      if (inAuthGroup || inWelcome) {
         if (!data.hasCompletedOnboarding) {
           router.replace('/onboarding');
         } else {
@@ -52,6 +53,7 @@ function RootLayoutNav() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="auth" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />

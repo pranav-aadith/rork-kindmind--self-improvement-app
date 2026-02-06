@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Target, Brain, Sparkles, ChevronRight, ChevronLeft, User } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft } from 'lucide-react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -8,8 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  TextInput,
-  Image,
   Animated,
 } from 'react-native';
 import { useKindMind } from '@/providers/KindMindProvider';
@@ -19,7 +17,6 @@ import type { UserGoal, OnboardingAnswers } from '@/types';
 export default function OnboardingScreen() {
   const { data, completeOnboarding } = useKindMind();
   const [step, setStep] = useState(0);
-  const [username, setUsername] = useState('');
   const [goals, setGoals] = useState<UserGoal[]>(data.goals);
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     reactionSpeed: '',
@@ -36,11 +33,11 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     Animated.timing(progressAnim, {
-      toValue: step / 7,
+      toValue: (step + 1) / 6,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [step]);
+  }, [step, progressAnim]);
 
   const animateStepChange = (nextStep: number, callback: () => void) => {
     const isForward = nextStep > step;
@@ -105,25 +102,23 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = () => {
-    completeOnboarding(username.trim(), goals, answers);
+    completeOnboarding('', goals, answers);
     router.replace('/(tabs)');
   };
 
   const canContinue = () => {
     switch (step) {
-      case 1:
-        return username.trim().length > 0;
-      case 2:
+      case 0:
         return goals.filter(g => g.selected).length > 0;
-      case 3:
+      case 1:
         return answers.reactionSpeed !== '';
-      case 4:
+      case 2:
         return answers.commonTriggers.length > 0;
-      case 5:
+      case 3:
         return answers.relationshipImpact !== '';
-      case 6:
+      case 4:
         return answers.awareness !== '';
-      case 7:
+      case 5:
         return answers.frequency !== '';
       default:
         return true;
@@ -133,27 +128,23 @@ export default function OnboardingScreen() {
   const renderStep = () => {
     switch (step) {
       case 0:
-        return <WelcomeStep />;
-      case 1:
-        return <UsernameStep value={username} onChange={setUsername} />;
-      case 2:
         return <GoalsStep goals={goals} toggleGoal={toggleGoal} />;
-      case 3:
+      case 1:
         return <ReactionSpeedStep value={answers.reactionSpeed} onChange={(v) => setAnswers(p => ({ ...p, reactionSpeed: v }))} />;
-      case 4:
+      case 2:
         return <TriggersStep selected={answers.commonTriggers} onToggle={toggleTrigger} />;
-      case 5:
+      case 3:
         return <RelationshipImpactStep value={answers.relationshipImpact} onChange={(v) => setAnswers(p => ({ ...p, relationshipImpact: v }))} />;
-      case 6:
+      case 4:
         return <AwarenessStep value={answers.awareness} onChange={(v) => setAnswers(p => ({ ...p, awareness: v }))} />;
-      case 7:
+      case 5:
         return <FrequencyStep value={answers.frequency} onChange={(v) => setAnswers(p => ({ ...p, frequency: v }))} />;
       default:
         return null;
     }
   };
 
-  const isLastStep = step === 7;
+  const isLastStep = step === 5;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -163,7 +154,7 @@ export default function OnboardingScreen() {
             <Animated.View style={[styles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
           </View>
           <Text style={styles.progressText}>
-            {step === 0 ? 'Welcome' : `${step} of 7`}
+            {`${step + 1} of 6`}
           </Text>
         </View>
 
@@ -202,7 +193,7 @@ export default function OnboardingScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.nextButtonText}>
-                {step === 0 ? "Let's Begin" : isLastStep ? 'Complete' : 'Continue'}
+                {isLastStep ? 'Complete' : 'Continue'}
               </Text>
               {!isLastStep && <ChevronRight size={24} color={Colors.light.card} />}
             </TouchableOpacity>
@@ -210,54 +201,6 @@ export default function OnboardingScreen() {
         </View>
       </View>
     </SafeAreaView>
-  );
-}
-
-function WelcomeStep() {
-  return (
-    <View style={styles.stepContainer}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/7qm5e9owkjmxhy6fn577g' }}
-          style={styles.logo}
-          resizeMode="cover"
-        />
-      </View>
-      <Text style={styles.title}>Welcome to KindMind</Text>
-      <Text style={styles.subtitle}>
-        Your personal tool for building emotional awareness and kinder communication
-      </Text>
-
-      <View style={styles.features}>
-        <View style={styles.featureItem}>
-          <Target size={28} color={Colors.light.primary} />
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>Track Triggers</Text>
-            <Text style={styles.featureDescription}>Understand what causes reactions</Text>
-          </View>
-        </View>
-        <View style={styles.featureItem}>
-          <Brain size={28} color={Colors.light.primary} />
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>Practice Pauses</Text>
-            <Text style={styles.featureDescription}>Learn to respond mindfully</Text>
-          </View>
-        </View>
-        <View style={styles.featureItem}>
-          <Sparkles size={28} color={Colors.light.primary} />
-          <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>Build Habits</Text>
-            <Text style={styles.featureDescription}>Develop kinder communication</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.infoText}>
-          This quick assessment will help us understand your patterns and personalize your experience.
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -436,29 +379,6 @@ function AwarenessStep({ value, onChange }: { value: string; onChange: (v: strin
   );
 }
 
-function UsernameStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <User size={48} color={Colors.light.primary} />
-      </View>
-      <Text style={styles.stepTitle}>What should we call you?</Text>
-      <Text style={styles.stepSubtitle}>Enter a username to personalize your experience</Text>
-
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChange}
-        placeholder="Your username"
-        placeholderTextColor={Colors.light.textSecondary}
-        autoCapitalize="none"
-        autoCorrect={false}
-        maxLength={20}
-      />
-    </View>
-  );
-}
-
 function FrequencyStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const options = [
     { id: 'multiple-daily', label: 'Multiple times per day', emoji: '🔥' },
@@ -534,36 +454,7 @@ const styles = StyleSheet.create({
   stepContainer: {
     gap: 20,
   },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.light.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: Colors.light.text,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingHorizontal: 8,
-  },
+
   stepTitle: {
     fontSize: 28,
     fontWeight: '700',
@@ -575,47 +466,7 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     lineHeight: 22,
   },
-  features: {
-    marginTop: 32,
-    gap: 24,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    backgroundColor: Colors.light.card,
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  featureTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  featureTitle: {
-    fontSize: 18,
-    color: Colors.light.text,
-    fontWeight: '700',
-  },
-  featureDescription: {
-    fontSize: 15,
-    color: Colors.light.textSecondary,
-  },
-  infoCard: {
-    backgroundColor: '#FFF0ED',
-    borderRadius: 20,
-    padding: 24,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.primary + '30',
-  },
-  infoText: {
-    fontSize: 16,
-    color: Colors.light.text,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
+
   optionsContainer: {
     gap: 16,
     marginTop: 8,
@@ -719,35 +570,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  input: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 20,
-    fontSize: 18,
-    color: Colors.light.text,
-    borderWidth: 2,
-    borderColor: Colors.light.border,
-    marginTop: 8,
-  },
-  logoContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.light.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 5,
-    overflow: 'hidden',
-  },
-  logo: {
-    width: 140,
-    height: 140,
-  },
+
 });

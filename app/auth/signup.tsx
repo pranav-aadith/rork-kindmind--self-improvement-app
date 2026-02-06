@@ -53,8 +53,9 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
+      console.log('[Auth] Attempting signup with:', email.trim().toLowerCase());
       const { data: { session, user }, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           data: {
@@ -63,12 +64,17 @@ export default function SignupScreen() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.log('[Auth] Signup error:', error.message, error.status);
+        throw error;
+      }
+
+      console.log('[Auth] Signup result - user:', !!user, 'session:', !!session);
 
       if (user && !session) {
         Alert.alert(
           'Check your email',
-          'Please check your email to verify your account.'
+          'Please check your email to verify your account, then log in.'
         );
         router.push('/auth/login');
       }

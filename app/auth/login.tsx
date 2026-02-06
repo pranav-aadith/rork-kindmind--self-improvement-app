@@ -47,14 +47,27 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log('[Auth] Attempting login with:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.log('[Auth] Login error:', error.message, error.status);
+        throw error;
+      }
+
+      console.log('[Auth] Login success, session:', !!data.session);
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      const msg = error.message || 'An unexpected error occurred';
+      if (msg.includes('Invalid login credentials')) {
+        Alert.alert('Login Failed', 'Incorrect email or password. If you just signed up, please check your email to confirm your account first.');
+      } else if (msg.includes('Email not confirmed')) {
+        Alert.alert('Email Not Confirmed', 'Please check your email and click the confirmation link before logging in.');
+      } else {
+        Alert.alert('Login Failed', msg);
+      }
     } finally {
       setLoading(false);
     }

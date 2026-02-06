@@ -72,11 +72,22 @@ export default function SignupScreen() {
       console.log('[Auth] Signup result - user:', !!user, 'session:', !!session);
 
       if (user && !session) {
-        Alert.alert(
-          'Check your email',
-          'Please check your email to verify your account, then log in.'
-        );
-        router.push('/auth/login');
+        console.log('[Auth] No session after signup, attempting auto-login...');
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+        if (loginError) {
+          console.log('[Auth] Auto-login failed:', loginError.message);
+          Alert.alert(
+            'Account Created',
+            'Your account was created. Please check your email to verify, then log in.'
+          );
+          router.push('/auth/login');
+        } else {
+          console.log('[Auth] Auto-login success, session:', !!loginData.session);
+        }
       }
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message);

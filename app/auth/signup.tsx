@@ -71,12 +71,14 @@ export default function SignupScreen() {
 
       console.log('[Auth] Signup result - user:', !!user, 'session:', !!session);
 
-      if (user && !session) {
+      if (session) {
+        console.log('[Auth] Auto signed in after signup');
+      } else if (user && !session) {
         Alert.alert(
           'Check your email',
           'Please check your email to verify your account, then log in.'
         );
-        router.push('/auth/login');
+        router.replace('/auth/login');
       }
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message);

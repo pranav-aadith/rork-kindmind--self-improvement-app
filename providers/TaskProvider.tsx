@@ -2,8 +2,9 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Task } from '@/types';
+import { useAuth } from '@/providers/AuthProvider';
 
-const TASKS_STORAGE_KEY = 'kindmind_tasks';
+const getStorageKey = (userId: string) => `kindmind_tasks_${userId}`;
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -13,19 +14,30 @@ const formatLocalDate = (date: Date): string => {
 };
 
 export const [TaskProvider, useTasks] = createContextHook(() => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (user) {
+      loadTasks();
+    } else {
+      setTasks([]);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   const loadTasks = async () => {
+    if (!user) return;
     try {
-      const stored = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+      setIsLoading(true);
+      const storageKey = getStorageKey(user.id);
+      const stored = await AsyncStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         setTasks(parsed);
+      } else {
+        setTasks([]);
       }
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -35,8 +47,10 @@ export const [TaskProvider, useTasks] = createContextHook(() => {
   };
 
   const saveTasks = async (newTasks: Task[]) => {
+    if (!user) return;
     try {
-      await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(newTasks));
+      const storageKey = getStorageKey(user.id);
+      await AsyncStorage.setItem(storageKey, JSON.stringify(newTasks));
       setTasks(newTasks);
     } catch (error) {
       console.error('Failed to save tasks:', error);

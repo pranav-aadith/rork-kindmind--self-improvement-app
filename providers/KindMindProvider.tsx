@@ -2,8 +2,9 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo } from 'react';
 import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry } from '@/types';
+import { useAuth } from '@/providers/AuthProvider';
 
-const STORAGE_KEY = 'kindmind_data';
+const getStorageKey = (userId: string) => `kindmind_data_${userId}`;
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -62,16 +63,26 @@ const initialData: UserData = {
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
+  const { user } = useAuth();
   const [data, setData] = useState<UserData>(initialData);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    } else {
+      setData(initialData);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   const loadData = async () => {
+    if (!user) return;
+    
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      setIsLoading(true);
+      const storageKey = getStorageKey(user.id);
+      const stored = await AsyncStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         const checkIns = parsed.checkIns || [];
@@ -93,8 +104,10 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         setData(loadedData);
         
         if (accurateStreak !== parsed.currentStreak) {
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(loadedData));
+          await AsyncStorage.setItem(storageKey, JSON.stringify(loadedData));
         }
+      } else {
+        setData(initialData);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -104,8 +117,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
   };
 
   const saveData = async (newData: UserData) => {
+    if (!user) return;
+    
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      const storageKey = getStorageKey(user.id);
+      await AsyncStorage.setItem(storageKey, JSON.stringify(newData));
       setData(newData);
     } catch (error) {
       console.error('Failed to save data:', error);
@@ -222,15 +238,6 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     saveData(newData);
   };
 
-  const logout = async () => {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      setData(initialData);
-    } catch (error) {
-      console.error('Failed to logout:', error);
-    }
-  };
-
   return {
     data,
     isLoading,
@@ -242,7 +249,6 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     successRate,
     hasCheckedInToday,
     updateUsername,
-    logout,
     checkInsLast30Days,
   };
 });

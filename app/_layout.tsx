@@ -6,37 +6,53 @@ import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KindMindProvider, useKindMind } from '@/providers/KindMindProvider';
 import { TaskProvider } from '@/providers/TaskProvider';
+import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const { data, isLoading } = useKindMind();
+  const { session, isLoading: authLoading } = useAuth();
+  const { data, isLoading: dataLoading } = useKindMind();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (authLoading || dataLoading) return;
 
+    const inAuthGroup = segments[0] === 'auth';
     const inOnboarding = segments[0] === 'onboarding';
     const inTabs = segments[0] === '(tabs)';
 
-    if (!data.hasCompletedOnboarding && !inOnboarding) {
-      router.replace('/onboarding');
-    } else if (data.hasCompletedOnboarding && !inTabs) {
-      router.replace('/(tabs)');
+    if (!session) {
+      if (!inAuthGroup) {
+        router.replace('/auth/login');
+      }
+    } else {
+      if (inAuthGroup) {
+        if (!data.hasCompletedOnboarding) {
+          router.replace('/onboarding');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else if (!data.hasCompletedOnboarding && !inOnboarding) {
+        router.replace('/onboarding');
+      } else if (data.hasCompletedOnboarding && !inTabs) {
+        router.replace('/(tabs)');
+      }
     }
-  }, [data.hasCompletedOnboarding, isLoading, segments, router]);
+  }, [session, authLoading, data.hasCompletedOnboarding, dataLoading, segments, router]);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!authLoading && !dataLoading) {
       SplashScreen.hideAsync();
     }
-  }, [isLoading]);
+  }, [authLoading, dataLoading]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="auth" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
     </Stack>
@@ -47,13 +63,15 @@ export default function RootLayout() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-      <KindMindProvider>
-        <TaskProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <RootLayoutNav />
-          </GestureHandlerRootView>
-        </TaskProvider>
-      </KindMindProvider>
+        <AuthProvider>
+          <KindMindProvider>
+            <TaskProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </TaskProvider>
+          </KindMindProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );

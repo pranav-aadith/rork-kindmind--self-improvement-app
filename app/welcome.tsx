@@ -1,235 +1,229 @@
 import { router } from 'expo-router';
-import { Target, Brain, Sparkles, ChevronRight } from 'lucide-react-native';
+import { Target, Brain, Sparkles, ArrowRight } from 'lucide-react-native';
 import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Animated,
 } from 'react-native';
-import Colors from '@/constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const FEATURES = [
+  { icon: Target, label: 'Track Triggers', desc: 'Understand your reactions', color: '#B5A8D6' },
+  { icon: Brain, label: 'Practice Pauses', desc: 'Respond with intention', color: '#8DC8C4' },
+  { icon: Sparkles, label: 'Build Habits', desc: 'Grow kinder each day', color: '#EDD9B8' },
+];
 
 export default function WelcomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const featureAnim0 = useRef(new Animated.Value(0)).current;
+  const featureAnim1 = useRef(new Animated.Value(0)).current;
+  const featureAnim2 = useRef(new Animated.Value(0)).current;
+  const featureAnims = [featureAnim0, featureAnim1, featureAnim2];
+  const footerFade = useRef(new Animated.Value(0)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 40,
-        friction: 8,
-        useNativeDriver: true,
-      }),
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, tension: 45, friction: 9, useNativeDriver: true }),
+      ]),
+      Animated.stagger(120, featureAnims.map(a =>
+        Animated.spring(a, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true })
+      )),
+      Animated.timing(footerFade, { toValue: 1, duration: 300, useNativeDriver: true }),
     ]).start();
-  }, [fadeAnim, slideAnim]);
+  }, [fadeAnim, slideAnim, footerFade, featureAnim0, featureAnim1, featureAnim2]);
+
+  const handlePressIn = () => {
+    Animated.spring(buttonScale, { toValue: 0.95, useNativeDriver: true, friction: 5 }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+  };
 
   const handleContinue = () => {
-    Animated.sequence([
-      Animated.timing(buttonScale, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      router.replace('/auth/login');
-    });
+    router.replace('/auth/login');
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/7qm5e9owkjmxhy6fn577g' }}
-              style={styles.logo}
-              resizeMode="cover"
-            />
-          </View>
-          <Text style={styles.title}>Welcome to KindMind</Text>
-          <Text style={styles.subtitle}>
-            Your personal tool for building emotional awareness and kinder communication
-          </Text>
-
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Target size={28} color={Colors.light.primary} />
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Track Triggers</Text>
-                <Text style={styles.featureDescription}>Understand what causes reactions</Text>
-              </View>
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <Animated.View style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.logoWrap}>
+              <Image
+                source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/7qm5e9owkjmxhy6fn577g' }}
+                style={styles.logo}
+                resizeMode="cover"
+              />
             </View>
-            <View style={styles.featureItem}>
-              <Brain size={28} color={Colors.light.primary} />
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Practice Pauses</Text>
-                <Text style={styles.featureDescription}>Learn to respond mindfully</Text>
-              </View>
-            </View>
-            <View style={styles.featureItem}>
-              <Sparkles size={28} color={Colors.light.primary} />
-              <View style={styles.featureTextContainer}>
-                <Text style={styles.featureTitle}>Build Habits</Text>
-                <Text style={styles.featureDescription}>Develop kinder communication</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>
-              Create an account to get started on your journey to emotional wellness.
+            <Text style={styles.brand}>KindMind</Text>
+            <Text style={styles.tagline}>
+              Build emotional awareness{'\n'}with gentle self-compassion
             </Text>
-          </View>
-        </Animated.View>
+          </Animated.View>
 
-        <View style={styles.footer}>
-          <Animated.View style={{ transform: [{ scale: buttonScale }], width: '100%' }}>
-            <TouchableOpacity
-              style={styles.nextButton}
-              onPress={handleContinue}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.nextButtonText}>Get Started</Text>
-              <ChevronRight size={24} color={Colors.light.card} />
-            </TouchableOpacity>
+          <View style={styles.featuresList}>
+            {FEATURES.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <Animated.View
+                  key={f.label}
+                  style={[
+                    styles.featureRow,
+                    {
+                      opacity: featureAnims[i],
+                      transform: [{ translateX: featureAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
+                    },
+                  ]}
+                >
+                  <View style={[styles.featureIcon, { backgroundColor: f.color + '20' }]}>
+                    <Icon size={22} color={f.color} />
+                  </View>
+                  <View style={styles.featureText}>
+                    <Text style={styles.featureLabel}>{f.label}</Text>
+                    <Text style={styles.featureDesc}>{f.desc}</Text>
+                  </View>
+                </Animated.View>
+              );
+            })}
+          </View>
+
+          <Animated.View style={[styles.footerArea, { opacity: footerFade }]}>
+            <Animated.View style={{ transform: [{ scale: buttonScale }], width: '100%' }}>
+              <TouchableOpacity
+                style={styles.ctaButton}
+                onPress={handleContinue}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={1}
+                testID="welcome-cta"
+              >
+                <Text style={styles.ctaText}>Get Started</Text>
+                <ArrowRight color="#FFFFFF" size={20} />
+              </TouchableOpacity>
+            </Animated.View>
+            <Text style={styles.termsText}>
+              By continuing you agree to our Terms & Privacy Policy
+            </Text>
           </Animated.View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#FAF8F5',
+  },
+  safe: {
+    flex: 1,
   },
   container: {
     flex: 1,
+    paddingHorizontal: 28,
+    justifyContent: 'space-between',
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+  heroSection: {
+    alignItems: 'center',
     paddingTop: 20,
   },
-  logoContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.light.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 5,
+  logoWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
     overflow: 'hidden',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
   },
   logo: {
-    width: 140,
-    height: 140,
+    width: 96,
+    height: 96,
   },
-  title: {
-    fontSize: 36,
+  brand: {
+    fontSize: 32,
     fontWeight: '700' as const,
-    color: Colors.light.text,
+    color: '#1C1917',
+    letterSpacing: -0.5,
+    marginBottom: 10,
+  },
+  tagline: {
+    fontSize: 17,
+    color: '#87827C',
     textAlign: 'center',
-    marginBottom: 12,
+    lineHeight: 24,
+    letterSpacing: 0.1,
   },
-  subtitle: {
-    fontSize: 18,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingHorizontal: 8,
+  featuresList: {
+    gap: 14,
+    paddingVertical: 8,
   },
-  features: {
-    marginTop: 32,
-    gap: 24,
-  },
-  featureItem: {
+  featureRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 20,
-    backgroundColor: Colors.light.card,
-    padding: 20,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: '#F0ECE7',
   },
-  featureTextContainer: {
+  featureIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  featureText: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
-  featureTitle: {
-    fontSize: 18,
-    color: Colors.light.text,
-    fontWeight: '700' as const,
-  },
-  featureDescription: {
-    fontSize: 15,
-    color: Colors.light.textSecondary,
-  },
-  infoCard: {
-    backgroundColor: '#FFF0ED',
-    borderRadius: 20,
-    padding: 24,
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.primary + '30',
-  },
-  infoText: {
+  featureLabel: {
     fontSize: 16,
-    color: Colors.light.text,
-    lineHeight: 24,
-    textAlign: 'center',
+    fontWeight: '600' as const,
+    color: '#1C1917',
   },
-  footer: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    paddingBottom: 32,
-    backgroundColor: Colors.light.background,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+  featureDesc: {
+    fontSize: 14,
+    color: '#9A9590',
+  },
+  footerArea: {
     alignItems: 'center',
+    gap: 14,
   },
-  nextButton: {
+  ctaButton: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: 8,
-    backgroundColor: Colors.light.primary,
+    gap: 10,
+    backgroundColor: '#1C1917',
+    height: 58,
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  nextButtonText: {
-    color: Colors.light.card,
+  ctaText: {
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '600' as const,
+    letterSpacing: 0.2,
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#B0ADA8',
+    textAlign: 'center',
   },
 });

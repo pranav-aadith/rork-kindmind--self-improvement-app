@@ -14,11 +14,8 @@ import {
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react-native';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Colors from '@/constants/colors';
-
-const colors = Colors.light;
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -27,41 +24,50 @@ export default function SignupScreen() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-  const iconScale = useRef(new Animated.Value(0.8)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const formFade = useRef(new Animated.Value(0)).current;
+  const formSlide = useRef(new Animated.Value(30)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-      Animated.spring(iconScale, { toValue: 1, friction: 4, useNativeDriver: true }),
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 9, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(formFade, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(formSlide, { toValue: 0, tension: 50, friction: 9, useNativeDriver: true }),
+      ]),
     ]).start();
-  }, [fadeAnim, slideAnim, iconScale]);
+  }, [fadeAnim, slideAnim, formFade, formSlide]);
+
+  const handlePressIn = () => {
+    Animated.spring(buttonScale, { toValue: 0.96, useNativeDriver: true, friction: 5 }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+  };
 
   const handleSignup = async () => {
     if (!email || !password || !fullName) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Missing Fields', 'Please fill in all fields to continue.');
       return;
     }
-
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Weak Password', 'Your password needs at least 6 characters.');
       return;
     }
-
     setLoading(true);
     try {
       console.log('[Auth] Attempting signup with:', email.trim().toLowerCase());
       const { data: { session, user }, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+        options: { data: { full_name: fullName } },
       });
 
       if (error) {
@@ -77,114 +83,131 @@ export default function SignupScreen() {
           email: email.trim().toLowerCase(),
           password,
         });
-
         if (loginError) {
           console.log('[Auth] Auto-login failed:', loginError.message);
-          Alert.alert(
-            'Account Created',
-            'Your account was created. Please check your email to verify, then log in.'
-          );
+          Alert.alert('Account Created', 'Check your email to verify, then sign in.');
           router.push('/auth/login');
         } else {
           console.log('[Auth] Auto-login success, session:', !!loginData.session);
         }
       }
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.message);
+      Alert.alert('Sign Up Failed', error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.outerContainer}>
-      <SafeAreaView style={styles.container}>
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-              <Animated.View style={[styles.iconContainer, { transform: [{ scale: iconScale }] }]}>
-                <Sparkles color={colors.secondary} size={32} fill={colors.secondary} />
-              </Animated.View>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Start your journey to a kinder mind</Text>
+              <View style={styles.pill}>
+                <Text style={styles.pillText}>Get started</Text>
+              </View>
+              <Text style={styles.title}>Create your{'\n'}account</Text>
+              <Text style={styles.subtitle}>Begin your journey to a kinder mind</Text>
             </Animated.View>
 
-            <Animated.View style={[styles.form, { opacity: fadeAnim }]}>
-              <View style={styles.inputContainer}>
-                <User color={colors.textSecondary} size={20} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name"
-                  placeholderTextColor={colors.textSecondary}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  autoCapitalize="words"
-                />
+            <Animated.View style={[styles.form, { opacity: formFade, transform: [{ translateY: formSlide }] }]}>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Full Name</Text>
+                <View style={[styles.inputWrap, focusedField === 'name' && styles.inputFocused]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Jane Doe"
+                    placeholderTextColor="#B0ADA8"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    autoCapitalize="words"
+                    onFocus={() => setFocusedField('name')}
+                    onBlur={() => setFocusedField(null)}
+                    testID="signup-name"
+                  />
+                </View>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Mail color={colors.textSecondary} size={20} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  placeholderTextColor={colors.textSecondary}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Email</Text>
+                <View style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="you@example.com"
+                    placeholderTextColor="#B0ADA8"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    testID="signup-email"
+                  />
+                </View>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Lock color={colors.textSecondary} size={20} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  placeholderTextColor={colors.textSecondary}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Min 6 characters"
+                    placeholderTextColor="#B0ADA8"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                    testID="signup-password"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    {showPassword ? (
+                      <EyeOff color="#9A9590" size={20} />
+                    ) : (
+                      <Eye color="#9A9590" size={20} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
                 <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
+                  style={[styles.button, loading && styles.buttonDisabled]}
+                  onPress={handleSignup}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                  disabled={loading}
+                  activeOpacity={1}
+                  testID="signup-button"
                 >
-                  {showPassword ? (
-                    <EyeOff color={colors.textSecondary} size={20} />
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Eye color={colors.textSecondary} size={20} />
+                    <View style={styles.buttonInner}>
+                      <Text style={styles.buttonText}>Create Account</Text>
+                      <ArrowRight color="#fff" size={18} />
+                    </View>
                   )}
                 </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleSignup}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.buttonText}>Sign Up</Text>
-                    <ArrowRight color="#fff" size={20} />
-                  </View>
-                )}
-              </TouchableOpacity>
+              </Animated.View>
             </Animated.View>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={styles.footerText}>Already have an account?</Text>
               <Link href="/auth/login" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.linkText}>Sign In</Text>
+                <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.linkText}>Sign in</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -196,108 +219,118 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  outerContainer: {
+  root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FAF8F5',
   },
-  container: {
+  safe: {
     flex: 1,
   },
-  scrollContent: {
+  scroll: {
     flexGrow: 1,
+    paddingHorizontal: 28,
+    paddingBottom: 40,
     justifyContent: 'center',
-    padding: 24,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 40,
   },
-  iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+  pill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E3EDDF',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#5A7252',
+    letterSpacing: 0.3,
   },
   title: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '700' as const,
-    color: colors.text,
-    marginBottom: 8,
+    color: '#1C1917',
+    lineHeight: 42,
+    letterSpacing: -0.5,
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: '#87827C',
+    lineHeight: 22,
   },
   form: {
-    gap: 14,
+    gap: 18,
   },
-  inputContainer: {
+  fieldGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#57534E',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase' as const,
+  },
+  inputWrap: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: colors.card,
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    height: 56,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: 54,
+    borderWidth: 1.5,
+    borderColor: '#E8E4DF',
   },
-  inputIcon: {
-    marginRight: 12,
+  inputFocused: {
+    borderColor: '#8DC8C4',
+    backgroundColor: '#FDFCFB',
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
-  },
-  eyeIcon: {
-    padding: 4,
+    color: '#1C1917',
+    letterSpacing: 0.1,
   },
   button: {
-    backgroundColor: colors.secondary,
+    backgroundColor: '#1C1917',
     height: 56,
-    borderRadius: 16,
+    borderRadius: 14,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     marginTop: 8,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
   },
   buttonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
-  buttonContent: {
+  buttonInner: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600' as const,
+    letterSpacing: 0.2,
   },
   footer: {
     flexDirection: 'row' as const,
     justifyContent: 'center' as const,
-    marginTop: 32,
+    alignItems: 'center' as const,
+    gap: 6,
+    marginTop: 36,
   },
   footerText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: 15,
+    color: '#87827C',
   },
   linkText: {
-    fontSize: 14,
-    color: colors.primary,
+    fontSize: 15,
+    color: '#1C1917',
     fontWeight: '600' as const,
   },
 });

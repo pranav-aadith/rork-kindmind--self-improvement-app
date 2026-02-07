@@ -107,7 +107,8 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           await AsyncStorage.setItem(storageKey, JSON.stringify(loadedData));
         }
       } else {
-        setData(initialData);
+        const defaultName = user?.user_metadata?.full_name || '';
+        setData({ ...initialData, username: defaultName });
       }
     } catch (error) {
       console.error('Failed to load data:', error);

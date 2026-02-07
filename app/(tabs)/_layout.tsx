@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Home, BarChart3, MessageCircle, User, Clock, ListTodo } from 'lucide-react-native';
+import { Home, BarChart3, MessageCircle, User, Clock } from 'lucide-react-native';
 import React from 'react';
 import { Platform } from 'react-native';
 import Colors from '@/constants/colors';
@@ -61,13 +61,6 @@ export default function TabLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color, size }) => <Clock color={color} size={size - 2} strokeWidth={2.2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: 'Tasks',
-          tabBarIcon: ({ color, size }) => <ListTodo color={color} size={size - 2} strokeWidth={2.2} />,
         }}
       />
       <Tabs.Screen

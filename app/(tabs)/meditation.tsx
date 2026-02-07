@@ -283,7 +283,7 @@ export default function MeditationScreen() {
                 </View>
                 <ChevronDown size={20} color={Colors.light.textSecondary} />
               </TouchableOpacity>
-              {selectedSound.url && (
+              {!!selectedSound.url && (
                 <TouchableOpacity
                   style={styles.previewButton}
                   onPress={previewSound}

@@ -437,7 +437,7 @@ export default function ResponsesScreen() {
                 Hey{username ? `, ${username}` : ''} 💛
               </Text>
               <Text style={styles.welcomeSubtitle}>
-                Tell me what's on your mind. I'll listen first, then help you find kinder words.
+                Tell me what&apos;s on your mind. I&apos;ll listen first, then help you find kinder words.
               </Text>
             </View>
 

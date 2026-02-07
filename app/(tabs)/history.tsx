@@ -254,7 +254,7 @@ export default function HistoryScreen() {
                   </Text>
                 </View>
 
-                {selectedEntry.gratitude && (
+                {!!selectedEntry.gratitude && (
                   <View style={styles.detailSection}>
                     <Text style={styles.detailSectionTitle}>Gratitude</Text>
                     <View style={styles.detailCard}>
@@ -263,7 +263,7 @@ export default function HistoryScreen() {
                   </View>
                 )}
 
-                {selectedEntry.reflection && (
+                {!!selectedEntry.reflection && (
                   <View style={styles.detailSection}>
                     <Text style={styles.detailSectionTitle}>Reflection</Text>
                     <View style={styles.detailCard}>

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Download, ChevronRight } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Download, ChevronRight, Wand2 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -22,6 +22,7 @@ import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { useAudioPlayer } from 'expo-audio';
 import { Audio } from 'expo-av';
+import { generateText } from '@rork-ai/toolkit-sdk';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
 import { getDailyQuote } from '@/constants/quotes';
@@ -81,6 +82,9 @@ export default function HomeScreen() {
   const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const recordingPulse = useRef(new Animated.Value(1)).current;
+
+  const [journalPrompt, setJournalPrompt] = useState('');
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   const [showWidgetModal, setShowWidgetModal] = useState(false);
   const [selectedWidgetStyle, setSelectedWidgetStyle] = useState(0);
@@ -447,6 +451,150 @@ export default function HomeScreen() {
     setShowJournalModal(false);
   };
 
+  const generateJournalPrompt = async () => {
+    setIsGeneratingPrompt(true);
+    triggerHaptic();
+    try {
+      const emotionContext = selectedEmotion ? `The user is currently feeling ${selectedEmotion.label.toLowerCase()}.` : '';
+      
+      const promptCategories = [
+        'gratitude and appreciation',
+        'self-discovery and identity',
+        'relationships and connections',
+        'dreams, goals, and aspirations',
+        'mindfulness and present moment',
+        'personal growth and learning',
+        'challenges and resilience',
+        'creativity and imagination',
+        'memories and nostalgia',
+        'values and beliefs',
+        'self-compassion and kindness',
+        'nature and surroundings',
+        'emotions and feelings',
+        'daily observations',
+        'future hopes',
+        'inner strength',
+        'simple pleasures',
+        'letting go',
+        'boundaries and self-care',
+        'curiosity and wonder',
+        'body awareness and physical sensations',
+        'childhood and innocence',
+        'forgiveness and healing',
+        'adventure and exploration',
+        'silence and solitude',
+        'laughter and joy',
+        'home and belonging',
+        'courage and fears',
+        'seasons and change',
+        'friendship and trust',
+        'purpose and meaning',
+        'rest and restoration',
+        'creativity and expression',
+        'learning from mistakes',
+        'moments of connection',
+        'small acts of kindness',
+        'sensory experiences',
+        'time and perspective',
+        'intuition and inner voice',
+        'comfort and safety'
+      ];
+      
+      const promptStyles = [
+        'Frame it as a "What if..." question.',
+        'Make it a reflective statement to complete, like "Today I noticed..." or "I feel most at peace when..."',
+        'Ask about a specific memory or moment.',
+        'Make it open-ended and thought-provoking.',
+        'Frame it as a gentle invitation, like "Describe..." or "Explore..."',
+        'Ask about contrasts, like "What brings you energy vs. what drains you?"',
+        'Frame it as a letter to someone (past self, future self, a loved one).',
+        'Ask about a metaphor, like "If your emotions were weather, what would today be?"',
+        'Make it sensory-focused, asking about what they saw, heard, or felt.',
+        'Frame it as gratitude for something unexpected or overlooked.',
+        'Ask about a lesson learned recently.',
+        'Make it about small details that often go unnoticed.',
+        'Frame it as advice they would give to a friend.',
+        'Ask about their ideal day or moment.',
+        'Make it about permission—what do they need to give themselves permission to do or feel?'
+      ];
+      
+      const promptTones = [
+        'Be warm, gentle, and nurturing.',
+        'Be curious and playful.',
+        'Be deep and philosophical.',
+        'Be light and encouraging.',
+        'Be introspective and calm.',
+        'Be hopeful and uplifting.',
+        'Be grounding and present-focused.'
+      ];
+      
+      const promptDepths = [
+        'Keep it simple and accessible.',
+        'Make it thought-provoking but not overwhelming.',
+        'Invite deeper exploration and vulnerability.',
+        'Focus on everyday moments with fresh perspective.'
+      ];
+      
+      const randomCategory = promptCategories[Math.floor(Math.random() * promptCategories.length)];
+      const randomStyle = promptStyles[Math.floor(Math.random() * promptStyles.length)];
+      const randomTone = promptTones[Math.floor(Math.random() * promptTones.length)];
+      const randomDepth = promptDepths[Math.floor(Math.random() * promptDepths.length)];
+      
+      const hour = new Date().getHours();
+      let timeContext = '';
+      if (hour < 12) {
+        timeContext = 'It is morning, a time for fresh starts.';
+      } else if (hour < 17) {
+        timeContext = 'It is afternoon, a time for reflection mid-day.';
+      } else {
+        timeContext = 'It is evening, a time for winding down and processing the day.';
+      }
+      
+      const result = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: `You are a thoughtful journaling assistant for a mental wellness app. Generate a single, unique journal prompt about ${randomCategory}. ${emotionContext} ${timeContext} ${randomStyle} ${randomTone} ${randomDepth} Keep it under 20 words. Make each prompt feel fresh, creative, and different from typical journaling prompts. Avoid clichés. Only return the prompt text, nothing else.`,
+          },
+        ],
+      });
+      console.log('[Journal] Generated prompt:', result, 'Category:', randomCategory, 'Style:', randomStyle);
+      setJournalPrompt(result);
+    } catch (err) {
+      console.error('[Journal] Failed to generate prompt:', err);
+      const fallbackPrompts = [
+        'What moment today made you feel most alive?',
+        'What are you grateful for right now?',
+        'What would you tell your younger self?',
+        'What small joy did you notice today?',
+        'What challenge helped you grow recently?',
+        'Who made you smile today, and why?',
+        'What does peace look like for you?',
+        'What are you ready to let go of?',
+        'If your heart could speak, what would it say?',
+        'What color describes your mood right now?',
+        'What sound brings you comfort?',
+        'Describe a place where you feel completely safe.',
+        'What are you curious about lately?',
+        'What would "enough" look like today?',
+        'What did you learn about yourself this week?',
+        'What boundary do you need to honor?',
+        'What would your future self thank you for?',
+        'What feels heavy right now that you could set down?',
+        'What unexpected moment brought you joy recently?',
+        'If today had a soundtrack, what would it be?',
+        'What permission do you need to give yourself?',
+        'What part of your routine brings you peace?',
+        'Describe someone who made you feel seen today.',
+        'What small thing are you looking forward to?',
+        'What would kindness to yourself look like right now?'
+      ];
+      setJournalPrompt(fallbackPrompts[Math.floor(Math.random() * fallbackPrompts.length)]);
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
   const closeJournalModal = () => {
     if (isRecording && recording) {
       recording.stopAndUnloadAsync();
@@ -456,6 +604,7 @@ export default function HomeScreen() {
     setShowJournalModal(false);
     setJournalText('');
     setSelectedEmotion(null);
+    setJournalPrompt('');
     setInputMode('voice');
   };
 
@@ -1109,6 +1258,39 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
+              <View style={styles.promptSection}>
+                <TouchableOpacity
+                  style={styles.generatePromptBtn}
+                  onPress={generateJournalPrompt}
+                  disabled={isGeneratingPrompt}
+                  activeOpacity={0.7}
+                >
+                  {isGeneratingPrompt ? (
+                    <ActivityIndicator size="small" color={Colors.light.secondary} />
+                  ) : (
+                    <Wand2 size={16} color={Colors.light.secondary} />
+                  )}
+                  <Text style={styles.generatePromptText}>
+                    {isGeneratingPrompt ? 'Generating...' : 'Generate a prompt'}
+                  </Text>
+                </TouchableOpacity>
+                {journalPrompt !== '' && (
+                  <TouchableOpacity
+                    style={styles.promptCard}
+                    onPress={() => {
+                      triggerHaptic();
+                      setJournalText(journalPrompt);
+                      setInputMode('text');
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Sparkles size={14} color={Colors.light.accent} />
+                    <Text style={styles.promptCardText}>{journalPrompt}</Text>
+                    <Text style={styles.promptCardHint}>Tap to use</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
               {inputMode === 'voice' ? (
                 <View style={styles.voiceSection}>
                   <Text style={styles.voiceHint}>
@@ -1170,7 +1352,7 @@ export default function HomeScreen() {
               )}
             </ScrollView>
 
-            {journalText.trim() && selectedEmotion && (
+            {!!journalText.trim() && !!selectedEmotion && (
               <View style={styles.journalFooter}>
                 <TouchableOpacity
                   style={styles.saveEntryBtn}
@@ -2138,6 +2320,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.textSecondary,
     lineHeight: 21,
+  },
+  promptSection: {
+    marginBottom: 16,
+  },
+  generatePromptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    backgroundColor: Colors.light.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderStyle: 'dashed',
+  },
+  generatePromptText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: Colors.light.secondary,
+  },
+  promptCard: {
+    marginTop: 10,
+    backgroundColor: Colors.light.card,
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.light.secondary,
+    gap: 6,
+  },
+  promptCardText: {
+    fontSize: 15,
+    fontWeight: '500' as const,
+    color: Colors.light.text,
+    fontStyle: 'italic' as const,
+    lineHeight: 22,
+  },
+  promptCardHint: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: Colors.light.textTertiary,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
   journalFooter: {
     paddingHorizontal: 20,

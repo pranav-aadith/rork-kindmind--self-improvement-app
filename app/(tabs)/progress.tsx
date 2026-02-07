@@ -646,7 +646,7 @@ export default function ProgressScreen() {
             <Text style={styles.exportText}>Check-ins: {weeklyAnalytics.thisWeekCheckIns}</Text>
             <Text style={styles.exportText}>Calm Days: {weeklyAnalytics.calmDays}</Text>
             <Text style={styles.exportText}>Positive Mood: {weeklyAnalytics.positiveRatio}%</Text>
-            {weeklyAnalytics.topEmotion && (
+            {!!weeklyAnalytics.topEmotion && (
               <Text style={styles.exportText}>Top Feeling: {weeklyAnalytics.topEmotion.emoji} {weeklyAnalytics.topEmotion.emotion}</Text>
             )}
           </View>
@@ -733,7 +733,7 @@ export default function ProgressScreen() {
         </Animated.View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Analytics</Text>
+          <Text style={styles.sectionTitle}>This Week&apos;s Analytics</Text>
           <Text style={styles.sectionSubtitle}>Your emotional wellness snapshot</Text>
         </View>
 
@@ -927,13 +927,13 @@ export default function ProgressScreen() {
                     })}
                   </Text>
                 </View>
-                {entry.gratitude && (
+                {!!entry.gratitude && (
                   <View style={styles.journalSection}>
                     <Text style={styles.journalSectionLabel}>🌸 Grateful for</Text>
                     <Text style={styles.journalSectionText} numberOfLines={2}>{entry.gratitude}</Text>
                   </View>
                 )}
-                {entry.reflection && (
+                {!!entry.reflection && (
                   <View style={styles.journalSection}>
                     <Text style={styles.journalSectionLabel}>✨ Reflection</Text>
                     <Text style={styles.journalSectionText} numberOfLines={2}>{entry.reflection}</Text>

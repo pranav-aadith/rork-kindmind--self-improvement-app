@@ -16,7 +16,7 @@ import Colors from '@/constants/colors';
 
 export default function ProfileScreen() {
   const { data, updateUsername } = useKindMind();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(data.username || '');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
           </View>
           
           <View style={styles.usernameContainer}>
-            <Text style={styles.username}>{data.username || 'User'}</Text>
+            <Text style={styles.username}>{data.username || user?.user_metadata?.full_name || 'User'}</Text>
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => setIsEditingUsername(true)}

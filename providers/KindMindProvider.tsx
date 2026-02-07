@@ -89,10 +89,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         const accurateStreak = calculateAccurateStreak(checkIns);
         const newLongest = Math.max(accurateStreak, parsed.longestStreak || 0);
         
+        const fallbackName = user?.user_metadata?.full_name || '';
         const loadedData = {
           ...initialData,
           ...parsed,
-          username: parsed.username || '',
+          username: parsed.username || fallbackName,
           goals: parsed.goals || defaultGoals,
           checkIns: checkIns,
           triggers: parsed.triggers || [],

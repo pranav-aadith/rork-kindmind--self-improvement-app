@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   selectedDay: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 20,
   },
   todayCell: {
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toggleButtonActive: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   toggleText: {
     fontSize: 14,
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   datePickerDaySelected: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 16,
   },
   datePickerDayText: {
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     padding: 14,
     marginTop: 24,

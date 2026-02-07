@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   questionCardSelected: {
     borderColor: Colors.light.primary,
-    backgroundColor: '#FFF0ED',
+    backgroundColor: '#F0E8F5',
   },
   checkbox: {
     width: 32,

@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     borderColor: Colors.light.primary,
-    backgroundColor: '#FFF0ED',
+    backgroundColor: '#F0E8F5',
   },
   optionContent: {
     flexDirection: 'row',

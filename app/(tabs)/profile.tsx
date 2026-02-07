@@ -73,7 +73,7 @@ export default function ProfileScreen() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF0ED' }]}>
+            <View style={[styles.statIcon, { backgroundColor: '#F0E8F5' }]}>
               <Heart size={24} color={Colors.light.primary} />
             </View>
             <Text style={styles.statNumber}>{data.triggers.length}</Text>
@@ -81,7 +81,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#E8F5F0' }]}>
+            <View style={[styles.statIcon, { backgroundColor: '#E3F2EF' }]}>
               <Target size={24} color={Colors.light.secondary} />
             </View>
             <Text style={styles.statNumber}>{data.checkIns.length}</Text>
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF4E8' }]}>
+            <View style={[styles.statIcon, { backgroundColor: '#F5EFE8' }]}>
               <Award size={24} color={Colors.light.accent} />
             </View>
             <Text style={styles.statNumber}>{data.longestStreak}</Text>
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#E8F5F0' }]}>
+              <View style={[styles.menuIcon, { backgroundColor: '#E3F2EF' }]}>
                 <Shield size={20} color={Colors.light.secondary} />
               </View>
               <Text style={styles.menuItemText}>Privacy & Data Protection</Text>
@@ -147,7 +147,7 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#FFF4E8' }]}>
+              <View style={[styles.menuIcon, { backgroundColor: '#F5EFE8' }]}>
                 <Info size={20} color={Colors.light.accent} />
               </View>
               <Text style={styles.menuItemText}>Version</Text>
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   closeButtonText: {
     fontSize: 14,
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   versionCloseButton: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 28,

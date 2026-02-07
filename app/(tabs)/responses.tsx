@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
   },
   userBubble: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderBottomRightRadius: 6,
   },
   messageText: {
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },

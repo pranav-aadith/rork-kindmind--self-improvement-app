@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Colors from '@/constants/colors';
 
 const FEATURES = [
   { icon: Target, label: 'Track Triggers', desc: 'Understand your reactions', color: '#B5A8D6' },
@@ -122,7 +123,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#F5EFE8',
   },
   safe: {
     flex: 1,
@@ -157,13 +158,13 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 32,
     fontWeight: '700' as const,
-    color: '#1C1917',
+    color: '#4A4545',
     letterSpacing: -0.5,
     marginBottom: 10,
   },
   tagline: {
     fontSize: 17,
-    color: '#87827C',
+    color: '#8A8585',
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: 0.1,
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14,
     borderWidth: 1,
-    borderColor: '#F0ECE7',
+    borderColor: '#E5DDD4',
   },
   featureIcon: {
     width: 46,
@@ -196,11 +197,11 @@ const styles = StyleSheet.create({
   featureLabel: {
     fontSize: 16,
     fontWeight: '600' as const,
-    color: '#1C1917',
+    color: '#4A4545',
   },
   featureDesc: {
     fontSize: 14,
-    color: '#9A9590',
+    color: '#8A8585',
   },
   footerArea: {
     alignItems: 'center',
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: 10,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.light.primary,
     height: 58,
     borderRadius: 16,
   },
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: '#B0ADA8',
+    color: '#B0ABAB',
     textAlign: 'center',
   },
 });

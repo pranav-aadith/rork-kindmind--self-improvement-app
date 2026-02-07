@@ -336,11 +336,11 @@ export default function ProgressScreen() {
 
       const height = padding * 2 + lines.length * lineHeight;
 
-      const bg = '#0B1220';
-      const card = '#0F1B2E';
-      const text = '#EAF0FF';
-      const subtle = '#93A4C7';
-      const accent = '#6DE0C7';
+      const bg = '#F5EFE8';
+      const card = '#FFFFFF';
+      const text = '#4A4545';
+      const subtle = '#8A8585';
+      const accent = '#8DC8C4';
 
       const safeTitle = `KindMind Progress • ${formatLocalDate(new Date())}`;
 
@@ -706,7 +706,7 @@ export default function ProgressScreen() {
 
         <Animated.View style={[styles.statsGrid, { opacity: statsAnim, transform: [{ scale: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>
           <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#FFF0ED' }]}>
+            <View style={[styles.statIcon, { backgroundColor: '#F0E8F5' }]}>
               <Flame size={28} color={Colors.light.primary} />
             </View>
             <Text style={styles.statNumber}>{data.currentStreak}</Text>
@@ -714,7 +714,7 @@ export default function ProgressScreen() {
           </View>
 
           <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#E8F5F0' }]}>
+            <View style={[styles.statIcon, { backgroundColor: '#E3F2EF' }]}>
               <Target size={28} color={Colors.light.secondary} />
             </View>
             <Text style={styles.statNumber}>{data.longestStreak}</Text>
@@ -995,7 +995,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,

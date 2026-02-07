@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   anotherButton: {
-    backgroundColor: '#F5F0FA',
+    backgroundColor: '#F0E8F5',
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',

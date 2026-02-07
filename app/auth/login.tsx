@@ -108,7 +108,7 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.input}
                     placeholder="you@example.com"
-                    placeholderTextColor="#B0ADA8"
+                    placeholderTextColor="#B0ABAB"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
@@ -126,7 +126,7 @@ export default function LoginScreen() {
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     placeholder="••••••••"
-                    placeholderTextColor="#B0ADA8"
+                    placeholderTextColor="#B0ABAB"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
@@ -187,7 +187,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#F5EFE8',
   },
   safe: {
     flex: 1,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   pill: {
     alignSelf: 'flex-start',
-    backgroundColor: '#EDE8E1',
+    backgroundColor: '#E5DDD4',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
@@ -212,20 +212,20 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 13,
     fontWeight: '600' as const,
-    color: '#7A756E',
+    color: '#8A8585',
     letterSpacing: 0.3,
   },
   title: {
     fontSize: 34,
     fontWeight: '700' as const,
-    color: '#1C1917',
+    color: '#4A4545',
     lineHeight: 42,
     letterSpacing: -0.5,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#87827C',
+    color: '#8A8585',
     lineHeight: 22,
   },
   form: {
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600' as const,
-    color: '#57534E',
+    color: '#6A6565',
     letterSpacing: 0.3,
     textTransform: 'uppercase' as const,
   },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 54,
     borderWidth: 1.5,
-    borderColor: '#E8E4DF',
+    borderColor: '#E5DDD4',
   },
   inputFocused: {
     borderColor: '#B5A8D6',
@@ -258,11 +258,11 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1C1917',
+    color: '#4A4545',
     letterSpacing: 0.1,
   },
   button: {
-    backgroundColor: '#1C1917',
+    backgroundColor: '#B5A8D6',
     height: 56,
     borderRadius: 14,
     justifyContent: 'center' as const,
@@ -292,11 +292,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 15,
-    color: '#87827C',
+    color: '#8A8585',
   },
   linkText: {
     fontSize: 15,
-    color: '#1C1917',
+    color: '#4A4545',
     fontWeight: '600' as const,
   },
 });

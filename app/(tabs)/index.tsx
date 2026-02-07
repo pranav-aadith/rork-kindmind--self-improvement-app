@@ -464,7 +464,7 @@ export default function HomeScreen() {
     { id: 1, name: 'Ocean Calm', bg: ['#E8F4F8', '#D0E8F2'], accent: '#4A9E8E', textColor: '#1A1A1A' },
     { id: 2, name: 'Lavender', bg: ['#F5F0FA', '#E8DFF5'], accent: '#8B7CB8', textColor: '#1A1A1A' },
     { id: 3, name: 'Forest', bg: ['#E8F5E9', '#C8E6C9'], accent: '#4A9E8E', textColor: '#1A1A1A' },
-    { id: 4, name: 'Midnight', bg: ['#1A1A2E', '#16213E'], accent: '#E8A87C', textColor: '#FFFFFF' },
+    { id: 4, name: 'Midnight', bg: ['#D4C8E8', '#C5B8DA'], accent: '#B5A8D6', textColor: '#4A4545' },
     { id: 5, name: 'Golden', bg: ['#FFF3E0', '#FFE0B2'], accent: '#D4A373', textColor: '#1A1A1A' },
   ];
 
@@ -672,15 +672,15 @@ export default function HomeScreen() {
         <View style={styles.actionsGrid}>
           <Animated.View style={[styles.actionCardWrap, { opacity: card1Anim, transform: [{ scale: card1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: '#1A1A1A' }]}
+              style={[styles.actionCard, { backgroundColor: Colors.light.primary }]}
               onPress={() => setShowJournalModal(true)}
               activeOpacity={0.85}
             >
-              <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+              <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
                 <BookOpen size={22} color="#FFF" />
               </View>
               <Text style={[styles.actionTitle, { color: '#FFF' }]}>Journal</Text>
-              <Text style={[styles.actionDesc, { color: 'rgba(255,255,255,0.6)' }]}>Write your thoughts</Text>
+              <Text style={[styles.actionDesc, { color: 'rgba(255,255,255,0.7)' }]}>Write your thoughts</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -1669,7 +1669,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.subtle,
   },
   presetButtonActive: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   presetText: {
     fontSize: 13,
@@ -1715,7 +1715,7 @@ const styles = StyleSheet.create({
     color: Colors.light.secondary,
   },
   startButton: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -1817,7 +1817,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1894,7 +1894,7 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     flex: 1,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.secondary,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
@@ -2029,7 +2029,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emotionChipSelected: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   emotionEmoji: {
     fontSize: 16,
@@ -2059,7 +2059,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   modeBtnActive: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   modeBtnText: {
     fontSize: 13,
@@ -2085,7 +2085,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -2146,7 +2146,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.light.border,
   },
   saveEntryBtn: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     paddingVertical: 15,
     flexDirection: 'row',
@@ -2221,7 +2221,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   widgetStyleOptionSelected: {
-    borderColor: Colors.light.text,
+    borderColor: Colors.light.primary,
   },
   widgetStyleInner: {
     flex: 1,
@@ -2270,7 +2270,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   widgetShareBtn: {
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
   },
   widgetShareText: {
     fontSize: 14,
@@ -2282,7 +2282,7 @@ const styles = StyleSheet.create({
     bottom: 100,
     left: 20,
     right: 20,
-    backgroundColor: Colors.light.text,
+    backgroundColor: Colors.light.primary,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 18,

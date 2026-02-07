@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, CheckCircle2, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Download } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Sparkles, Timer, Play, Pause, RotateCcw, Minus, Plus, X, Check, Volume2, ChevronDown, Mic, MicOff, Keyboard, Send, LayoutGrid, Copy, Download, ChevronRight } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -58,7 +58,6 @@ export default function HomeScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const heartScale = useRef(new Animated.Value(1)).current;
   const quoteAnim = useRef(new Animated.Value(0)).current;
   const statsAnim = useRef(new Animated.Value(0)).current;
 
@@ -156,24 +155,6 @@ export default function HomeScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(heartScale, {
-          toValue: 1.15,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(heartScale, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimation.start();
-
-    return () => pulseAnimation.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -429,11 +410,11 @@ export default function HomeScreen() {
         throw new Error('Transcription failed');
       }
 
-      const data = await response.json();
-      console.log('Transcription result:', data);
+      const respData = await response.json();
+      console.log('Transcription result:', respData);
 
-      if (data.text) {
-        setJournalText(prev => prev ? prev + ' ' + data.text : data.text);
+      if (respData.text) {
+        setJournalText(prev => prev ? prev + ' ' + respData.text : respData.text);
       }
     } catch (err) {
       console.error('Transcription error:', err);
@@ -479,12 +460,12 @@ export default function HomeScreen() {
   };
 
   const WIDGET_STYLES = [
-    { id: 0, name: 'Warm Sunrise', bg: ['#FFF9F5', '#FFE8DC'], accent: '#FF6B6B', textColor: '#2D3436' },
-    { id: 1, name: 'Ocean Calm', bg: ['#E8F4F8', '#D0E8F2'], accent: '#4ECDC4', textColor: '#2D3436' },
-    { id: 2, name: 'Lavender Dream', bg: ['#F5F0FA', '#E8DFF5'], accent: '#9B59B6', textColor: '#2D3436' },
-    { id: 3, name: 'Forest Green', bg: ['#E8F5E9', '#C8E6C9'], accent: '#27AE60', textColor: '#2D3436' },
-    { id: 4, name: 'Midnight', bg: ['#1A1A2E', '#16213E'], accent: '#E94560', textColor: '#FFFFFF' },
-    { id: 5, name: 'Golden Hour', bg: ['#FFF3E0', '#FFE0B2'], accent: '#FF9800', textColor: '#2D3436' },
+    { id: 0, name: 'Warm Sunrise', bg: ['#FFF9F5', '#FFE8DC'], accent: '#E8A87C', textColor: '#1A1A1A' },
+    { id: 1, name: 'Ocean Calm', bg: ['#E8F4F8', '#D0E8F2'], accent: '#4A9E8E', textColor: '#1A1A1A' },
+    { id: 2, name: 'Lavender', bg: ['#F5F0FA', '#E8DFF5'], accent: '#8B7CB8', textColor: '#1A1A1A' },
+    { id: 3, name: 'Forest', bg: ['#E8F5E9', '#C8E6C9'], accent: '#4A9E8E', textColor: '#1A1A1A' },
+    { id: 4, name: 'Midnight', bg: ['#1A1A2E', '#16213E'], accent: '#E8A87C', textColor: '#FFFFFF' },
+    { id: 5, name: 'Golden', bg: ['#FFF3E0', '#FFE0B2'], accent: '#D4A373', textColor: '#1A1A1A' },
   ];
 
   const copyQuote = async () => {
@@ -611,23 +592,12 @@ export default function HomeScreen() {
       <stop offset="0%" stop-color="${style.bg[0]}" />
       <stop offset="100%" stop-color="${style.bg[1]}" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000000" flood-opacity="0.1" />
-    </filter>
   </defs>
-  
   <rect x="0" y="0" width="${width}" height="${height}" fill="url(#bg)" rx="32" />
-  
-  <rect x="${padding}" y="${padding}" width="${width - padding * 2}" height="${height - padding * 2}" fill="${style.bg[1]}" rx="24" filter="url(#shadow)" />
-  
-  <rect x="${padding}" y="${padding}" width="8" height="${height - padding * 2}" fill="${style.accent}" rx="4" />
-  
-  <circle cx="${padding + 44}" cy="120" r="20" fill="${style.accent}" opacity="0.2" />
-  <text x="${padding + 44}" y="128" fill="${style.accent}" font-family="Arial" font-size="24" text-anchor="middle">✦</text>
-  
+  <rect x="${padding}" y="${padding}" width="${width - padding * 2}" height="${height - padding * 2}" fill="${style.bg[1]}" rx="24" />
+  <rect x="${padding}" y="${padding}" width="6" height="${height - padding * 2}" fill="${style.accent}" rx="3" />
   ${quoteLines}
-  
-  <text x="${padding + 24}" y="${height - padding - 24}" fill="${style.textColor}" font-family="Arial, sans-serif" font-size="14" opacity="0.6">Quote of the Day • KindMind</text>
+  <text x="${padding + 24}" y="${height - padding - 24}" fill="${style.textColor}" font-family="Arial, sans-serif" font-size="14" opacity="0.5">KindMind</text>
 </svg>`;
   };
 
@@ -638,131 +608,110 @@ export default function HomeScreen() {
     outputRange: [0.3, 0.7],
   });
 
-  const animateButtonPress = (callback: () => void) => {
-    callback();
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Animated.View style={[styles.headerTop, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View>
-              <Text style={styles.greeting}>Hello {data.username || 'there'}</Text>
-              <Text style={styles.subtitle}>How are you feeling today?</Text>
-            </View>
-            <Animated.View style={[styles.iconContainer, { transform: [{ scale: heartScale }] }]}>
-              <Heart size={32} color={Colors.light.primary} fill={Colors.light.primary} />
-            </Animated.View>
-          </Animated.View>
-        </View>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <Text style={styles.greeting}>{getTimeOfDay()}</Text>
+          <Text style={styles.username}>{data.username || 'there'}</Text>
+        </Animated.View>
 
-        <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
-          <View style={styles.quoteHeader}>
-            <View style={styles.quoteIconContainer}>
-              <Sparkles size={20} color={Colors.light.primary} />
+        <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }]}>
+          <View style={styles.quoteAccent} />
+          <View style={styles.quoteContent}>
+            <Text style={styles.quoteText}>{dailyQuote}</Text>
+            <View style={styles.quoteActions}>
+              <TouchableOpacity
+                style={styles.quoteActionBtn}
+                onPress={() => setShowWidgetModal(true)}
+                activeOpacity={0.7}
+              >
+                <LayoutGrid size={14} color={Colors.light.textSecondary} />
+                <Text style={styles.quoteActionText}>Widget</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.widgetButton}
-              onPress={() => setShowWidgetModal(true)}
-              activeOpacity={0.7}
-            >
-              <LayoutGrid size={18} color={Colors.light.primary} />
-              <Text style={styles.widgetButtonText}>Widget</Text>
-            </TouchableOpacity>
           </View>
-          <Text style={styles.quoteText}>{dailyQuote}</Text>
         </Animated.View>
 
         {!hasCheckedInToday && (
           <TouchableOpacity
             style={styles.checkInBanner}
             onPress={() => router.push('/checkin')}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <View style={styles.bannerIcon}>
-              <CheckCircle2 size={24} color={Colors.light.primary} />
+            <View style={styles.checkInLeft}>
+              <View style={styles.checkInDot} />
+              <View>
+                <Text style={styles.bannerTitle}>Daily Check-In</Text>
+                <Text style={styles.bannerText}>How was your day?</Text>
+              </View>
             </View>
-            <View style={styles.bannerContent}>
-              <Text style={styles.bannerTitle}>Daily Check-In</Text>
-              <Text style={styles.bannerText}>Reflect on today</Text>
-            </View>
-            <View style={styles.bannerArrow}>
-              <Text style={styles.bannerArrowText}>→</Text>
-            </View>
+            <ChevronRight size={20} color={Colors.light.textSecondary} />
           </TouchableOpacity>
         )}
 
-        <Animated.View style={[styles.statsGrid, { opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
-          <View style={styles.statCard}>
-            <View style={styles.statIconContainer}>
-              <Flower size={24} color={Colors.light.primary} />
-            </View>
-            <Text style={styles.statNumber}>{data.currentStreak}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
+        <Animated.View style={[styles.streakCard, { opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+          <View style={styles.streakIconWrap}>
+            <Flower size={22} color={Colors.light.secondary} />
+          </View>
+          <View style={styles.streakInfo}>
+            <Text style={styles.streakNumber}>{data.currentStreak}</Text>
+            <Text style={styles.streakLabel}>day streak</Text>
           </View>
         </Animated.View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
 
         <View style={styles.actionsGrid}>
-          <Animated.View style={{ opacity: card1Anim, transform: [{ scale: card1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
+          <Animated.View style={[styles.actionCardWrap, { opacity: card1Anim, transform: [{ scale: card1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
             <TouchableOpacity
-              style={[styles.actionCard, styles.actionCardPrimary]}
+              style={[styles.actionCard, { backgroundColor: '#1A1A1A' }]}
               onPress={() => setShowJournalModal(true)}
-              activeOpacity={0.9}
+              activeOpacity={0.85}
             >
-              <View style={[styles.actionIcon, styles.actionIconPrimary]}>
-                <BookOpen size={28} color={Colors.light.card} />
+              <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                <BookOpen size={22} color="#FFF" />
               </View>
-              <Text style={styles.actionTitle}>Journal</Text>
-              <Text style={styles.actionDescription}>
-                Reflect on your day and emotions
-              </Text>
+              <Text style={[styles.actionTitle, { color: '#FFF' }]}>Journal</Text>
+              <Text style={[styles.actionDesc, { color: 'rgba(255,255,255,0.6)' }]}>Write your thoughts</Text>
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View style={{ opacity: card2Anim, transform: [{ scale: card2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
-            <TouchableOpacity
-              style={[styles.actionCard, styles.actionCardSecondary]}
-              onPress={() => animateButtonPress(() => router.push('/pause'))}
-              activeOpacity={0.9}
-            >
-              <View style={[styles.actionIcon, styles.actionIconSecondary]}>
-                <Heart size={28} color={Colors.light.card} />
-              </View>
-              <Text style={styles.actionTitle}>Pause Practice</Text>
-              <Text style={styles.actionDescription}>
-                Take a mindful moment to breathe
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
+          <View style={styles.actionRow}>
+            <Animated.View style={[styles.actionCardHalf, { opacity: card2Anim, transform: [{ scale: card2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.secondary }]}
+                onPress={() => router.push('/pause')}
+                activeOpacity={0.85}
+              >
+                <Heart size={20} color="#FFF" />
+                <Text style={[styles.actionTitleSmall, { color: '#FFF' }]}>Pause</Text>
+              </TouchableOpacity>
+            </Animated.View>
 
-          <Animated.View style={{ opacity: card3Anim, transform: [{ scale: card3Anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
-            <TouchableOpacity
-              style={[styles.actionCard, styles.actionCardMeditation]}
-              onPress={() => setShowMeditationModal(true)}
-              activeOpacity={0.9}
-            >
-              <View style={[styles.actionIcon, styles.actionIconMeditation]}>
-                <Timer size={28} color={Colors.light.card} />
-              </View>
-              <Text style={styles.actionTitle}>Meditation Timer</Text>
-              <Text style={styles.actionDescription}>
-                Set a timer for mindful meditation
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
+            <Animated.View style={[styles.actionCardHalf, { opacity: card3Anim, transform: [{ scale: card3Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.accent }]}
+                onPress={() => setShowMeditationModal(true)}
+                activeOpacity={0.85}
+              >
+                <Timer size={20} color="#FFF" />
+                <Text style={[styles.actionTitleSmall, { color: '#FFF' }]}>Meditate</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
         </View>
 
         {data.goals.filter(g => g.selected).length > 0 && (
           <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your Goals</Text>
-            </View>
-
+            <Text style={styles.sectionTitle}>Your Goals</Text>
             <View style={styles.goalsContainer}>
               {data.goals
                 .filter(g => g.selected)
@@ -776,46 +725,44 @@ export default function HomeScreen() {
           </>
         )}
 
-
-
         <TouchableOpacity
           style={styles.analyticsCard}
           onPress={() => router.push('/progress')}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
         >
-          <View style={styles.analyticsIcon}>
-            <BarChart3 size={24} color={Colors.light.primary} />
+          <View style={styles.analyticsLeft}>
+            <BarChart3 size={20} color={Colors.light.secondary} />
+            <View>
+              <Text style={styles.analyticsTitle}>View Analytics</Text>
+              <Text style={styles.analyticsText}>Track your emotional patterns</Text>
+            </View>
           </View>
-          <View style={styles.analyticsContent}>
-            <Text style={styles.analyticsTitle}>View Analytics</Text>
-            <Text style={styles.analyticsText}>
-              Track your emotional patterns
-            </Text>
-          </View>
+          <ChevronRight size={18} color={Colors.light.textTertiary} />
         </TouchableOpacity>
 
         {data.journalEntries && data.journalEntries.length > 0 && (
           <>
-            <View style={styles.section}>
+            <View style={styles.sectionRow}>
               <Text style={styles.sectionTitle}>Recent Entries</Text>
               <TouchableOpacity onPress={() => router.push('/progress')}>
                 <Text style={styles.sectionLink}>View All</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.triggersContainer}>
+            <View style={styles.entriesContainer}>
               {data.journalEntries.slice(0, 3).map(entry => (
-                <View key={entry.id} style={styles.triggerCard}>
-                  <View style={styles.triggerHeader}>
-                    <Text style={styles.journalEmoji}>{entry.emotionEmoji} {entry.emotion}</Text>
-                    <Text style={styles.triggerTime}>
+                <View key={entry.id} style={styles.entryCard}>
+                  <View style={styles.entryHeader}>
+                    <Text style={styles.entryEmoji}>{entry.emotionEmoji}</Text>
+                    <Text style={styles.entryEmotion}>{entry.emotion}</Text>
+                    <Text style={styles.entryTime}>
                       {new Date(entry.timestamp).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                       })}
                     </Text>
                   </View>
-                  <Text style={styles.triggerSituation} numberOfLines={2}>
+                  <Text style={styles.entryText} numberOfLines={2}>
                     {entry.gratitude}
                   </Text>
                 </View>
@@ -837,9 +784,9 @@ export default function HomeScreen() {
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={closeMeditationModal} style={styles.modalCloseBtn}>
-                <X size={24} color={Colors.light.text} />
+                <X size={22} color={Colors.light.text} />
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>Meditation Timer</Text>
+              <Text style={styles.modalTitle}>Meditation</Text>
               <View style={styles.modalCloseBtn} />
             </View>
 
@@ -851,7 +798,7 @@ export default function HomeScreen() {
                     onPress={() => adjustTime(-60)}
                     activeOpacity={0.7}
                   >
-                    <Minus size={24} color={Colors.light.primary} />
+                    <Minus size={22} color={Colors.light.text} />
                   </TouchableOpacity>
 
                   <View style={styles.timeTextContainer}>
@@ -864,12 +811,11 @@ export default function HomeScreen() {
                     onPress={() => adjustTime(60)}
                     activeOpacity={0.7}
                   >
-                    <Plus size={24} color={Colors.light.primary} />
+                    <Plus size={22} color={Colors.light.text} />
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.presetsContainer}>
-                  <Text style={styles.presetsLabel}>Quick Select</Text>
                   <View style={styles.presetsGrid}>
                     {PRESET_TIMES.map((preset) => (
                       <TouchableOpacity
@@ -895,28 +841,28 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.soundPickerContainer}>
-                  <Text style={styles.presetsLabel}>End Sound</Text>
+                  <Text style={styles.fieldLabel}>End Sound</Text>
                   <TouchableOpacity
                     style={styles.soundSelector}
                     onPress={() => setShowSoundPicker(true)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.soundSelectorLeft}>
-                      <Volume2 size={20} color={Colors.light.primary} />
+                      <Volume2 size={18} color={Colors.light.secondary} />
                       <Text style={styles.soundSelectorText}>{selectedSound.label}</Text>
                     </View>
-                    <ChevronDown size={20} color={Colors.light.textSecondary} />
+                    <ChevronDown size={18} color={Colors.light.textSecondary} />
                   </TouchableOpacity>
-                  {selectedSound.url && (
+                  {selectedSound.url ? (
                     <TouchableOpacity
                       style={styles.previewButton}
                       onPress={previewSound}
                       activeOpacity={0.7}
                     >
-                      <Play size={14} color={Colors.light.primary} />
+                      <Play size={12} color={Colors.light.secondary} />
                       <Text style={styles.previewButtonText}>Preview</Text>
                     </TouchableOpacity>
-                  )}
+                  ) : null}
                 </View>
 
                 <TouchableOpacity
@@ -924,8 +870,8 @@ export default function HomeScreen() {
                   onPress={startMeditation}
                   activeOpacity={0.8}
                 >
-                  <Play size={24} color="#FFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.startButtonText}>Begin Meditation</Text>
+                  <Play size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.startButtonText}>Begin</Text>
                 </TouchableOpacity>
               </ScrollView>
             )}
@@ -955,7 +901,7 @@ export default function HomeScreen() {
                     <View style={styles.progressBackground}>
                       <View
                         style={[
-                          styles.progressFill,
+                          styles.progressFillCircle,
                           {
                             height: `${progress * 100}%`,
                           },
@@ -975,7 +921,7 @@ export default function HomeScreen() {
                     onPress={resetMeditation}
                     activeOpacity={0.7}
                   >
-                    <RotateCcw size={24} color={Colors.light.textSecondary} />
+                    <RotateCcw size={22} color={Colors.light.textSecondary} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -987,9 +933,9 @@ export default function HomeScreen() {
                     activeOpacity={0.8}
                   >
                     {isRunning ? (
-                      <Pause size={32} color="#FFF" />
+                      <Pause size={28} color="#FFF" />
                     ) : (
-                      <Play size={32} color="#FFF" style={{ marginLeft: 4 }} />
+                      <Play size={28} color="#FFF" style={{ marginLeft: 3 }} />
                     )}
                   </TouchableOpacity>
 
@@ -1001,9 +947,8 @@ export default function HomeScreen() {
             {meditationPhase === 'complete' && (
               <View style={styles.completeContent}>
                 <View style={styles.completeIconContainer}>
-                  <View style={styles.completeIconGlow} />
                   <View style={styles.completeIcon}>
-                    <Check size={48} color="#FFF" />
+                    <Check size={40} color="#FFF" />
                   </View>
                 </View>
 
@@ -1016,7 +961,6 @@ export default function HomeScreen() {
                   <Text style={styles.completeCardTitle}>How do you feel?</Text>
                   <Text style={styles.completeCardText}>
                     Take a moment to notice any shifts in your mind and body.
-                    Carry this calm with you.
                   </Text>
                 </View>
 
@@ -1026,8 +970,8 @@ export default function HomeScreen() {
                     onPress={resetMeditation}
                     activeOpacity={0.8}
                   >
-                    <RotateCcw size={20} color={Colors.light.primary} style={{ marginRight: 8 }} />
-                    <Text style={styles.anotherButtonText}>Meditate Again</Text>
+                    <RotateCcw size={18} color={Colors.light.text} style={{ marginRight: 8 }} />
+                    <Text style={styles.anotherButtonText}>Again</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1035,7 +979,7 @@ export default function HomeScreen() {
                     onPress={closeMeditationModal}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.doneButtonText}>Finish</Text>
+                    <Text style={styles.doneButtonText}>Done</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1052,7 +996,7 @@ export default function HomeScreen() {
           <View style={styles.soundModalOverlay}>
             <View style={styles.soundModalContent}>
               <View style={styles.soundModalHeader}>
-                <Text style={styles.soundModalTitle}>Select End Sound</Text>
+                <Text style={styles.soundModalTitle}>End Sound</Text>
                 <TouchableOpacity
                   onPress={() => setShowSoundPicker(false)}
                   style={styles.soundModalCloseButton}
@@ -1073,8 +1017,8 @@ export default function HomeScreen() {
                   >
                     <View style={styles.soundOptionLeft}>
                       <Volume2
-                        size={20}
-                        color={selectedSound.id === sound.id ? Colors.light.primary : Colors.light.textSecondary}
+                        size={18}
+                        color={selectedSound.id === sound.id ? Colors.light.secondary : Colors.light.textSecondary}
                       />
                       <Text
                         style={[
@@ -1086,7 +1030,7 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                     {selectedSound.id === sound.id && (
-                      <Check size={20} color={Colors.light.primary} />
+                      <Check size={18} color={Colors.light.secondary} />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -1109,21 +1053,21 @@ export default function HomeScreen() {
           >
             <View style={styles.journalHeader}>
               <TouchableOpacity onPress={closeJournalModal} style={styles.journalCloseBtn}>
-                <X size={24} color={Colors.light.text} />
+                <X size={22} color={Colors.light.text} />
               </TouchableOpacity>
-              <Text style={styles.journalHeaderTitle}>Quick Journal</Text>
+              <Text style={styles.journalHeaderTitle}>Journal</Text>
               <TouchableOpacity 
                 onPress={saveJournalEntry} 
                 style={[styles.journalSaveBtn, (!journalText.trim() || !selectedEmotion) && styles.journalSaveBtnDisabled]}
                 disabled={!journalText.trim() || !selectedEmotion}
               >
-                <Send size={20} color={journalText.trim() && selectedEmotion ? Colors.light.primary : Colors.light.textSecondary} />
+                <Send size={18} color={journalText.trim() && selectedEmotion ? Colors.light.text : Colors.light.textTertiary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.journalContent} keyboardShouldPersistTaps="handled">
               <View style={styles.emotionSection}>
-                <Text style={styles.emotionLabel}>How are you feeling?</Text>
+                <Text style={styles.fieldLabel}>How are you feeling?</Text>
                 <View style={styles.emotionGrid}>
                   {EMOTIONS.map((emotion) => (
                     <TouchableOpacity
@@ -1153,14 +1097,14 @@ export default function HomeScreen() {
                   style={[styles.modeBtn, inputMode === 'voice' && styles.modeBtnActive]}
                   onPress={() => setInputMode('voice')}
                 >
-                  <Mic size={18} color={inputMode === 'voice' ? '#FFF' : Colors.light.textSecondary} />
+                  <Mic size={16} color={inputMode === 'voice' ? '#FFF' : Colors.light.textSecondary} />
                   <Text style={[styles.modeBtnText, inputMode === 'voice' && styles.modeBtnTextActive]}>Voice</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modeBtn, inputMode === 'text' && styles.modeBtnActive]}
                   onPress={() => setInputMode('text')}
                 >
-                  <Keyboard size={18} color={inputMode === 'text' ? '#FFF' : Colors.light.textSecondary} />
+                  <Keyboard size={16} color={inputMode === 'text' ? '#FFF' : Colors.light.textSecondary} />
                   <Text style={[styles.modeBtnText, inputMode === 'text' && styles.modeBtnTextActive]}>Type</Text>
                 </TouchableOpacity>
               </View>
@@ -1168,7 +1112,7 @@ export default function HomeScreen() {
               {inputMode === 'voice' ? (
                 <View style={styles.voiceSection}>
                   <Text style={styles.voiceHint}>
-                    {isRecording ? 'Listening... tap to stop' : isTranscribing ? 'Processing...' : 'Tap to speak'}
+                    {isRecording ? 'Listening...' : isTranscribing ? 'Processing...' : 'Tap to speak'}
                   </Text>
                   <Animated.View style={[
                     styles.micButtonContainer,
@@ -1186,9 +1130,9 @@ export default function HomeScreen() {
                       {isTranscribing ? (
                         <ActivityIndicator size="large" color="#FFF" />
                       ) : isRecording ? (
-                        <MicOff size={48} color="#FFF" />
+                        <MicOff size={40} color="#FFF" />
                       ) : (
-                        <Mic size={48} color="#FFF" />
+                        <Mic size={40} color="#FFF" />
                       )}
                     </TouchableOpacity>
                   </Animated.View>
@@ -1204,7 +1148,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.journalTextInput}
                     placeholder="What's on your mind?"
-                    placeholderTextColor={Colors.light.textSecondary}
+                    placeholderTextColor={Colors.light.textTertiary}
                     value={journalText}
                     onChangeText={setJournalText}
                     multiline
@@ -1215,7 +1159,7 @@ export default function HomeScreen() {
 
               {journalText.trim() !== '' && (
                 <View style={styles.previewSection}>
-                  <Text style={styles.previewLabel}>Your entry</Text>
+                  <Text style={styles.fieldLabel}>Preview</Text>
                   <View style={styles.previewCard}>
                     {selectedEmotion && (
                       <Text style={styles.previewEmotion}>{selectedEmotion.emoji} {selectedEmotion.label}</Text>
@@ -1233,7 +1177,7 @@ export default function HomeScreen() {
                   onPress={saveJournalEntry}
                   activeOpacity={0.8}
                 >
-                  <Check size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Check size={18} color="#FFF" style={{ marginRight: 8 }} />
                   <Text style={styles.saveEntryBtnText}>Save Entry</Text>
                 </TouchableOpacity>
               </View>
@@ -1250,16 +1194,15 @@ export default function HomeScreen() {
       >
         <SafeAreaView style={styles.widgetModalSafeArea}>
           <View style={styles.widgetModalContainer}>
-            <View style={styles.widgetModalHeader}>
-              <TouchableOpacity onPress={() => setShowWidgetModal(false)} style={styles.widgetCloseBtn}>
-                <X size={24} color={Colors.light.text} />
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowWidgetModal(false)} style={styles.modalCloseBtn}>
+                <X size={22} color={Colors.light.text} />
               </TouchableOpacity>
-              <Text style={styles.widgetModalTitle}>Quote Widget</Text>
-              <View style={styles.widgetCloseBtn} />
+              <Text style={styles.modalTitle}>Quote Widget</Text>
+              <View style={styles.modalCloseBtn} />
             </View>
 
             <ScrollView style={styles.widgetModalContent} contentContainerStyle={styles.widgetModalContentContainer}>
-              <Text style={styles.widgetSectionTitle}>Preview</Text>
               <View 
                 ref={widgetPreviewRef}
                 collapsable={false}
@@ -1277,7 +1220,7 @@ export default function HomeScreen() {
                     { backgroundColor: WIDGET_STYLES[selectedWidgetStyle].accent }
                   ]} />
                   <View style={styles.widgetPreviewContent}>
-                    <Sparkles size={24} color={WIDGET_STYLES[selectedWidgetStyle].accent} />
+                    <Sparkles size={20} color={WIDGET_STYLES[selectedWidgetStyle].accent} />
                     <Text style={[
                       styles.widgetQuoteText,
                       { color: WIDGET_STYLES[selectedWidgetStyle].textColor }
@@ -1286,15 +1229,15 @@ export default function HomeScreen() {
                     </Text>
                     <Text style={[
                       styles.widgetDateText,
-                      { color: WIDGET_STYLES[selectedWidgetStyle].textColor, opacity: 0.6 }
+                      { color: WIDGET_STYLES[selectedWidgetStyle].textColor, opacity: 0.5 }
                     ]}>
-                      Quote of the Day • KindMind
+                      KindMind
                     </Text>
                   </View>
                 </View>
               </View>
 
-              <Text style={styles.widgetSectionTitle}>Choose Style</Text>
+              <Text style={styles.fieldLabel}>Style</Text>
               <View style={styles.widgetStylesGrid}>
                 {WIDGET_STYLES.map((style) => (
                   <TouchableOpacity
@@ -1327,8 +1270,8 @@ export default function HomeScreen() {
                   onPress={copyQuote}
                   activeOpacity={0.7}
                 >
-                  <Copy size={20} color={Colors.light.primary} />
-                  <Text style={styles.widgetActionText}>Copy Text</Text>
+                  <Copy size={18} color={Colors.light.text} />
+                  <Text style={styles.widgetActionText}>Copy</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -1341,25 +1284,18 @@ export default function HomeScreen() {
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
                     <>
-                      <Download size={20} color="#FFF" />
-                      <Text style={styles.widgetShareText}>Save Image</Text>
+                      <Download size={18} color="#FFF" />
+                      <Text style={styles.widgetShareText}>Save</Text>
                     </>
                   )}
                 </TouchableOpacity>
-              </View>
-
-              <View style={styles.widgetInfoCard}>
-                <Text style={styles.widgetInfoTitle}>Share as Image</Text>
-                <Text style={styles.widgetInfoText}>
-                  Tap Save Image to export your quote as a beautiful PNG with your selected style. Share it with friends or use it as a wallpaper! The quote changes every day.
-                </Text>
               </View>
             </ScrollView>
 
             {copiedToast && (
               <View style={styles.copiedToast}>
-                <Check size={18} color="#FFF" />
-                <Text style={styles.copiedToastText}>Quote copied!</Text>
+                <Check size={16} color="#FFF" />
+                <Text style={styles.copiedToastText}>Copied!</Text>
               </View>
             )}
           </View>
@@ -1378,188 +1314,195 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 28,
   },
   greeting: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontSize: 15,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
+    letterSpacing: 0.3,
     marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.light.textSecondary,
+  username: {
+    fontSize: 30,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+    letterSpacing: -0.5,
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  quoteCard: {
     backgroundColor: Colors.light.card,
-    justifyContent: 'center',
+    borderRadius: 16,
+    marginBottom: 20,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  quoteAccent: {
+    width: 4,
+    backgroundColor: Colors.light.accent,
+  },
+  quoteContent: {
+    flex: 1,
+    padding: 18,
+  },
+  quoteText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: Colors.light.text,
+    fontWeight: '400' as const,
+    fontStyle: 'italic' as const,
+    letterSpacing: 0.1,
+  },
+  quoteActions: {
+    flexDirection: 'row',
+    marginTop: 14,
+  },
+  quoteActionBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 8,
+  },
+  quoteActionText: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
   },
   checkInBanner: {
-    backgroundColor: '#FFF0ED',
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: Colors.light.card,
+    borderRadius: 14,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: Colors.light.primary,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  bannerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  checkInLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  checkInDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.light.secondary,
+  },
+  bannerTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    marginBottom: 1,
+  },
+  bannerText: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  streakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.light.card,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 28,
+    gap: 14,
+  },
+  streakIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bannerContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  bannerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 2,
-  },
-  bannerText: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-  },
-  bannerArrow: {
-    marginLeft: 12,
-  },
-  bannerArrowText: {
-    fontSize: 24,
-    color: Colors.light.primary,
-    fontWeight: '700',
-  },
-  statsGrid: {
+  streakInfo: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 32,
+    alignItems: 'baseline',
+    gap: 6,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statIconContainer: {
-    marginBottom: 12,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: '700',
+  streakNumber: {
+    fontSize: 28,
+    fontWeight: '700' as const,
     color: Colors.light.text,
-    marginBottom: 4,
+    letterSpacing: -0.5,
   },
-  statLabel: {
+  streakLabel: {
     fontSize: 14,
+    fontWeight: '500' as const,
     color: Colors.light.textSecondary,
-    fontWeight: '500',
   },
-  section: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+    marginBottom: 14,
+    letterSpacing: -0.3,
+  },
+  sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.light.text,
+    marginBottom: 14,
   },
   sectionLink: {
-    fontSize: 16,
-    color: Colors.light.primary,
-    fontWeight: '600',
+    fontSize: 14,
+    color: Colors.light.secondary,
+    fontWeight: '600' as const,
   },
   actionsGrid: {
-    gap: 16,
-    marginBottom: 32,
+    gap: 12,
+    marginBottom: 28,
+  },
+  actionCardWrap: {},
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionCardHalf: {
+    flex: 1,
   },
   actionCard: {
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: 16,
+    padding: 20,
   },
-  actionCardPrimary: {
-    backgroundColor: Colors.light.primary,
+  actionCardSmall: {
+    padding: 18,
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  actionCardSecondary: {
-    backgroundColor: Colors.light.secondary,
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  actionIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  actionIconPrimary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  actionIconSecondary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  actionCardMeditation: {
-    backgroundColor: '#6366F1',
-  },
-  actionIconMeditation: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginBottom: 14,
   },
   actionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.light.card,
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '700' as const,
+    marginBottom: 4,
   },
-  actionDescription: {
-    fontSize: 15,
-    color: Colors.light.card,
-    opacity: 0.9,
-    lineHeight: 22,
+  actionTitleSmall: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  actionDesc: {
+    fontSize: 13,
+    lineHeight: 19,
   },
   goalsContainer: {
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 32,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 28,
+    gap: 14,
   },
   goalItem: {
     flexDirection: 'row',
@@ -1567,61 +1510,76 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   goalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.light.primary,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.light.secondary,
   },
   goalText: {
     flex: 1,
-    fontSize: 16,
-    color: Colors.light.text,
-    fontWeight: '500',
-  },
-  triggersContainer: {
-    gap: 12,
-    marginBottom: 32,
-  },
-  triggerCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  triggerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  triggerEmotion: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.primary,
-  },
-  triggerIntensity: {
-    fontSize: 13,
-    color: Colors.light.textSecondary,
-    fontWeight: '600',
-  },
-  triggerSituation: {
     fontSize: 15,
     color: Colors.light.text,
-    lineHeight: 22,
-    marginBottom: 8,
+    fontWeight: '500' as const,
   },
-  triggerTime: {
-    fontSize: 12,
+  analyticsCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  analyticsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  analyticsTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    marginBottom: 1,
+  },
+  analyticsText: {
+    fontSize: 13,
     color: Colors.light.textSecondary,
   },
-  journalEmoji: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.primary,
+  entriesContainer: {
+    gap: 10,
+    marginBottom: 28,
+  },
+  entryCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 14,
+    padding: 16,
+  },
+  entryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  entryEmoji: {
+    fontSize: 18,
+  },
+  entryEmotion: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    flex: 1,
+  },
+  entryTime: {
+    fontSize: 12,
+    color: Colors.light.textTertiary,
+  },
+  entryText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 20,
   },
   bottomSpacer: {
-    height: 40,
+    height: 30,
   },
   modalSafeArea: {
     flex: 1,
@@ -1634,11 +1592,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.light.border,
-    backgroundColor: Colors.light.card,
   },
   modalCloseBtn: {
     width: 40,
@@ -1647,83 +1604,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.text,
+    letterSpacing: -0.2,
   },
   modalContent: {
     flex: 1,
   },
   modalContentContainer: {
     padding: 24,
-    paddingTop: 40,
+    paddingTop: 36,
   },
   timeDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
-    gap: 24,
+    gap: 28,
   },
   adjustButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.light.card,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   timeTextContainer: {
     alignItems: 'center',
   },
   timeText: {
-    fontSize: 56,
-    fontWeight: '700' as const,
-    color: Colors.light.primary,
+    fontSize: 52,
+    fontWeight: '200' as const,
+    color: Colors.light.text,
     letterSpacing: -2,
   },
   timeLabelText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.light.textSecondary,
-    marginTop: -4,
+    marginTop: -2,
   },
   presetsContainer: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  presetsLabel: {
-    fontSize: 14,
+  fieldLabel: {
+    fontSize: 13,
     fontWeight: '600' as const,
     color: Colors.light.textSecondary,
-    marginBottom: 12,
-    textAlign: 'center',
+    marginBottom: 10,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   presetsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
   },
   presetButton: {
     paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: Colors.light.card,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.light.subtle,
   },
   presetButtonActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.text,
   },
   presetText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
     color: Colors.light.text,
   },
@@ -1737,20 +1686,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.light.card,
+    backgroundColor: Colors.light.subtle,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   soundSelectorLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   soundSelectorText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500' as const,
     color: Colors.light.text,
   },
@@ -1758,31 +1705,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     marginTop: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   previewButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
-    color: Colors.light.primary,
+    color: Colors.light.secondary,
   },
   startButton: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: 16,
-    paddingVertical: 18,
+    backgroundColor: Colors.light.text,
+    borderRadius: 14,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
   },
   startButtonText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: '#FFF',
   },
   meditatingContent: {
@@ -1792,14 +1734,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   meditatingTitle: {
-    fontSize: 32,
-    fontWeight: '700' as const,
+    fontSize: 28,
+    fontWeight: '300' as const,
     color: Colors.light.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   meditatingSubtitle: {
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: 48,
@@ -1807,27 +1750,22 @@ const styles = StyleSheet.create({
   timerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 60,
+    marginBottom: 56,
   },
   timerGlow: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: '#E8DFF5',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: Colors.light.subtle,
   },
   timerCircle: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     backgroundColor: Colors.light.card,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 8,
     overflow: 'hidden',
   },
   progressBackground: {
@@ -1836,59 +1774,52 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    borderRadius: 120,
+    borderRadius: 110,
     overflow: 'hidden',
   },
-  progressFill: {
+  progressFillCircle: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#F5F0FA',
+    backgroundColor: Colors.light.subtle,
   },
   timerInner: {
     alignItems: 'center',
     zIndex: 1,
   },
   timerDisplayText: {
-    fontSize: 48,
-    fontWeight: '700' as const,
-    color: Colors.light.primary,
+    fontSize: 44,
+    fontWeight: '200' as const,
+    color: Colors.light.text,
     letterSpacing: -1,
   },
   timerLabelText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.light.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
   },
   controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 32,
+    gap: 28,
   },
   controlButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.light.card,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   playPauseButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.light.primary,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.light.text,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
   },
   playButton: {
     backgroundColor: Colors.light.secondary,
@@ -1900,115 +1831,103 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   completeIconContainer: {
-    marginBottom: 32,
-  },
-  completeIconGlow: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#D5EBE0',
-    top: -20,
-    left: -20,
+    marginBottom: 28,
   },
   completeIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.light.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   completeTitle: {
-    fontSize: 32,
-    fontWeight: '700' as const,
+    fontSize: 28,
+    fontWeight: '300' as const,
     color: Colors.light.text,
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   completeSubtitle: {
-    fontSize: 17,
+    fontSize: 15,
     color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
   },
   completeCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 40,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 36,
     width: '100%',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   completeCardTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   completeCardText: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.light.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   completeButtons: {
     width: '100%',
+    flexDirection: 'row',
     gap: 12,
   },
   anotherButton: {
-    backgroundColor: '#F5F0FA',
-    borderRadius: 16,
-    paddingVertical: 16,
+    flex: 1,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 14,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   anotherButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600' as const,
-    color: Colors.light.primary,
+    color: Colors.light.text,
   },
   doneButton: {
-    backgroundColor: Colors.light.secondary,
-    borderRadius: 16,
-    paddingVertical: 18,
+    flex: 1,
+    backgroundColor: Colors.light.text,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: Colors.light.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
   },
   doneButtonText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 15,
+    fontWeight: '600' as const,
     color: '#FFF',
   },
   soundModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   soundModalContent: {
     backgroundColor: Colors.light.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingBottom: 40,
-    maxHeight: '60%',
+    maxHeight: '55%',
   },
   soundModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.light.border,
   },
   soundModalTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.text,
   },
   soundModalCloseButton: {
@@ -2016,9 +1935,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   soundModalCloseText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600' as const,
-    color: Colors.light.primary,
+    color: Colors.light.secondary,
   },
   soundList: {
     paddingHorizontal: 16,
@@ -2029,12 +1948,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginVertical: 4,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginVertical: 2,
   },
   soundOptionActive: {
-    backgroundColor: '#F5F0FA',
+    backgroundColor: Colors.light.subtle,
   },
   soundOptionLeft: {
     flexDirection: 'row',
@@ -2042,92 +1961,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   soundOptionText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500' as const,
     color: Colors.light.text,
   },
   soundOptionTextActive: {
-    color: Colors.light.primary,
+    color: Colors.light.secondary,
     fontWeight: '600' as const,
-  },
-  quoteCard: {
-    backgroundColor: '#FFF9F5',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#FFE8DC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  quoteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quoteIconContainer: {
-  },
-  widgetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFF0ED',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  widgetButtonText: {
-    fontSize: 13,
-    fontWeight: '600' as const,
-    color: Colors.light.primary,
-  },
-  quoteText: {
-    fontSize: 17,
-    lineHeight: 26,
-    color: Colors.light.text,
-    fontWeight: '500',
-    fontStyle: 'italic' as const,
-  },
-  analyticsCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  analyticsIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF0ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  analyticsContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  analyticsTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 2,
-  },
-  analyticsText: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
   },
   journalModalSafeArea: {
     flex: 1,
@@ -2141,9 +1981,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: Colors.light.card,
-    borderBottomWidth: 1,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
     borderBottomColor: Colors.light.border,
   },
   journalCloseBtn: {
@@ -2153,9 +1992,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   journalHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
+    fontSize: 16,
+    fontWeight: '600' as const,
     color: Colors.light.text,
+    letterSpacing: -0.2,
   },
   journalSaveBtn: {
     width: 40,
@@ -2164,77 +2004,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   journalSaveBtnDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   journalContent: {
     flex: 1,
     paddingHorizontal: 20,
   },
   emotionSection: {
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  emotionLabel: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.light.text,
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 20,
   },
   emotionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   emotionChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: Colors.light.card,
-    borderWidth: 1.5,
-    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.subtle,
     gap: 6,
   },
   emotionChipSelected: {
-    backgroundColor: '#F5F0FA',
-    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.text,
   },
   emotionEmoji: {
-    fontSize: 18,
+    fontSize: 16,
   },
   emotionChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500' as const,
     color: Colors.light.textSecondary,
   },
   emotionChipTextSelected: {
-    color: Colors.light.primary,
-    fontWeight: '600' as const,
+    color: '#FFF',
   },
   inputModeToggle: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 20,
   },
   modeBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
   },
   modeBtnActive: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.text,
   },
   modeBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
     color: Colors.light.textSecondary,
   },
@@ -2243,112 +2071,91 @@ const styles = StyleSheet.create({
   },
   voiceSection: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 28,
   },
   voiceHint: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.textSecondary,
-    marginBottom: 32,
+    marginBottom: 28,
   },
   micButtonContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   micButton: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.light.primary,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.light.text,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
   },
   micButtonRecording: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#FF3B30',
   },
   recordingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   recordingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#EF4444',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
   },
   recordingText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
-    color: '#EF4444',
+    color: '#FF3B30',
   },
   textSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   journalTextInput: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 14,
     padding: 16,
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.light.text,
-    minHeight: 160,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    lineHeight: 24,
+    minHeight: 140,
+    lineHeight: 22,
   },
   previewSection: {
-    marginBottom: 24,
-  },
-  previewLabel: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.light.textSecondary,
-    marginBottom: 12,
+    marginBottom: 20,
   },
   previewCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   previewEmotion: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600' as const,
-    color: Colors.light.primary,
-    marginBottom: 8,
+    color: Colors.light.text,
+    marginBottom: 6,
   },
   previewText: {
-    fontSize: 15,
-    color: Colors.light.text,
-    lineHeight: 22,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 21,
   },
   journalFooter: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: Colors.light.card,
-    borderTopWidth: 1,
+    paddingVertical: 14,
+    borderTopWidth: 0.5,
     borderTopColor: Colors.light.border,
   },
   saveEntryBtn: {
-    backgroundColor: Colors.light.secondary,
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: Colors.light.text,
+    borderRadius: 14,
+    paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.light.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
   },
   saveEntryBtnText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
+    fontSize: 15,
+    fontWeight: '600' as const,
     color: '#FFF',
   },
   widgetModalSafeArea: {
@@ -2358,53 +2165,21 @@ const styles = StyleSheet.create({
   widgetModalContainer: {
     flex: 1,
   },
-  widgetModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
-    backgroundColor: Colors.light.card,
-  },
-  widgetCloseBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  widgetModalTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.light.text,
-  },
   widgetModalContent: {
     flex: 1,
   },
   widgetModalContentContainer: {
-    padding: 24,
-  },
-  widgetSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.light.textSecondary,
-    marginBottom: 16,
+    padding: 20,
   },
   widgetPreview: {
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 4,
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
+    marginBottom: 28,
   },
   widgetPreviewInner: {
-    borderRadius: 20,
-    padding: 24,
-    minHeight: 200,
+    borderRadius: 16,
+    padding: 20,
+    minHeight: 180,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -2413,44 +2188,44 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 6,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    width: 5,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
   widgetPreviewContent: {
     paddingLeft: 12,
-    gap: 16,
+    gap: 14,
   },
   widgetQuoteText: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    lineHeight: 28,
+    fontSize: 16,
+    fontWeight: '500' as const,
+    lineHeight: 24,
     fontStyle: 'italic' as const,
   },
   widgetDateText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500' as const,
   },
   widgetStylesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 32,
+    gap: 10,
+    marginBottom: 28,
   },
   widgetStyleOption: {
     width: '30%',
     aspectRatio: 1,
-    borderRadius: 16,
-    padding: 4,
+    borderRadius: 14,
+    padding: 3,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   widgetStyleOptionSelected: {
-    borderColor: Colors.light.primary,
+    borderColor: Colors.light.text,
   },
   widgetStyleInner: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 11,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -2459,25 +2234,25 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+    width: 3,
+    borderTopLeftRadius: 11,
+    borderBottomLeftRadius: 11,
   },
   widgetStyleName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500' as const,
     color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   widgetStyleNameSelected: {
-    color: Colors.light.primary,
+    color: Colors.light.text,
     fontWeight: '600' as const,
   },
   widgetActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 20,
   },
   widgetActionBtn: {
     flex: 1,
@@ -2485,69 +2260,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: Colors.light.card,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: Colors.light.subtle,
   },
   widgetActionText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: Colors.light.primary,
-  },
-  widgetShareBtn: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  widgetShareText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: '#FFF',
-  },
-  widgetInfoCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  widgetInfoTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600' as const,
     color: Colors.light.text,
-    marginBottom: 8,
   },
-  widgetInfoText: {
+  widgetShareBtn: {
+    backgroundColor: Colors.light.text,
+  },
+  widgetShareText: {
     fontSize: 14,
-    color: Colors.light.textSecondary,
-    lineHeight: 22,
+    fontWeight: '600' as const,
+    color: '#FFF',
   },
   copiedToast: {
     position: 'absolute',
     bottom: 100,
-    left: 24,
-    right: 24,
-    backgroundColor: Colors.light.secondary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: Colors.light.text,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
   },
   copiedToastText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600' as const,
     color: '#FFF',
-  },
-  widgetShareBtnDisabled: {
-    opacity: 0.7,
   },
 });

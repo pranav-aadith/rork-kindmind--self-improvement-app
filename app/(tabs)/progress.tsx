@@ -981,10 +981,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700' as const,
     color: Colors.light.text,
-    marginBottom: 8,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
@@ -994,10 +995,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.text,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 10,
     marginTop: 4,
   },
   screenshotButtonText: {
@@ -1013,16 +1014,9 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 14,
+    padding: 18,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   statIcon: {
     width: 56,
@@ -1048,10 +1042,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: Colors.light.text,
     marginBottom: 6,
+    letterSpacing: -0.3,
   },
   sectionSubtitle: {
     fontSize: 14,
@@ -1068,13 +1063,11 @@ const styles = StyleSheet.create({
   },
   emotionCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    gap: 14,
   },
   emotionRank: {
     width: 40,
@@ -1107,16 +1100,9 @@ const styles = StyleSheet.create({
   },
   calendarContainer: {
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 14,
+    padding: 18,
     marginBottom: 32,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -1163,7 +1149,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   todayCircle: {
-    backgroundColor: Colors.light.primary + '20',
+    backgroundColor: Colors.light.secondary + '20',
   },
   dayText: {
     fontSize: 15,
@@ -1172,7 +1158,7 @@ const styles = StyleSheet.create({
   },
   todayText: {
     fontWeight: '700',
-    color: Colors.light.primary,
+    color: Colors.light.secondary,
   },
   checkInDot: {
     width: 6,
@@ -1186,7 +1172,7 @@ const styles = StyleSheet.create({
     gap: 24,
     marginTop: 16,
     paddingTop: 16,
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: Colors.light.border,
   },
   legendItem: {
@@ -1243,10 +1229,8 @@ const styles = StyleSheet.create({
   },
   journalCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   journalHeader: {
     flexDirection: 'row',
@@ -1291,12 +1275,10 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     backgroundColor: Colors.light.card,
-    borderRadius: 20,
-    padding: 40,
+    borderRadius: 14,
+    padding: 36,
     alignItems: 'center',
     marginBottom: 32,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   emptyText: {
     fontSize: 18,
@@ -1376,12 +1358,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#1E3A5F',
   },
   weeklyInsightCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
+    backgroundColor: Colors.light.card,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
   },
   weeklyInsightHeader: {
     flexDirection: 'row',
@@ -1392,19 +1372,19 @@ const styles = StyleSheet.create({
   weeklyInsightIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
   },
   weeklyInsightTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#92400E',
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.text,
   },
   weeklyInsightText: {
     fontSize: 14,
-    color: '#78350F',
+    color: Colors.light.textSecondary,
     lineHeight: 21,
   },
   analyticsGrid: {
@@ -1417,10 +1397,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   analyticsHeader: {
     flexDirection: 'row',
@@ -1471,11 +1449,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 32,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   weeklyStatItem: {
     alignItems: 'center',
@@ -1504,16 +1480,13 @@ const styles = StyleSheet.create({
   },
   achievementCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 14,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   achievementUnlocked: {
-    borderColor: Colors.light.secondary + '40',
     backgroundColor: Colors.light.secondary + '08',
   },
   achievementIconContainer: {

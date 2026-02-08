@@ -1,4 +1,4 @@
-import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight } from 'lucide-react-native';
+import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight, FileText } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -20,6 +20,7 @@ export default function ProfileScreen() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(data.username || '');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
 
   const handleSaveUsername = () => {
@@ -129,6 +130,20 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <TouchableOpacity
             style={styles.menuItem}
+            onPress={() => setShowTermsModal(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIcon, { backgroundColor: '#F0E8F5' }]}>
+                <FileText size={20} color={Colors.light.primary} />
+              </View>
+              <Text style={styles.menuItemText}>Terms of Service</Text>
+            </View>
+            <ChevronRight size={20} color={Colors.light.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => setShowPrivacyModal(true)}
             activeOpacity={0.7}
           >
@@ -136,7 +151,7 @@ export default function ProfileScreen() {
               <View style={[styles.menuIcon, { backgroundColor: '#E3F2EF' }]}>
                 <Shield size={20} color={Colors.light.secondary} />
               </View>
-              <Text style={styles.menuItemText}>Privacy & Data Protection</Text>
+              <Text style={styles.menuItemText}>Privacy Policy</Text>
             </View>
             <ChevronRight size={20} color={Colors.light.textSecondary} />
           </TouchableOpacity>
@@ -169,6 +184,131 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <Modal
+        visible={showTermsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTermsModal(false)}
+      >
+        <View style={styles.fullModalOverlay}>
+          <SafeAreaView style={styles.fullModalSafeArea}>
+            <View style={styles.fullModalHeader}>
+              <Text style={styles.fullModalTitle}>Terms of Service</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowTermsModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.fullModalScroll} contentContainerStyle={styles.fullModalContent}>
+              <Text style={styles.privacyText}>
+                Last updated: February 2026
+              </Text>
+              <Text style={styles.privacyIntro}>
+                Welcome to KindMind. By using our app, you agree to the following terms. Please read them carefully.
+              </Text>
+
+              <Text style={styles.privacyHeading}>1. Acceptance of Terms</Text>
+              <Text style={styles.privacyText}>
+                By creating an account, completing onboarding, or using any feature of KindMind, you agree to be bound by these Terms of Service. If you do not agree, please do not use the app.
+              </Text>
+
+              <Text style={styles.privacyHeading}>2. Account Registration</Text>
+              <Text style={styles.privacyText}>
+                You must create an account using a valid email address and password. You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account.
+              </Text>
+
+              <Text style={styles.privacyHeading}>3. Onboarding & Personalization</Text>
+              <Text style={styles.privacyText}>
+                During onboarding, you may provide personal preferences including your reaction speed, common triggers, relationship impact, awareness level, and conflict frequency. This information is used solely to personalize your in-app experience and tailor features like Kora (AI coach) responses.
+              </Text>
+
+              <Text style={styles.privacyHeading}>4. Journaling Feature</Text>
+              <Text style={styles.privacyText}>
+                The Journal allows you to record gratitude entries, reflections, and emotions. AI-generated writing prompts are available to inspire your entries. All journal content is stored locally on your device and is never shared with third parties.
+              </Text>
+
+              <Text style={styles.privacyHeading}>5. Kora AI Coach</Text>
+              <Text style={styles.privacyText}>
+                Kora is an AI-powered kindness coach that provides supportive, non-judgmental responses based on your messages and onboarding profile. Important limitations:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Kora is not a licensed therapist, counselor, or medical professional</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Kora does not diagnose mental health conditions</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Responses are informational and supportive in nature only</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} If you are in crisis, please contact a mental health professional or emergency services</Text>
+
+              <Text style={styles.privacyHeading}>6. Voice Input & Transcription</Text>
+              <Text style={styles.privacyText}>
+                You may use voice input to interact with Kora or the Journal. Audio recordings are temporarily processed for transcription and are not stored permanently. Microphone access requires your explicit permission.
+              </Text>
+
+              <Text style={styles.privacyHeading}>7. Daily Check-Ins</Text>
+              <Text style={styles.privacyText}>
+                Daily check-ins track behavioral patterns such as reacting calmly, avoiding snapping, being kinder, positive self-talk, and feeling relaxed. This data is stored locally and used to calculate your streaks and progress analytics.
+              </Text>
+
+              <Text style={styles.privacyHeading}>8. Trigger Logging</Text>
+              <Text style={styles.privacyText}>
+                The Trigger feature allows you to log emotional triggers including the situation, your reaction, the emotion felt, and its intensity. This information is used to help you identify patterns and is stored locally on your device.
+              </Text>
+
+              <Text style={styles.privacyHeading}>9. Pause & Breathing Exercises</Text>
+              <Text style={styles.privacyText}>
+                The Pause feature provides guided breathing exercises with optional haptic feedback. This feature is designed for relaxation and mindfulness and is not a substitute for professional therapeutic techniques.
+              </Text>
+
+              <Text style={styles.privacyHeading}>10. Meditation Timer</Text>
+              <Text style={styles.privacyText}>
+                The Meditation feature provides a customizable timer with preset durations and optional completion sounds. Session data is not tracked or stored beyond the current session.
+              </Text>
+
+              <Text style={styles.privacyHeading}>11. Progress & Analytics</Text>
+              <Text style={styles.privacyText}>
+                KindMind provides progress tracking including streak counts, emotion trends, check-in history, and success rates. All analytics are generated from your locally stored data and are visible only to you.
+              </Text>
+
+              <Text style={styles.privacyHeading}>12. User-Generated Content</Text>
+              <Text style={styles.privacyText}>
+                All content you create (journal entries, trigger logs, check-ins) belongs to you. We do not claim ownership of your personal entries. You may delete your data at any time.
+              </Text>
+
+              <Text style={styles.privacyHeading}>13. Prohibited Use</Text>
+              <Text style={styles.privacyText}>
+                You agree not to:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Use KindMind for any unlawful purpose</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Attempt to reverse-engineer, hack, or disrupt the app</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Misuse the Kora AI feature to generate harmful or abusive content</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Share your account credentials with others</Text>
+
+              <Text style={styles.privacyHeading}>14. Disclaimer of Warranties</Text>
+              <Text style={styles.privacyText}>
+                KindMind is provided &quot;as is&quot; without warranties of any kind. We do not guarantee that the app will be error-free, uninterrupted, or that AI-generated content will always be accurate or appropriate.
+              </Text>
+
+              <Text style={styles.privacyHeading}>15. Limitation of Liability</Text>
+              <Text style={styles.privacyText}>
+                KindMind and its creators shall not be liable for any direct, indirect, incidental, or consequential damages arising from your use of the app, including but not limited to reliance on AI-generated advice.
+              </Text>
+
+              <Text style={styles.privacyHeading}>16. Changes to Terms</Text>
+              <Text style={styles.privacyText}>
+                We reserve the right to modify these terms at any time. Continued use of KindMind after changes are posted constitutes your acceptance of the updated terms.
+              </Text>
+
+              <Text style={styles.privacyHeading}>17. Contact</Text>
+              <Text style={styles.privacyText}>
+                If you have questions about these Terms of Service, please reach out through the app or our support channels.
+              </Text>
+
+              <View style={styles.privacyBottomSpacer} />
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showPrivacyModal}
         transparent
         animationType="slide"
@@ -177,7 +317,7 @@ export default function ProfileScreen() {
         <View style={styles.fullModalOverlay}>
           <SafeAreaView style={styles.fullModalSafeArea}>
             <View style={styles.fullModalHeader}>
-              <Text style={styles.fullModalTitle}>Privacy & Data Protection</Text>
+              <Text style={styles.fullModalTitle}>Privacy Policy</Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowPrivacyModal(false)}
@@ -187,52 +327,123 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.fullModalScroll} contentContainerStyle={styles.fullModalContent}>
+              <Text style={styles.privacyText}>
+                Last updated: February 2026
+              </Text>
               <Text style={styles.privacyIntro}>
-                Your emotional well-being is personal. We are committed to protecting your privacy and being transparent about how your data is handled.
+                Your emotional well-being is deeply personal. This Privacy Policy explains what data KindMind collects, how it is used, and your rights regarding that data.
               </Text>
 
-              <Text style={styles.privacyHeading}>What We Collect</Text>
+              <Text style={styles.privacyHeading}>1. Information We Collect</Text>
               <Text style={styles.privacyText}>
-                We only collect what&apos;s necessary to support your emotional awareness journey:
-              </Text>
-              <Text style={styles.privacyBullet}>• Check-in responses (yes/no answers, mood selections)</Text>
-              <Text style={styles.privacyBullet}>• Optional notes or reflections you choose to add</Text>
-              <Text style={styles.privacyBullet}>• App usage data (feature usage, crash reports) to improve performance</Text>
-
-              <Text style={styles.privacyHeading}>What We Do NOT Collect</Text>
-              <Text style={styles.privacyBullet}>• No audio or video recordings</Text>
-              <Text style={styles.privacyBullet}>• No contacts, photos, or files</Text>
-              <Text style={styles.privacyBullet}>• No precise location data</Text>
-              <Text style={styles.privacyBullet}>• No social media data</Text>
-
-              <Text style={styles.privacyHeading}>How Your Data Is Used</Text>
-              <Text style={styles.privacyText}>Your data is used to:</Text>
-              <Text style={styles.privacyBullet}>• Show personal insights, trends, and summaries</Text>
-              <Text style={styles.privacyBullet}>• Personalize your experience</Text>
-              <Text style={styles.privacyBullet}>• Improve app reliability and features</Text>
-              <Text style={styles.privacyText}>
-                Your data is never used for advertising or sold to third parties.
+                We collect only what is necessary to provide and personalize your KindMind experience:
               </Text>
 
-              <Text style={styles.privacyHeading}>Data Storage & Security</Text>
-              <Text style={styles.privacyBullet}>• Data is stored securely using industry-standard encryption</Text>
-              <Text style={styles.privacyBullet}>• Access is limited to essential systems only</Text>
+              <Text style={styles.privacySectionLabel}>Account Information</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Email address and password (managed securely via Supabase authentication)</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Display name (optional, editable in your profile)</Text>
 
-              <Text style={styles.privacyHeading}>Your Control</Text>
-              <Text style={styles.privacyText}>You are always in control of your data:</Text>
-              <Text style={styles.privacyBullet}>• Edit or delete entries at any time</Text>
-              <Text style={styles.privacyBullet}>• Export your data (if enabled)</Text>
-              <Text style={styles.privacyBullet}>• Delete your account and all associated data</Text>
+              <Text style={styles.privacySectionLabel}>Onboarding Data</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Reaction speed, common triggers, relationship impact, awareness level, and conflict frequency</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Personal goals you select (e.g., &quot;I want to be calmer&quot;)</Text>
 
-              <Text style={styles.privacyHeading}>AI & Insights</Text>
-              <Text style={styles.privacyText}>If the app provides AI-generated insights:</Text>
-              <Text style={styles.privacyBullet}>• Insights are informational, not medical advice</Text>
-              <Text style={styles.privacyBullet}>• AI does not diagnose conditions</Text>
-              <Text style={styles.privacyBullet}>• Data used for insights is handled securely</Text>
+              <Text style={styles.privacySectionLabel}>Journal Entries</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Gratitude entries, reflections, and selected emotions/emojis</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} AI-generated writing prompts (generated on-device, not stored on servers)</Text>
 
-              <Text style={styles.privacyHeading}>Changes to This Privacy Screen</Text>
+              <Text style={styles.privacySectionLabel}>Kora AI Conversations</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Text and voice messages you send to Kora</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Conversations are session-based and not permanently stored on our servers</Text>
+
+              <Text style={styles.privacySectionLabel}>Daily Check-Ins</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Behavioral responses: reacted calmly, avoided snapping, was kinder, positive self-talk, felt relaxed</Text>
+
+              <Text style={styles.privacySectionLabel}>Trigger Logs</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Situation descriptions, reactions, emotions, and intensity levels</Text>
+
+              <Text style={styles.privacySectionLabel}>Usage Analytics</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Streak data, check-in frequency, and progress metrics (calculated locally)</Text>
+
+              <Text style={styles.privacyHeading}>2. Information We Do NOT Collect</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} We do not permanently store audio recordings (voice input is transcribed and discarded)</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} We do not access your contacts, photos, files, or camera</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} We do not collect precise location data</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} We do not track you across other apps or websites</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} We do not collect social media information</Text>
+
+              <Text style={styles.privacyHeading}>3. How Your Data Is Used</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Personalize Kora AI responses using your onboarding profile</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Display your progress analytics, streaks, and emotion trends</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Generate AI journal prompts tailored to emotional wellness</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Calculate daily check-in success rates and streaks</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Provide breathing exercise and meditation features</Text>
               <Text style={styles.privacyText}>
-                We may update this screen as the app evolves. Significant changes will be clearly communicated.
+                Your data is never sold, rented, or shared with third parties for advertising purposes.
+              </Text>
+
+              <Text style={styles.privacyHeading}>4. Data Storage & Security</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Personal data (journal entries, check-ins, triggers, goals) is stored locally on your device using encrypted storage</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Authentication is handled securely through Supabase with industry-standard encryption</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Voice recordings are transmitted securely for transcription and immediately discarded after processing</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Kora AI conversations are processed in real-time and are not stored on external servers after your session ends</Text>
+
+              <Text style={styles.privacyHeading}>5. Voice & Microphone Usage</Text>
+              <Text style={styles.privacyText}>
+                KindMind requests microphone access only when you choose to use voice input with Kora or the Journal. Audio is:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Recorded temporarily for speech-to-text transcription</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Sent to a secure transcription service for processing</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Not stored permanently on any server</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} You can revoke microphone access at any time in your device settings</Text>
+
+              <Text style={styles.privacyHeading}>6. AI-Generated Content</Text>
+              <Text style={styles.privacyText}>
+                KindMind uses AI for Kora coaching and journal prompt generation:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} AI responses are generated based on your messages and onboarding profile</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} AI does not have access to data beyond what you provide in the current session</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} AI-generated content is for informational and emotional support only, not clinical advice</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Journal prompts are generated from a diverse set of wellness-focused categories</Text>
+
+              <Text style={styles.privacyHeading}>7. Haptics & Device Features</Text>
+              <Text style={styles.privacyText}>
+                The Pause (breathing) feature and Meditation timer may use haptic feedback on supported devices. No data is collected from these interactions.
+              </Text>
+
+              <Text style={styles.privacyHeading}>8. Your Rights & Control</Text>
+              <Text style={styles.privacyText}>
+                You have full control over your data:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Edit or delete journal entries, trigger logs, and check-ins at any time</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Update your username, goals, and profile information</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Log out and clear your session at any time</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Request deletion of your account and all associated data</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Revoke microphone permissions through your device settings</Text>
+
+              <Text style={styles.privacyHeading}>9. Children&apos;s Privacy</Text>
+              <Text style={styles.privacyText}>
+                KindMind is not intended for children under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided us with data, please contact us to have it removed.
+              </Text>
+
+              <Text style={styles.privacyHeading}>10. Third-Party Services</Text>
+              <Text style={styles.privacyText}>
+                KindMind uses the following third-party services:
+              </Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Supabase for secure authentication</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} Speech-to-text transcription service for voice input</Text>
+              <Text style={styles.privacyBullet}>{'\u2022'} AI model provider for Kora responses and journal prompts</Text>
+              <Text style={styles.privacyText}>
+                These services are bound by their own privacy policies and are selected for their commitment to data security.
+              </Text>
+
+              <Text style={styles.privacyHeading}>11. Changes to This Policy</Text>
+              <Text style={styles.privacyText}>
+                We may update this Privacy Policy as KindMind evolves. Significant changes will be communicated through the app. Continued use after updates constitutes acceptance of the revised policy.
+              </Text>
+
+              <Text style={styles.privacyHeading}>12. Contact Us</Text>
+              <Text style={styles.privacyText}>
+                If you have any questions, concerns, or requests regarding your privacy, please reach out through the app or our support channels.
               </Text>
 
               <View style={styles.privacyBottomSpacer} />
@@ -648,6 +859,13 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     marginTop: 24,
     marginBottom: 12,
+  },
+  privacySectionLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginTop: 16,
+    marginBottom: 8,
   },
   privacyText: {
     fontSize: 15,

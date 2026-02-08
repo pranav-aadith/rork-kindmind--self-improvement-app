@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
@@ -111,7 +112,10 @@ export default function WelcomeScreen() {
               </TouchableOpacity>
             </Animated.View>
             <Text style={styles.termsText}>
-              By continuing you agree to our Terms & Privacy Policy
+              By continuing you agree to our{' '}
+              <Text style={styles.link} onPress={() => Linking.openURL('https://example.com/terms')}>Terms</Text>
+              {' & '}
+              <Text style={styles.link} onPress={() => Linking.openURL('https://example.com/privacy')}>Privacy Policy</Text>
             </Text>
           </Animated.View>
         </View>
@@ -226,5 +230,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#B0ABAB',
     textAlign: 'center',
+  },
+  link: {
+    color: '#8A8585',
+    textDecorationLine: 'underline' as const,
   },
 });

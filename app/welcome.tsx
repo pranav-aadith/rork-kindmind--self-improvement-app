@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Target, Brain, Sparkles, ArrowRight } from 'lucide-react-native';
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
+import LegalModal from '@/components/LegalModal';
 
 const FEATURES = [
   { icon: Target, label: 'Track Triggers', desc: 'Understand your reactions', color: '#B5A8D6' },
@@ -20,6 +20,7 @@ const FEATURES = [
 ];
 
 export default function WelcomeScreen() {
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const featureAnim0 = useRef(new Animated.Value(0)).current;
@@ -113,13 +114,18 @@ export default function WelcomeScreen() {
             </Animated.View>
             <Text style={styles.termsText}>
               By continuing you agree to our{' '}
-              <Text style={styles.link} onPress={() => Linking.openURL('https://example.com/terms')}>Terms</Text>
+              <Text style={styles.link} onPress={() => setLegalModalType('terms')}>Terms</Text>
               {' & '}
-              <Text style={styles.link} onPress={() => Linking.openURL('https://example.com/privacy')}>Privacy Policy</Text>
+              <Text style={styles.link} onPress={() => setLegalModalType('privacy')}>Privacy Policy</Text>
             </Text>
           </Animated.View>
         </View>
       </SafeAreaView>
+      <LegalModal
+        visible={legalModalType !== null}
+        type={legalModalType || 'terms'}
+        onClose={() => setLegalModalType(null)}
+      />
     </View>
   );
 }

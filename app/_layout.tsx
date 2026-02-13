@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KindMindProvider, useKindMind } from '@/providers/KindMindProvider';
-
+import { ThemeProvider } from '@/providers/ThemeProvider';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 
 SplashScreen.preventAutoHideAsync();
@@ -65,13 +65,15 @@ export default function RootLayout() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <KindMindProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-          </KindMindProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <KindMindProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+            </KindMindProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );

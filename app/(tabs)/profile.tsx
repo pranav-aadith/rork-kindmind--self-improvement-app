@@ -1,4 +1,4 @@
-import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight, FileText } from 'lucide-react-native';
+import { User, Heart, Award, Calendar, Target, Edit3, LogOut, Shield, Info, ChevronRight, FileText, Moon, Sun } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -12,11 +12,12 @@ import {
 } from 'react-native';
 import { useKindMind } from '@/providers/KindMindProvider';
 import { useAuth } from '@/providers/AuthProvider';
-import Colors from '@/constants/colors';
+import { useTheme } from '@/providers/ThemeProvider';
 
 export default function ProfileScreen() {
   const { data, updateUsername } = useKindMind();
   const { signOut, user } = useAuth();
+  const { theme, colors, toggleTheme } = useTheme();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(data.username || '');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -42,142 +43,160 @@ export default function ProfileScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Your KindMind journey</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your KindMind journey</Text>
         </View>
 
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <User size={48} color={Colors.light.primary} />
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.avatarContainer, { backgroundColor: colors.subtle }]}>
+            <User size={48} color={colors.primary} />
           </View>
           
           <View style={styles.usernameContainer}>
-            <Text style={styles.username}>{data.username || user?.user_metadata?.full_name || 'User'}</Text>
+            <Text style={[styles.username, { color: colors.text }]}>{data.username || user?.user_metadata?.full_name || 'User'}</Text>
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { backgroundColor: colors.subtle }]}
               onPress={() => setIsEditingUsername(true)}
               activeOpacity={0.7}
             >
-              <Edit3 size={16} color={Colors.light.primary} />
-              <Text style={styles.editButtonText}>Edit</Text>
+              <Edit3 size={16} color={colors.primary} />
+              <Text style={[styles.editButtonText, { color: colors.textSecondary }]}>Edit</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.joinedContainer}>
-            <Calendar size={16} color={Colors.light.textSecondary} />
-            <Text style={styles.joinedText}>Joined {joinedDate}</Text>
+            <Calendar size={16} color={colors.textSecondary} />
+            <Text style={[styles.joinedText, { color: colors.textSecondary }]}>Joined {joinedDate}</Text>
           </View>
         </View>
 
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#F0E8F5' }]}>
-              <Heart size={24} color={Colors.light.primary} />
+          <View style={[styles.statItem, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIcon, { backgroundColor: theme === 'light' ? '#F0E8F5' : '#3A3448' }]}>
+              <Heart size={24} color={colors.primary} />
             </View>
-            <Text style={styles.statNumber}>{data.triggers.length}</Text>
-            <Text style={styles.statLabel}>Triggers Logged</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>{data.triggers.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Triggers Logged</Text>
           </View>
 
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#E3F2EF' }]}>
-              <Target size={24} color={Colors.light.secondary} />
+          <View style={[styles.statItem, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIcon, { backgroundColor: theme === 'light' ? '#E3F2EF' : '#2C3E3B' }]}>
+              <Target size={24} color={colors.secondary} />
             </View>
-            <Text style={styles.statNumber}>{data.checkIns.length}</Text>
-            <Text style={styles.statLabel}>Check-Ins</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>{data.checkIns.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Check-Ins</Text>
           </View>
 
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#F5EFE8' }]}>
-              <Award size={24} color={Colors.light.accent} />
+          <View style={[styles.statItem, { backgroundColor: colors.card }]}>
+            <View style={[styles.statIcon, { backgroundColor: colors.subtle }]}>
+              <Award size={24} color={colors.accent} />
             </View>
-            <Text style={styles.statNumber}>{data.longestStreak}</Text>
-            <Text style={styles.statLabel}>Longest Streak</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>{data.longestStreak}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Longest Streak</Text>
           </View>
         </View>
 
         {data.goals.filter(g => g.selected).length > 0 && (
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your Goals</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Goals</Text>
             </View>
 
-            <View style={styles.goalsContainer}>
+            <View style={[styles.goalsContainer, { backgroundColor: colors.card }]}>
               {data.goals
                 .filter(g => g.selected)
                 .map(goal => (
                   <View key={goal.id} style={styles.goalItem}>
-                    <View style={styles.goalIcon}>
-                      <Target size={20} color={Colors.light.primary} />
+                    <View style={[styles.goalIcon, { backgroundColor: colors.subtle }]}>
+                      <Target size={20} color={colors.primary} />
                     </View>
-                    <Text style={styles.goalText}>{goal.label}</Text>
+                    <Text style={[styles.goalText, { color: colors.text }]}>{goal.label}</Text>
                   </View>
                 ))}
             </View>
           </>
         )}
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>About KindMind</Text>
-          <Text style={styles.infoText}>
+        <View style={[styles.infoCard, { backgroundColor: colors.subtle }]}>
+          <Text style={[styles.infoTitle, { color: colors.text }]}>About KindMind</Text>
+          <Text style={[styles.infoText, { color: colors.text }]}>
             KindMind is your personal tool for building emotional awareness and kinder communication. 
             Track your triggers, practice mindful responses, and watch your progress grow.
           </Text>
         </View>
 
-        <View style={styles.menuSection}>
+        <View style={[styles.menuSection, { backgroundColor: colors.card }]}>
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIcon, { backgroundColor: theme === 'light' ? '#F5EFE8' : colors.subtle }]}>
+                {theme === 'light' ? (
+                  <Moon size={20} color={colors.accent} />
+                ) : (
+                  <Sun size={20} color={colors.secondary} />
+                )}
+              </View>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</Text>
+            </View>
+            <ChevronRight size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
             onPress={() => setShowTermsModal(true)}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#F0E8F5' }]}>
-                <FileText size={20} color={Colors.light.primary} />
+              <View style={[styles.menuIcon, { backgroundColor: theme === 'light' ? '#F0E8F5' : '#3A3448' }]}>
+                <FileText size={20} color={colors.primary} />
               </View>
-              <Text style={styles.menuItemText}>Terms of Service</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Terms of Service</Text>
             </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
+            <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
             onPress={() => setShowPrivacyModal(true)}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#E3F2EF' }]}>
-                <Shield size={20} color={Colors.light.secondary} />
+              <View style={[styles.menuIcon, { backgroundColor: theme === 'light' ? '#E3F2EF' : '#2C3E3B' }]}>
+                <Shield size={20} color={colors.secondary} />
               </View>
-              <Text style={styles.menuItemText}>Privacy Policy</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Privacy Policy</Text>
             </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
+            <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
             onPress={() => setShowVersionModal(true)}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: '#F5EFE8' }]}>
-                <Info size={20} color={Colors.light.accent} />
+              <View style={[styles.menuIcon, { backgroundColor: colors.subtle }]}>
+                <Info size={20} color={colors.accent} />
               </View>
-              <Text style={styles.menuItemText}>Version</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Version</Text>
             </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
+            <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={[styles.logoutButton, { backgroundColor: colors.card }]}
           onPress={signOut}
           activeOpacity={0.7}
         >
-          <LogOut size={20} color={Colors.light.error} />
-          <Text style={styles.logoutButtonText}>Logout</Text>
+          <LogOut size={20} color={colors.error} />
+          <Text style={[styles.logoutButtonText, { color: colors.error }]}>Logout</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />
@@ -189,7 +208,7 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setShowTermsModal(false)}
       >
-        <View style={styles.fullModalOverlay}>
+        <View style={[styles.fullModalOverlay, { backgroundColor: colors.background }]}>
           <SafeAreaView style={styles.fullModalSafeArea}>
             <View style={styles.fullModalHeader}>
               <Text style={styles.fullModalTitle}>Terms of Service</Text>
@@ -314,7 +333,7 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setShowPrivacyModal(false)}
       >
-        <View style={styles.fullModalOverlay}>
+        <View style={[styles.fullModalOverlay, { backgroundColor: colors.background }]}>
           <SafeAreaView style={styles.fullModalSafeArea}>
             <View style={styles.fullModalHeader}>
               <Text style={styles.fullModalTitle}>Privacy Policy</Text>
@@ -459,17 +478,17 @@ export default function ProfileScreen() {
         onRequestClose={() => setShowVersionModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.versionModalContent}>
-            <View style={styles.versionIconContainer}>
-              <Info size={32} color={Colors.light.primary} />
+          <View style={[styles.versionModalContent, { backgroundColor: colors.card }]}>
+            <View style={[styles.versionIconContainer, { backgroundColor: colors.subtle }]}>
+              <Info size={32} color={colors.primary} />
             </View>
-            <Text style={styles.versionTitle}>KindMind</Text>
-            <Text style={styles.versionNumber}>Version 1</Text>
-            <Text style={styles.versionDescription}>
+            <Text style={[styles.versionTitle, { color: colors.text }]}>KindMind</Text>
+            <Text style={[styles.versionNumber, { color: colors.secondary }]}>Version 1</Text>
+            <Text style={[styles.versionDescription, { color: colors.textSecondary }]}>
               Your personal tool for building emotional awareness and kinder communication.
             </Text>
             <TouchableOpacity
-              style={styles.versionCloseButton}
+              style={[styles.versionCloseButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowVersionModal(false)}
               activeOpacity={0.7}
             >
@@ -486,17 +505,17 @@ export default function ProfileScreen() {
         onRequestClose={handleCancelEdit}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Username</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Username</Text>
             </View>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
               value={tempUsername}
               onChangeText={setTempUsername}
               placeholder="Enter username"
-              placeholderTextColor={Colors.light.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
               autoCorrect={false}
               maxLength={20}
@@ -505,17 +524,18 @@ export default function ProfileScreen() {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.cancelButton, { backgroundColor: colors.border }]}
                 onPress={handleCancelEdit}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.saveButton,
-                  (tempUsername || '').trim().length === 0 && styles.saveButtonDisabled,
+                  { backgroundColor: colors.primary },
+                  (tempUsername || '').trim().length === 0 && { backgroundColor: colors.border },
                 ]}
                 onPress={handleSaveUsername}
                 disabled={(tempUsername || '').trim().length === 0}
@@ -534,7 +554,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   container: {
     flex: 1,
@@ -548,17 +567,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginBottom: 6,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.light.textSecondary,
   },
   profileCard: {
-    backgroundColor: Colors.light.card,
     borderRadius: 16,
     padding: 28,
     alignItems: 'center',
@@ -568,7 +584,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 18,
@@ -581,8 +596,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     letterSpacing: -0.3,
   },
   editButton: {
@@ -592,12 +606,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: Colors.light.subtle,
   },
   editButtonText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: Colors.light.textSecondary,
+    fontWeight: '600' as const,
   },
   joinedContainer: {
     flexDirection: 'row',
@@ -606,7 +618,6 @@ const styles = StyleSheet.create({
   },
   joinedText: {
     fontSize: 14,
-    color: Colors.light.textSecondary,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -615,7 +626,6 @@ const styles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    backgroundColor: Colors.light.card,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -630,27 +640,23 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.light.textSecondary,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '500' as const,
   },
   section: {
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     letterSpacing: -0.3,
   },
   goalsContainer: {
-    backgroundColor: Colors.light.card,
     borderRadius: 14,
     padding: 18,
     marginBottom: 24,
@@ -665,31 +671,26 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
   },
   goalText: {
     flex: 1,
     fontSize: 16,
-    color: Colors.light.text,
-    fontWeight: '500',
+    fontWeight: '500' as const,
   },
   infoCard: {
-    backgroundColor: Colors.light.subtle,
     borderRadius: 14,
     padding: 20,
     marginBottom: 24,
   },
   infoTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginBottom: 12,
   },
   infoText: {
     fontSize: 15,
-    color: Colors.light.text,
     lineHeight: 22,
   },
   bottomSpacer: {
@@ -703,7 +704,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: Colors.light.card,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -714,17 +714,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
   },
   input: {
-    backgroundColor: Colors.light.background,
     borderRadius: 16,
     padding: 16,
     fontSize: 17,
-    color: Colors.light.text,
     borderWidth: 2,
-    borderColor: Colors.light.border,
     marginBottom: 24,
   },
   modalButtons: {
@@ -733,25 +729,19 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: Colors.light.border,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.textSecondary,
+    fontWeight: '700' as const,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: Colors.light.primary,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: Colors.light.border,
   },
   saveButtonText: {
     fontSize: 15,
@@ -763,18 +753,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.light.card,
     borderRadius: 14,
     paddingVertical: 14,
     marginBottom: 24,
   },
   logoutButtonText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.error,
+    fontWeight: '700' as const,
   },
   menuSection: {
-    backgroundColor: Colors.light.card,
     borderRadius: 14,
     marginBottom: 24,
     overflow: 'hidden',
@@ -785,7 +772,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.light.border,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -802,13 +788,11 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.text,
+    fontWeight: '600' as const,
     flex: 1,
   },
   fullModalOverlay: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   fullModalSafeArea: {
     flex: 1,
@@ -820,20 +804,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
-    backgroundColor: Colors.light.card,
   },
   fullModalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     flex: 1,
   },
   closeButton: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: Colors.light.primary,
   },
   closeButtonText: {
     fontSize: 14,
@@ -850,33 +830,28 @@ const styles = StyleSheet.create({
   privacyIntro: {
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.light.text,
     marginBottom: 24,
   },
   privacyHeading: {
     fontSize: 20,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginTop: 24,
     marginBottom: 12,
   },
   privacySectionLabel: {
     fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginTop: 16,
     marginBottom: 8,
   },
   privacyText: {
     fontSize: 15,
     lineHeight: 22,
-    color: Colors.light.text,
     marginBottom: 12,
   },
   privacyBullet: {
     fontSize: 15,
     lineHeight: 22,
-    color: Colors.light.text,
     marginBottom: 8,
     paddingLeft: 8,
   },
@@ -884,7 +859,6 @@ const styles = StyleSheet.create({
     height: 40,
   },
   versionModalContent: {
-    backgroundColor: Colors.light.card,
     borderRadius: 24,
     padding: 32,
     width: '100%',
@@ -895,32 +869,27 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: Colors.light.subtle,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 18,
   },
   versionTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontWeight: '700' as const,
     marginBottom: 8,
   },
   versionNumber: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.secondary,
+    fontWeight: '600' as const,
     marginBottom: 16,
   },
   versionDescription: {
     fontSize: 15,
     lineHeight: 22,
-    color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
   versionCloseButton: {
-    backgroundColor: Colors.light.primary,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 28,

@@ -294,6 +294,45 @@ export default function ProgressScreen() {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [isTakingScreenshot, setIsTakingScreenshot] = React.useState(false);
 
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+
+  const checkInsByDate = React.useMemo(() => {
+    const getCheckInScore = (checkIn: typeof data.checkIns[0]) => {
+      return [
+        checkIn.reactedCalmly,
+        checkIn.avoidedSnapping,
+        checkIn.wasKinder,
+        checkIn.noticedPositiveSelfTalk,
+        checkIn.feltRelaxed,
+      ].filter(Boolean).length;
+    };
+
+    const getCheckInColor = (score: number) => {
+      if (score >= 4) return '#4CAF50';
+      if (score === 3) return '#FF9800';
+      return '#F44336';
+    };
+
+    const map: Record<string, { score: number; color: string }> = {};
+    data.checkIns.forEach(checkIn => {
+      const score = getCheckInScore(checkIn);
+      map[checkIn.date] = {
+        score,
+        color: getCheckInColor(score),
+      };
+    });
+    return map;
+  }, [data]);
+
   const generatePdfHtml = React.useCallback(() => {
     const now = new Date();
     const exportDate = now.toLocaleDateString('en-US', { 
@@ -773,7 +812,7 @@ export default function ProgressScreen() {
         </body>
       </html>
     `;
-  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate, currentMonth, checkInsByDate, achievements, getDaysInMonth]);
+  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate, currentMonth, checkInsByDate, achievements]);
 
   const handleScreenshot = React.useCallback(async () => {
     setIsTakingScreenshot(true);
@@ -816,45 +855,6 @@ export default function ProgressScreen() {
       setIsTakingScreenshot(false);
     }
   }, [generatePdfHtml]);
-
-  const checkInsByDate = React.useMemo(() => {
-    const getCheckInScore = (checkIn: typeof data.checkIns[0]) => {
-      return [
-        checkIn.reactedCalmly,
-        checkIn.avoidedSnapping,
-        checkIn.wasKinder,
-        checkIn.noticedPositiveSelfTalk,
-        checkIn.feltRelaxed,
-      ].filter(Boolean).length;
-    };
-
-    const getCheckInColor = (score: number) => {
-      if (score >= 4) return '#4CAF50';
-      if (score === 3) return '#FF9800';
-      return '#F44336';
-    };
-
-    const map: Record<string, { score: number; color: string }> = {};
-    data.checkIns.forEach(checkIn => {
-      const score = getCheckInScore(checkIn);
-      map[checkIn.date] = {
-        score,
-        color: getCheckInColor(score),
-      };
-    });
-    return map;
-  }, [data]);
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    return { daysInMonth, startingDayOfWeek, year, month };
-  };
 
   const renderCalendar = () => {
     const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);

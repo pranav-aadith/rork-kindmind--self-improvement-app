@@ -1,5 +1,6 @@
-import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, TrendingUp, TrendingDown, Minus, Heart, PenLine, Smile, Sun, Camera } from 'lucide-react-native';
-import React, { useEffect, useRef, useCallback } from 'react';
+import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, Camera, User } from 'lucide-react-native';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
+import React, { useEffect, useRef } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import {
   View,
@@ -188,6 +189,98 @@ export default function ProgressScreen() {
       journalTrend,
       scoreTrend,
       weeklyInsight,
+    };
+  }, [data.journalEntries, data.checkIns]);
+
+  const emotionalTrendsData = React.useMemo(() => {
+    const now = new Date();
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const dayData: { day: string; score: number; emotion: string; emoji: string }[] = [];
+    
+    const emotionScores: Record<string, number> = {
+      'Happy': 90, 'Grateful': 85, 'Loved': 85, 'Hopeful': 80, 'Strong': 75,
+      'Calm': 70, 'Thoughtful': 60, 'Tired': 40, 'Sad': 30, 'Anxious': 25,
+      'Frustrated': 20, 'Hurt': 15,
+    };
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      const dateKey = formatLocalDate(date);
+      const dayName = days[date.getDay()];
+      
+      const dayJournals = data.journalEntries.filter(j => {
+        const jDate = new Date(j.timestamp);
+        return formatLocalDate(jDate) === dateKey;
+      });
+      
+      const dayCheckIn = data.checkIns.find(c => c.date === dateKey);
+      
+      let score = 50;
+      let emotion = '';
+      let emoji = '';
+      
+      if (dayJournals.length > 0) {
+        const avgEmotionScore = dayJournals.reduce((sum, j) => sum + (emotionScores[j.emotion] || 50), 0) / dayJournals.length;
+        score = avgEmotionScore;
+        emotion = dayJournals[dayJournals.length - 1].emotion;
+        emoji = dayJournals[dayJournals.length - 1].emotionEmoji;
+      } else if (dayCheckIn) {
+        const checkInScore = [dayCheckIn.reactedCalmly, dayCheckIn.avoidedSnapping, dayCheckIn.wasKinder, dayCheckIn.noticedPositiveSelfTalk, dayCheckIn.feltRelaxed].filter(Boolean).length;
+        score = 30 + (checkInScore / 5) * 50;
+        emotion = checkInScore >= 4 ? 'Calm' : checkInScore >= 2 ? 'Neutral' : 'Stressed';
+      }
+      
+      dayData.push({ day: dayName, score, emotion, emoji });
+    }
+    
+    const validScores = dayData.filter(d => d.emotion !== '');
+    const avgScore = validScores.length > 0 
+      ? validScores.reduce((sum, d) => sum + d.score, 0) / validScores.length 
+      : 50;
+    
+    const emotionCounts: Record<string, { count: number; emoji: string; score: number }> = {};
+    dayData.forEach(d => {
+      if (d.emotion) {
+        if (!emotionCounts[d.emotion]) {
+          emotionCounts[d.emotion] = { count: 0, emoji: d.emoji, score: d.score };
+        }
+        emotionCounts[d.emotion].count++;
+      }
+    });
+    
+    const dominantEmotion = Object.entries(emotionCounts)
+      .sort(([, a], [, b]) => b.count - a.count)[0];
+    
+    const peakDay = dayData.reduce((max, d) => d.score > max.score ? d : max, dayData[0]);
+    
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(now.getDate() - 13);
+    const lastWeekEnd = new Date(now);
+    lastWeekEnd.setDate(now.getDate() - 7);
+    
+    const lastWeekJournals = data.journalEntries.filter(j => {
+      const jDate = new Date(j.timestamp);
+      return jDate >= lastWeekStart && jDate < lastWeekEnd;
+    });
+    
+    const lastWeekAvg = lastWeekJournals.length > 0
+      ? lastWeekJournals.reduce((sum, j) => sum + (emotionScores[j.emotion] || 50), 0) / lastWeekJournals.length
+      : 50;
+    
+    const trend = avgScore - lastWeekAvg;
+    const trendPercent = lastWeekAvg !== 0 ? Math.round((trend / lastWeekAvg) * 100) : 0;
+    
+    return {
+      dayData,
+      avgScore,
+      dominantEmotion: dominantEmotion ? { 
+        emotion: dominantEmotion[0], 
+        emoji: dominantEmotion[1].emoji,
+        count: dominantEmotion[1].count 
+      } : null,
+      peakDay,
+      trendPercent,
     };
   }, [data.journalEntries, data.checkIns]);
 
@@ -732,85 +825,144 @@ export default function ProgressScreen() {
           <Text style={styles.weeklyInsightText}>{weeklyAnalytics.weeklyInsight}</Text>
         </Animated.View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week&apos;s Analytics</Text>
-          <Text style={styles.sectionSubtitle}>Your emotional wellness snapshot</Text>
-        </View>
-
-        <Animated.View style={[styles.analyticsGrid, { opacity: analyticsAnim, transform: [{ translateY: analyticsAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
-          <View style={styles.analyticsCard}>
-            <View style={styles.analyticsHeader}>
-              <PenLine size={18} color="#6366F1" />
-              <Text style={styles.analyticsLabel}>Journal Entries</Text>
+        <Animated.View style={[styles.emotionalTrendsCard, { opacity: analyticsAnim, transform: [{ translateY: analyticsAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
+          <View style={styles.trendsHeader}>
+            <View>
+              <Text style={styles.trendsOverview}>OVERVIEW</Text>
+              <Text style={styles.trendsTitle}>Emotional Trends</Text>
             </View>
-            <Text style={styles.analyticsValue}>{weeklyAnalytics.thisWeekJournals}</Text>
-            <View style={styles.trendContainer}>
-              {weeklyAnalytics.journalTrend > 0 ? (
-                <TrendingUp size={14} color="#10B981" />
-              ) : weeklyAnalytics.journalTrend < 0 ? (
-                <TrendingDown size={14} color="#EF4444" />
-              ) : (
-                <Minus size={14} color={Colors.light.textSecondary} />
-              )}
-              <Text style={[
-                styles.trendText,
-                weeklyAnalytics.journalTrend > 0 ? styles.trendPositive : 
-                weeklyAnalytics.journalTrend < 0 ? styles.trendNegative : styles.trendNeutral
+            <View style={styles.trendsProfileIcon}>
+              <User size={16} color={Colors.light.textSecondary} />
+            </View>
+          </View>
+          
+          <View style={styles.dominantEmotionRow}>
+            <Text style={styles.dominantEmotionText}>
+              {emotionalTrendsData.dominantEmotion?.emotion || 'Neutral'}
+            </Text>
+            {emotionalTrendsData.trendPercent !== 0 && (
+              <View style={[
+                styles.trendBadge,
+                emotionalTrendsData.trendPercent > 0 ? styles.trendBadgePositive : styles.trendBadgeNegative
               ]}>
-                {weeklyAnalytics.journalTrend === 0 ? 'Same' : 
-                  `${Math.abs(weeklyAnalytics.journalTrend)} ${weeklyAnalytics.journalTrend > 0 ? 'more' : 'fewer'}`}
-              </Text>
-            </View>
+                <Text style={[
+                  styles.trendBadgeText,
+                  emotionalTrendsData.trendPercent > 0 ? styles.trendTextPositive : styles.trendTextNegative
+                ]}>
+                  {emotionalTrendsData.trendPercent > 0 ? '+' : ''}{emotionalTrendsData.trendPercent}%
+                </Text>
+              </View>
+            )}
           </View>
-
-          <View style={styles.analyticsCard}>
-            <View style={styles.analyticsHeader}>
-              <Sun size={18} color="#F59E0B" />
-              <Text style={styles.analyticsLabel}>Positive Mood</Text>
-            </View>
-            <Text style={styles.analyticsValue}>
-              {weeklyAnalytics.thisWeekJournals > 0 ? `${weeklyAnalytics.positiveRatio}%` : '—'}
-            </Text>
-            <Text style={styles.analyticsSubtext}>
-              {weeklyAnalytics.thisWeekJournals > 0 ? 'of entries' : 'No data'}
-            </Text>
+          <Text style={styles.trendsSubtitle}>Average state over the last 7 days</Text>
+          
+          <View style={styles.graphContainer}>
+            <Svg width="100%" height={140} viewBox="0 0 320 140">
+              <Defs>
+                <LinearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <Stop offset="0" stopColor={Colors.light.secondary} stopOpacity="0.6" />
+                  <Stop offset="1" stopColor={Colors.light.secondary} stopOpacity="1" />
+                </LinearGradient>
+              </Defs>
+              
+              {(() => {
+                const points = emotionalTrendsData.dayData.map((d, i) => ({
+                  x: 20 + (i * 46),
+                  y: 110 - (d.score / 100) * 90,
+                }));
+                
+                const getControlPoints = (p0: {x: number, y: number}, p1: {x: number, y: number}, p2: {x: number, y: number}) => {
+                  const smoothing = 0.2;
+                  const dx = p2.x - p0.x;
+                  const dy = p2.y - p0.y;
+                  return {
+                    cp1x: p1.x - dx * smoothing,
+                    cp1y: p1.y - dy * smoothing,
+                    cp2x: p1.x + dx * smoothing,
+                    cp2y: p1.y + dy * smoothing,
+                  };
+                };
+                
+                let pathD = `M ${points[0].x} ${points[0].y}`;
+                
+                for (let i = 1; i < points.length; i++) {
+                  const p0 = points[i - 2] || points[i - 1];
+                  const p1 = points[i - 1];
+                  const p2 = points[i];
+                  const p3 = points[i + 1] || points[i];
+                  
+                  const cp1 = getControlPoints(p0, p1, p2);
+                  const cp2 = getControlPoints(p1, p2, p3);
+                  
+                  pathD += ` C ${cp1.cp2x} ${cp1.cp2y}, ${cp2.cp1x} ${cp2.cp1y}, ${p2.x} ${p2.y}`;
+                }
+                
+                const peakIndex = emotionalTrendsData.dayData.findIndex(d => d === emotionalTrendsData.peakDay);
+                const peakPoint = points[peakIndex];
+                const hasPeakEmotion = emotionalTrendsData.peakDay.emotion !== '';
+                
+                return (
+                  <>
+                    <Path
+                      d={pathD}
+                      fill="none"
+                      stroke="url(#lineGradient)"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                    />
+                    
+                    {points.map((p, i) => (
+                      <Circle
+                        key={i}
+                        cx={p.x}
+                        cy={p.y}
+                        r={4}
+                        fill={Colors.light.card}
+                        stroke={Colors.light.secondary}
+                        strokeWidth={2}
+                      />
+                    ))}
+                    
+                    {hasPeakEmotion && peakPoint && (
+                      <>
+                        <Line
+                          x1={peakPoint.x}
+                          y1={peakPoint.y + 8}
+                          x2={peakPoint.x}
+                          y2={peakPoint.y + 25}
+                          stroke={Colors.light.textSecondary}
+                          strokeWidth={1}
+                          strokeDasharray="2,2"
+                        />
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+            </Svg>
+            
+            {(() => {
+              const peakIndex = emotionalTrendsData.dayData.findIndex(d => d === emotionalTrendsData.peakDay);
+              const hasPeakEmotion = emotionalTrendsData.peakDay.emotion !== '';
+              if (!hasPeakEmotion) return null;
+              
+              const peakX = 20 + (peakIndex * 46);
+              const peakY = 110 - (emotionalTrendsData.peakDay.score / 100) * 90;
+              
+              return (
+                <View style={[styles.peakLabel, { left: peakX - 35, top: peakY + 28 }]}>
+                  <Text style={styles.peakLabelText}>PEAK {emotionalTrendsData.peakDay.emotion?.toUpperCase() || 'JOY'}</Text>
+                </View>
+              );
+            })()}
           </View>
-
-          <View style={styles.analyticsCard}>
-            <View style={styles.analyticsHeader}>
-              <Heart size={18} color="#EC4899" />
-              <Text style={styles.analyticsLabel}>Calm Days</Text>
-            </View>
-            <Text style={styles.analyticsValue}>{weeklyAnalytics.calmDays}</Text>
-            <Text style={styles.analyticsSubtext}>of {weeklyAnalytics.thisWeekCheckIns} check-ins</Text>
-          </View>
-
-          <View style={styles.analyticsCard}>
-            <View style={styles.analyticsHeader}>
-              <Smile size={18} color="#10B981" />
-              <Text style={styles.analyticsLabel}>Top Feeling</Text>
-            </View>
-            <Text style={styles.analyticsValueSmall}>
-              {weeklyAnalytics.topEmotion ? `${weeklyAnalytics.topEmotion.emoji} ${weeklyAnalytics.topEmotion.emotion}` : '—'}
-            </Text>
-            <Text style={styles.analyticsSubtext}>
-              {weeklyAnalytics.topEmotion ? `${weeklyAnalytics.topEmotion.count}x this week` : 'No data'}
-            </Text>
+          
+          <View style={styles.dayLabelsContainer}>
+            {emotionalTrendsData.dayData.map((d, i) => (
+              <Text key={i} style={styles.dayLabel}>{d.day}</Text>
+            ))}
           </View>
         </Animated.View>
-
-        <View style={styles.weeklyStatsRow}>
-          <View style={styles.weeklyStatItem}>
-            <View style={[styles.weeklyStatDot, { backgroundColor: '#10B981' }]} />
-            <Text style={styles.weeklyStatLabel}>Calm days</Text>
-            <Text style={styles.weeklyStatValue}>{weeklyAnalytics.calmDays} days</Text>
-          </View>
-          <View style={styles.weeklyStatItem}>
-            <View style={[styles.weeklyStatDot, { backgroundColor: '#F59E0B' }]} />
-            <Text style={styles.weeklyStatLabel}>Success rate</Text>
-            <Text style={styles.weeklyStatValue}>{successRate}%</Text>
-          </View>
-        </View>
 
         {topJournalEmotions.length > 0 && (
           <>
@@ -1387,92 +1539,107 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     lineHeight: 21,
   },
-  analyticsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-  },
-  analyticsCard: {
-    flex: 1,
-    minWidth: '45%',
+  emotionalTrendsCard: {
     backgroundColor: Colors.light.card,
-    borderRadius: 14,
-    padding: 16,
-  },
-  analyticsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  analyticsLabel: {
-    fontSize: 13,
-    color: Colors.light.textSecondary,
-    fontWeight: '500',
-  },
-  analyticsValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 4,
-  },
-  analyticsValueSmall: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 4,
-  },
-  analyticsSubtext: {
-    fontSize: 12,
-    color: Colors.light.textSecondary,
-  },
-  trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  trendText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  trendPositive: {
-    color: '#10B981',
-  },
-  trendNegative: {
-    color: '#EF4444',
-  },
-  trendNeutral: {
-    color: Colors.light.textSecondary,
-  },
-  weeklyStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.light.card,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 32,
   },
-  weeklyStatItem: {
-    alignItems: 'center',
-    flex: 1,
+  trendsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  weeklyStatDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 6,
-  },
-  weeklyStatLabel: {
+  trendsOverview: {
     fontSize: 11,
+    fontWeight: '600' as const,
     color: Colors.light.textSecondary,
+    letterSpacing: 1,
     marginBottom: 4,
-    textAlign: 'center',
   },
-  weeklyStatValue: {
-    fontSize: 14,
-    fontWeight: '700',
+  trendsTitle: {
+    fontSize: 22,
+    fontWeight: '600' as const,
     color: Colors.light.text,
+  },
+  trendsProfileIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dominantEmotionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  dominantEmotionText: {
+    fontSize: 32,
+    fontWeight: '300' as const,
+    color: Colors.light.text,
+  },
+  trendBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  trendBadgePositive: {
+    backgroundColor: '#E8F5E9',
+  },
+  trendBadgeNegative: {
+    backgroundColor: '#FFEBEE',
+  },
+  trendBadgeText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+  },
+  trendTextPositive: {
+    color: '#2E7D32',
+  },
+  trendTextNegative: {
+    color: '#C62828',
+  },
+  trendsSubtitle: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    marginBottom: 24,
+  },
+  graphContainer: {
+    height: 160,
+    marginHorizontal: -8,
+    position: 'relative',
+  },
+  peakLabel: {
+    position: 'absolute',
+    backgroundColor: Colors.light.background,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  peakLabelText: {
+    fontSize: 9,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+    letterSpacing: 0.5,
+  },
+  dayLabelsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: 8,
+  },
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
+    width: 32,
+    textAlign: 'center',
   },
   achievementsContainer: {
     gap: 12,

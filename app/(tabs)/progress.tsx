@@ -1,7 +1,6 @@
 import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, Camera, User } from 'lucide-react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
 import React, { useEffect, useRef } from 'react';
-import { captureRef } from 'react-native-view-shot';
 import {
   View,
   Text,
@@ -14,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
 
@@ -293,11 +293,8 @@ export default function ProgressScreen() {
   ];
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [isTakingScreenshot, setIsTakingScreenshot] = React.useState(false);
-  const [showExportView, setShowExportView] = React.useState(false);
-  const exportViewRef = useRef<View>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
 
-  const generateExportData = React.useCallback(() => {
+  const generatePdfHtml = React.useCallback(() => {
     const now = new Date();
     const exportDate = now.toLocaleDateString('en-US', { 
       weekday: 'long', 
@@ -306,273 +303,519 @@ export default function ProgressScreen() {
       day: 'numeric' 
     });
 
-    let exportText = `KindMind Progress Report\n`;
-    exportText += `Generated: ${exportDate}\n`;
-    exportText += `${'='.repeat(50)}\n\n`;
+    const getCheckInScore = (checkIn: typeof data.checkIns[0]) => {
+      return [checkIn.reactedCalmly, checkIn.avoidedSnapping, checkIn.wasKinder, checkIn.noticedPositiveSelfTalk, checkIn.feltRelaxed].filter(Boolean).length;
+    };
 
-    // Stats Summary
-    exportText += `📊 OVERVIEW\n`;
-    exportText += `-`.repeat(30) + `\n`;
-    exportText += `Current Streak: ${data.currentStreak} days\n`;
-    exportText += `Longest Streak: ${data.longestStreak} days\n`;
-    exportText += `Total Check-ins: ${data.checkIns.length}\n`;
-    exportText += `Check-ins (Last 30 Days): ${checkInsLast30Days}\n`;
-    exportText += `Success Rate: ${successRate}%\n\n`;
+    const sortedCheckIns = [...data.checkIns].sort((a, b) => b.date.localeCompare(a.date));
 
-    // Weekly Analytics
-    exportText += `📈 THIS WEEK'S ANALYTICS\n`;
-    exportText += `-`.repeat(30) + `\n`;
-    exportText += `Journal Entries: ${weeklyAnalytics.thisWeekJournals}\n`;
-    exportText += `Check-ins: ${weeklyAnalytics.thisWeekCheckIns}\n`;
-    exportText += `Calm Days: ${weeklyAnalytics.calmDays}\n`;
-    exportText += `Positive Mood: ${weeklyAnalytics.positiveRatio}%\n`;
-    if (weeklyAnalytics.topEmotion) {
-      exportText += `Top Feeling: ${weeklyAnalytics.topEmotion.emoji} ${weeklyAnalytics.topEmotion.emotion} (${weeklyAnalytics.topEmotion.count}x)\n`;
-    }
-    exportText += `\nWeekly Insight: ${weeklyAnalytics.weeklyInsight}\n\n`;
+    const calendarHtml = (() => {
+      const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+      const weeks: (number | null)[][] = [];
+      let week: (number | null)[] = [];
 
-    // Top Emotions
-    if (topJournalEmotions.length > 0) {
-      exportText += `💭 TOP EMOTIONS (All Time)\n`;
-      exportText += `-`.repeat(30) + `\n`;
-      topJournalEmotions.forEach((item, index) => {
-        exportText += `${index + 1}. ${item.emoji} ${item.emotion} - ${item.count} entries\n`;
-      });
-      exportText += `\n`;
-    }
+      for (let i = 0; i < startingDayOfWeek; i++) {
+        week.push(null);
+      }
 
-    // Check-in Calendar Data
-    exportText += `📅 CHECK-IN HISTORY\n`;
-    exportText += `-`.repeat(30) + `\n`;
-    if (data.checkIns.length > 0) {
-      const sortedCheckIns = [...data.checkIns].sort((a, b) => b.date.localeCompare(a.date));
-      sortedCheckIns.forEach(checkIn => {
-        const score = [checkIn.reactedCalmly, checkIn.avoidedSnapping, checkIn.wasKinder, checkIn.noticedPositiveSelfTalk, checkIn.feltRelaxed].filter(Boolean).length;
-        const dateFormatted = new Date(checkIn.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        exportText += `${dateFormatted}: ${score}/5`;
-        const achievements = [];
-        if (checkIn.reactedCalmly) achievements.push('Calm');
-        if (checkIn.avoidedSnapping) achievements.push('Patient');
-        if (checkIn.wasKinder) achievements.push('Kind');
-        if (checkIn.noticedPositiveSelfTalk) achievements.push('Positive');
-        if (checkIn.feltRelaxed) achievements.push('Relaxed');
-        if (achievements.length > 0) {
-          exportText += ` (${achievements.join(', ')})`;
+      for (let day = 1; day <= daysInMonth; day++) {
+        week.push(day);
+        if (week.length === 7) {
+          weeks.push(week);
+          week = [];
         }
-        exportText += `\n`;
-      });
-    } else {
-      exportText += `No check-ins recorded yet.\n`;
-    }
-    exportText += `\n`;
+      }
 
-    // Journal Entries Summary
-    exportText += `📝 JOURNAL ENTRIES\n`;
-    exportText += `-`.repeat(30) + `\n`;
-    if (data.journalEntries.length > 0) {
-      data.journalEntries.slice(0, 20).forEach(entry => {
-        const dateFormatted = new Date(entry.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        exportText += `\n${dateFormatted} - ${entry.emotionEmoji} ${entry.emotion}\n`;
-        if (entry.gratitude) {
-          exportText += `  Grateful for: ${entry.gratitude}\n`;
+      if (week.length > 0) {
+        while (week.length < 7) {
+          week.push(null);
         }
-        if (entry.reflection) {
-          exportText += `  Reflection: ${entry.reflection}\n`;
-        }
-      });
-    } else {
-      exportText += `No journal entries recorded yet.\n`;
-    }
+        weeks.push(week);
+      }
 
-    exportText += `\n${'='.repeat(50)}\n`;
-    exportText += `Thank you for using KindMind! 🌱\n`;
+      const dateKey = (day: number) => formatLocalDate(new Date(year, month, day));
+      const getCheckInColor = (score: number) => {
+        if (score >= 4) return '#4CAF50';
+        if (score === 3) return '#FF9800';
+        return '#F44336';
+      };
 
-    return exportText;
-  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate]);
+      return `
+        <div style="margin: 20px 0;">
+          <h3 style="color: #8DC8C4; font-size: 18px; margin-bottom: 10px;">
+            ${currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <tr>
+              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => 
+                `<th style="text-align: center; padding: 8px; color: #93A4C7; font-size: 12px;">${d}</th>`
+              ).join('')}
+            </tr>
+            ${weeks.map(w => `
+              <tr>
+                ${w.map(day => {
+                  if (!day) return '<td style="padding: 8px;"></td>';
+                  const checkInData = checkInsByDate[dateKey(day)];
+                  const isToday = formatLocalDate(new Date()) === dateKey(day);
+                  return `
+                    <td style="text-align: center; padding: 8px;">
+                      <div style="
+                        display: inline-block;
+                        width: 32px;
+                        height: 32px;
+                        line-height: 32px;
+                        border-radius: 50%;
+                        background-color: ${isToday ? '#8DC8C420' : 'transparent'};
+                        color: ${isToday ? '#8DC8C4' : '#EAF0FF'};
+                        font-weight: ${isToday ? 'bold' : 'normal'};
+                        position: relative;
+                      ">
+                        ${day}
+                        ${checkInData ? `
+                          <div style="
+                            position: absolute;
+                            bottom: 2px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 6px;
+                            height: 6px;
+                            border-radius: 50%;
+                            background-color: ${checkInData.color};
+                          "></div>
+                        ` : ''}
+                      </div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </table>
+        </div>
+      `;
+    })();
 
-  const escapeXml = React.useCallback((value: string) => {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  }, []);
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #0F1B2E 0%, #0B1220 100%);
+              color: #EAF0FF;
+              padding: 30px;
+              line-height: 1.6;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 40px;
+              padding-bottom: 30px;
+              border-bottom: 2px solid #1E3A5F;
+            }
+            h1 {
+              font-size: 32px;
+              font-weight: 700;
+              color: #EAF0FF;
+              margin-bottom: 10px;
+            }
+            .date {
+              font-size: 16px;
+              color: #93A4C7;
+            }
+            .section {
+              margin-bottom: 35px;
+              page-break-inside: avoid;
+            }
+            .section-title {
+              font-size: 20px;
+              font-weight: 600;
+              color: #6DE0C7;
+              margin-bottom: 15px;
+              padding-bottom: 8px;
+              border-bottom: 1px solid #1E3A5F;
+            }
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 20px;
+              margin-bottom: 20px;
+            }
+            .stat-card {
+              background: #1E3A5F20;
+              border-radius: 12px;
+              padding: 20px;
+              text-align: center;
+            }
+            .stat-number {
+              font-size: 36px;
+              font-weight: 700;
+              color: #8DC8C4;
+              margin-bottom: 8px;
+            }
+            .stat-label {
+              font-size: 14px;
+              color: #93A4C7;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 12px 0;
+              border-bottom: 1px solid #1E3A5F40;
+            }
+            .info-row:last-child {
+              border-bottom: none;
+            }
+            .info-label {
+              color: #93A4C7;
+              font-size: 14px;
+            }
+            .info-value {
+              color: #EAF0FF;
+              font-weight: 600;
+              font-size: 14px;
+            }
+            .insight-box {
+              background: linear-gradient(135deg, #8DC8C420 0%, #6DE0C720 100%);
+              border-left: 4px solid #8DC8C4;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 20px 0;
+              font-style: italic;
+              color: #EAF0FF;
+            }
+            .emotion-list {
+              list-style: none;
+            }
+            .emotion-item {
+              background: #1E3A5F20;
+              padding: 15px;
+              margin-bottom: 10px;
+              border-radius: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .emotion-name {
+              font-size: 16px;
+              font-weight: 600;
+            }
+            .emotion-count {
+              color: #8DC8C4;
+              font-weight: 600;
+            }
+            .check-in-item {
+              background: #1E3A5F20;
+              padding: 12px;
+              margin-bottom: 8px;
+              border-radius: 6px;
+              font-size: 13px;
+            }
+            .check-in-date {
+              color: #8DC8C4;
+              font-weight: 600;
+              margin-right: 10px;
+            }
+            .check-in-score {
+              color: #EAF0FF;
+            }
+            .check-in-tags {
+              color: #93A4C7;
+              font-size: 12px;
+              margin-top: 4px;
+            }
+            .journal-entry {
+              background: #1E3A5F20;
+              padding: 15px;
+              margin-bottom: 12px;
+              border-radius: 8px;
+              page-break-inside: avoid;
+            }
+            .journal-header {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            }
+            .journal-emotion {
+              font-size: 16px;
+              font-weight: 600;
+              color: #8DC8C4;
+            }
+            .journal-date {
+              color: #93A4C7;
+              font-size: 13px;
+            }
+            .journal-text {
+              color: #EAF0FF;
+              font-size: 14px;
+              line-height: 1.6;
+              margin-top: 8px;
+            }
+            .journal-label {
+              color: #6DE0C7;
+              font-size: 12px;
+              font-weight: 600;
+              margin-top: 10px;
+              margin-bottom: 4px;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 50px;
+              padding-top: 30px;
+              border-top: 2px solid #1E3A5F;
+              color: #93A4C7;
+              font-size: 14px;
+            }
+            .achievement-item {
+              background: #1E3A5F20;
+              padding: 12px 15px;
+              margin-bottom: 8px;
+              border-radius: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .achievement-name {
+              color: #EAF0FF;
+              font-size: 14px;
+            }
+            .achievement-status {
+              font-size: 12px;
+              font-weight: 600;
+              padding: 4px 10px;
+              border-radius: 4px;
+            }
+            .unlocked {
+              background: #10B98140;
+              color: #10B981;
+            }
+            .locked {
+              background: #F4433640;
+              color: #F44336;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🌱 KindMind Progress Report</h1>
+              <p class="date">${exportDate}</p>
+            </div>
 
-  const buildExportSvg = React.useCallback(
-    (exportText: string) => {
-      const maxCharsPerLine = 74;
-      const fontSize = 18;
-      const lineHeight = 26;
-      const padding = 56;
-      const width = 1080;
+            <div class="section">
+              <h2 class="section-title">📊 Overview</h2>
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-number">${data.currentStreak}</div>
+                  <div class="stat-label">Current Streak</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number">${data.longestStreak}</div>
+                  <div class="stat-label">Longest Streak</div>
+                </div>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Total Check-ins</span>
+                <span class="info-value">${data.checkIns.length}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Check-ins (Last 30 Days)</span>
+                <span class="info-value">${checkInsLast30Days}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Success Rate</span>
+                <span class="info-value">${successRate}%</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Total Journal Entries</span>
+                <span class="info-value">${data.journalEntries.length}</span>
+              </div>
+            </div>
 
-      const rawLines = exportText.split('\n');
-      const lines: string[] = [];
+            <div class="section">
+              <h2 class="section-title">📈 This Week's Analytics</h2>
+              <div class="info-row">
+                <span class="info-label">Journal Entries</span>
+                <span class="info-value">${weeklyAnalytics.thisWeekJournals}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Check-ins</span>
+                <span class="info-value">${weeklyAnalytics.thisWeekCheckIns}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Calm Days</span>
+                <span class="info-value">${weeklyAnalytics.calmDays}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Positive Mood Ratio</span>
+                <span class="info-value">${weeklyAnalytics.positiveRatio}%</span>
+              </div>
+              ${weeklyAnalytics.topEmotion ? `
+                <div class="info-row">
+                  <span class="info-label">Top Feeling This Week</span>
+                  <span class="info-value">${weeklyAnalytics.topEmotion.emoji} ${weeklyAnalytics.topEmotion.emotion} (${weeklyAnalytics.topEmotion.count}x)</span>
+                </div>
+              ` : ''}
+              <div class="insight-box">
+                <strong>💡 Weekly Insight:</strong><br>
+                ${weeklyAnalytics.weeklyInsight}
+              </div>
+            </div>
 
-      rawLines.forEach((line) => {
-        if (line.length <= maxCharsPerLine) {
-          lines.push(line);
-          return;
-        }
+            ${topJournalEmotions.length > 0 ? `
+              <div class="section">
+                <h2 class="section-title">💭 Top Emotions (All Time)</h2>
+                <ul class="emotion-list">
+                  ${topJournalEmotions.map((item, index) => `
+                    <li class="emotion-item">
+                      <span class="emotion-name">${index + 1}. ${item.emoji} ${item.emotion}</span>
+                      <span class="emotion-count">${item.count} ${item.count === 1 ? 'entry' : 'entries'}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
 
-        let remaining = line;
-        while (remaining.length > maxCharsPerLine) {
-          const slice = remaining.slice(0, maxCharsPerLine);
-          const lastSpace = slice.lastIndexOf(' ');
-          const cutIndex = lastSpace > 20 ? lastSpace : maxCharsPerLine;
-          lines.push(remaining.slice(0, cutIndex));
-          remaining = remaining.slice(cutIndex).trimStart();
-        }
-        if (remaining.length > 0) lines.push(remaining);
-      });
+            <div class="section">
+              <h2 class="section-title">🧩 Achievements Progress</h2>
+              ${achievements.map(achievement => {
+                const isUnlocked = checkInsLast30Days >= achievement.threshold;
+                return `
+                  <div class="achievement-item">
+                    <span class="achievement-name">${isUnlocked ? '✓' : '🔒'} ${achievement.title}</span>
+                    <span class="achievement-status ${isUnlocked ? 'unlocked' : 'locked'}">
+                      ${isUnlocked ? 'Unlocked!' : `${checkInsLast30Days}/${achievement.threshold}`}
+                    </span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
 
-      const height = padding * 2 + lines.length * lineHeight;
+            <div class="section">
+              <h2 class="section-title">📅 Check-In Calendar</h2>
+              ${calendarHtml}
+            </div>
 
-      const bg = '#F5EFE8';
-      const card = '#FFFFFF';
-      const text = '#4A4545';
-      const subtle = '#8A8585';
-      const accent = '#8DC8C4';
+            ${sortedCheckIns.length > 0 ? `
+              <div class="section">
+                <h2 class="section-title">📋 Recent Check-Ins</h2>
+                ${sortedCheckIns.slice(0, 15).map(checkIn => {
+                  const score = getCheckInScore(checkIn);
+                  const dateFormatted = new Date(checkIn.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  });
+                  const achievements = [];
+                  if (checkIn.reactedCalmly) achievements.push('Calm');
+                  if (checkIn.avoidedSnapping) achievements.push('Patient');
+                  if (checkIn.wasKinder) achievements.push('Kind');
+                  if (checkIn.noticedPositiveSelfTalk) achievements.push('Positive');
+                  if (checkIn.feltRelaxed) achievements.push('Relaxed');
+                  
+                  return `
+                    <div class="check-in-item">
+                      <span class="check-in-date">${dateFormatted}</span>
+                      <span class="check-in-score">Score: ${score}/5</span>
+                      ${achievements.length > 0 ? `
+                        <div class="check-in-tags">${achievements.join(' • ')}</div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
 
-      const safeTitle = `KindMind Progress • ${formatLocalDate(new Date())}`;
+            ${data.journalEntries.length > 0 ? `
+              <div class="section">
+                <h2 class="section-title">📝 Recent Journal Entries</h2>
+                ${data.journalEntries.slice(0, 15).map(entry => {
+                  const dateFormatted = new Date(entry.timestamp).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  });
+                  return `
+                    <div class="journal-entry">
+                      <div class="journal-header">
+                        <span class="journal-emotion">${entry.emotionEmoji} ${entry.emotion}</span>
+                        <span class="journal-date">${dateFormatted}</span>
+                      </div>
+                      ${entry.gratitude ? `
+                        <div class="journal-label">🌸 Grateful for</div>
+                        <div class="journal-text">${entry.gratitude}</div>
+                      ` : ''}
+                      ${entry.reflection ? `
+                        <div class="journal-label">✨ Reflection</div>
+                        <div class="journal-text">${entry.reflection}</div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
 
-      const textEls = lines
-        .map((l, i) => {
-          const y = padding + (i + 1) * lineHeight;
-          const fill = l.startsWith('📊') || l.startsWith('📈') || l.startsWith('💭') || l.startsWith('📅') || l.startsWith('📝')
-            ? accent
-            : l.startsWith('-') || l.startsWith('=')
-              ? subtle
-              : text;
-
-          return `<text x="${padding}" y="${y}" fill="${fill}" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="${fontSize}">${escapeXml(l)}</text>`;
-        })
-        .join('');
-
-      return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#183B56" stop-opacity="0.55" />
-      <stop offset="1" stop-color="#0B1220" stop-opacity="0.0" />
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.45" />
-    </filter>
-  </defs>
-
-  <rect x="0" y="0" width="${width}" height="${height}" fill="${bg}" />
-  <rect x="0" y="0" width="${width}" height="${height}" fill="url(#g)" />
-
-  <rect x="40" y="36" width="${width - 80}" height="${height - 72}" rx="28" fill="${card}" filter="url(#shadow)" />
-  <text x="${padding}" y="${padding}" fill="${text}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial" font-weight="700" font-size="28">${escapeXml(safeTitle)}</text>
-
-  <g transform="translate(0, 22)">
-    ${textEls}
-  </g>
-</svg>`;
-    },
-    [escapeXml]
-  );
+            <div class="footer">
+              <p>Thank you for using KindMind! 🌱</p>
+              <p style="margin-top: 8px; font-size: 12px;">Generated on ${exportDate}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate, currentMonth, checkInsByDate, achievements, getDaysInMonth]);
 
   const handleScreenshot = React.useCallback(async () => {
     setIsTakingScreenshot(true);
     try {
-      console.log('[Progress] Screenshot: generating report');
-      const exportText = generateExportData();
-      const exportSvg = buildExportSvg(exportText);
-
+      console.log('[Progress] Generating PDF report');
+      const html = generatePdfHtml();
+      
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+      });
+      
+      console.log('[Progress] PDF generated at:', uri);
+      
       if (Platform.OS === 'web') {
-        console.log('[Progress] Screenshot: web download png via canvas');
-        const svgBlob = new Blob([exportSvg], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
-        
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const pngUrl = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = pngUrl;
-                link.download = `kindmind-screenshot-${formatLocalDate(new Date())}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(pngUrl);
-              }
-              URL.revokeObjectURL(svgUrl);
-              setIsTakingScreenshot(false);
-              Alert.alert('Success', 'Your screenshot has been saved!');
-            }, 'image/png');
-          }
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(svgUrl);
-          setIsTakingScreenshot(false);
-          Alert.alert('Error', 'Failed to take screenshot.');
-        };
-        img.src = svgUrl;
-        return;
+        const link = document.createElement('a');
+        link.href = uri;
+        link.download = `kindmind-progress-${formatLocalDate(new Date())}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Alert.alert('Success', 'Your PDF has been downloaded!');
       } else {
-        console.log('[Progress] Screenshot: native capture view as png');
-        setShowExportView(true);
-        
-        requestAnimationFrame(() => {
-          setTimeout(async () => {
-            try {
-              if (exportViewRef.current) {
-                console.log('[Progress] Capturing view...');
-                const uri = await captureRef(exportViewRef, {
-                  format: 'png',
-                  quality: 1,
-                  result: 'tmpfile',
-                });
-                
-                console.log('[Progress] Captured URI:', uri);
-                setShowExportView(false);
-                
-                const canShare = await Sharing.isAvailableAsync();
-                console.log('[Progress] Can share:', canShare);
-                
-                if (canShare) {
-                  await Sharing.shareAsync(uri, {
-                    mimeType: 'image/png',
-                    dialogTitle: 'Share KindMind Progress',
-                    UTI: 'public.png',
-                  });
-                  console.log('[Progress] Share complete');
-                } else {
-                  Alert.alert('Saved', 'Your progress screenshot is ready to share!');
-                }
-              } else {
-                console.error('[Progress] Screenshot view ref is null');
-                setShowExportView(false);
-                Alert.alert('Error', 'Could not take screenshot. Please try again.');
-              }
-            } catch (captureError) {
-              console.error('[Progress] Screenshot error:', captureError);
-              setShowExportView(false);
-              Alert.alert('Error', 'Failed to take screenshot. Please try again.');
-            } finally {
-              setIsTakingScreenshot(false);
-            }
-          }, 500);
-        });
-        return;
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Share KindMind Progress Report',
+            UTI: 'com.adobe.pdf',
+          });
+          console.log('[Progress] PDF shared successfully');
+        } else {
+          Alert.alert('Success', 'Your PDF report is ready!');
+        }
       }
     } catch (error) {
-      console.error('[Progress] Screenshot error:', error);
-      Alert.alert('Error', 'Failed to take screenshot. Please try again.');
+      console.error('[Progress] PDF generation error:', error);
+      Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+    } finally {
       setIsTakingScreenshot(false);
     }
-  }, [buildExportSvg, generateExportData]);
+  }, [generatePdfHtml]);
 
   const checkInsByDate = React.useMemo(() => {
     const getCheckInScore = (checkIn: typeof data.checkIns[0]) => {
@@ -710,75 +953,10 @@ export default function ProgressScreen() {
     );
   };
 
-  const renderExportContent = () => {
-    const exportDate = new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
 
-    return (
-      <View style={styles.exportContainer}>
-        <View style={styles.exportCard}>
-          <Text style={styles.exportTitle}>KindMind Progress Report</Text>
-          <Text style={styles.exportDate}>{exportDate}</Text>
-          
-          <View style={styles.exportSection}>
-            <Text style={styles.exportSectionTitle}>📊 Overview</Text>
-            <Text style={styles.exportText}>Current Streak: {data.currentStreak} days</Text>
-            <Text style={styles.exportText}>Longest Streak: {data.longestStreak} days</Text>
-            <Text style={styles.exportText}>Total Check-ins: {data.checkIns.length}</Text>
-            <Text style={styles.exportText}>Check-ins (Last 30 Days): {checkInsLast30Days}</Text>
-            <Text style={styles.exportText}>Success Rate: {successRate}%</Text>
-          </View>
-
-          <View style={styles.exportSection}>
-            <Text style={styles.exportSectionTitle}>📈 This Week</Text>
-            <Text style={styles.exportText}>Journal Entries: {weeklyAnalytics.thisWeekJournals}</Text>
-            <Text style={styles.exportText}>Check-ins: {weeklyAnalytics.thisWeekCheckIns}</Text>
-            <Text style={styles.exportText}>Calm Days: {weeklyAnalytics.calmDays}</Text>
-            <Text style={styles.exportText}>Positive Mood: {weeklyAnalytics.positiveRatio}%</Text>
-            {!!weeklyAnalytics.topEmotion && (
-              <Text style={styles.exportText}>Top Feeling: {weeklyAnalytics.topEmotion.emoji} {weeklyAnalytics.topEmotion.emotion}</Text>
-            )}
-          </View>
-
-          {topJournalEmotions.length > 0 && (
-            <View style={styles.exportSection}>
-              <Text style={styles.exportSectionTitle}>💭 Top Emotions</Text>
-              {topJournalEmotions.map((item, index) => (
-                <Text key={item.emotion} style={styles.exportText}>
-                  {index + 1}. {item.emoji} {item.emotion} - {item.count} entries
-                </Text>
-              ))}
-            </View>
-          )}
-
-          <View style={styles.exportSection}>
-            <Text style={styles.exportSectionTitle}>✨ Weekly Insight</Text>
-            <Text style={styles.exportInsight}>{weeklyAnalytics.weeklyInsight}</Text>
-          </View>
-
-          <Text style={styles.exportFooter}>Thank you for using KindMind! 🌱</Text>
-        </View>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {showExportView && Platform.OS !== 'web' && (
-        <View style={styles.exportOverlay}>
-          <View 
-            style={styles.exportViewWrapper} 
-            ref={exportViewRef} 
-            collapsable={false}
-          >
-            {renderExportContent()}
-          </View>
-        </View>
-      )}
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         <Animated.View style={[styles.header, { opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
           <View style={styles.headerRow}>
@@ -792,7 +970,7 @@ export default function ProgressScreen() {
               disabled={isTakingScreenshot}
             >
               <Camera size={20} color={Colors.light.card} />
-              <Text style={styles.screenshotButtonText}>{isTakingScreenshot ? 'Capturing...' : 'Screenshot'}</Text>
+              <Text style={styles.screenshotButtonText}>{isTakingScreenshot ? 'Generating...' : 'Export PDF'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -1446,69 +1624,7 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 40,
   },
-  exportOverlay: {
-    position: 'absolute',
-    top: -2000,
-    left: 0,
-    zIndex: -1,
-  },
-  exportViewWrapper: {
-    width: 400,
-    height: 700,
-    backgroundColor: '#0B1220',
-  },
-  exportContainer: {
-    backgroundColor: '#0B1220',
-    padding: 20,
-    width: 400,
-    height: 700,
-  },
-  exportCard: {
-    backgroundColor: '#0F1B2E',
-    borderRadius: 20,
-    padding: 20,
-    flex: 1,
-  },
-  exportTitle: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#EAF0FF',
-    marginBottom: 4,
-  },
-  exportDate: {
-    fontSize: 14,
-    color: '#93A4C7',
-    marginBottom: 24,
-  },
-  exportSection: {
-    marginBottom: 20,
-  },
-  exportSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#6DE0C7',
-    marginBottom: 8,
-  },
-  exportText: {
-    fontSize: 14,
-    color: '#EAF0FF',
-    marginBottom: 4,
-  },
-  exportInsight: {
-    fontSize: 14,
-    color: '#EAF0FF',
-    lineHeight: 20,
-    fontStyle: 'italic' as const,
-  },
-  exportFooter: {
-    fontSize: 14,
-    color: '#93A4C7',
-    textAlign: 'center' as const,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#1E3A5F',
-  },
+
   weeklyInsightCard: {
     backgroundColor: Colors.light.card,
     borderRadius: 14,

@@ -120,12 +120,19 @@ export default function HomeScreen() {
       const recentEmotions = data.journalEntries.slice(0, 5).map(j => j.emotion).join(', ');
       const recentCheckIns = data.checkIns.slice(0, 3);
       const calmDays = recentCheckIns.filter(c => c.reactedCalmly).length;
-      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${wellbeingData.trendPercent}% (negative means declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days. Give a brief, caring 2-3 sentence suggestion to help improve their wellbeing. Include one specific actionable tip like trying a breathing exercise, journaling about gratitude, or taking a mindful pause. Be warm but concise. Don't use bullet points. Don't mention the percentage.`;
+      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${wellbeingData.trendPercent}% (negative means declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days.
+
+Give a personalized, caring response in exactly 4-5 sentences. Structure it like this:
+1. First, acknowledge how they might be feeling based on their recent emotions (1 sentence).
+2. Then give ONE specific mental wellness tip they can use right now — for example: "Try the 5-4-3-2-1 grounding technique: notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste" or "Practice reframing one negative thought today — instead of 'I can't handle this,' try 'This is hard, but I've gotten through hard things before'" or "Spend 2 minutes doing a body scan: close your eyes and slowly notice tension from your head down to your toes, releasing each area as you go" (1-2 sentences).
+3. Finally, suggest using ONE specific KindMind feature with a real reason why it helps — for example: "The Pause breathing exercise uses a 4-7-8 pattern that activates your parasympathetic nervous system and naturally lowers stress" or "A 5-minute guided meditation can reduce cortisol levels and help reset your emotional baseline" or "Journaling about one thing you're grateful for rewires your brain to notice positives over time" or "Talking to me (Kora) can help you process what you're feeling without judgment" (1-2 sentences).
+
+Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. Don't mention the percentage. Vary your suggestions — don't always recommend the same thing.`;
       const result = await generateText(prompt);
       setKoraSuggestion(result);
     } catch (error) {
       console.error('[Home] Kora suggestion error:', error);
-      setKoraSuggestion('It looks like things have been tough lately. Try taking a few deep breaths right now, and consider journaling about one thing you\'re grateful for today.');
+      setKoraSuggestion('It sounds like things have felt heavy recently, and that\'s completely okay — your feelings are valid. Try the 5-4-3-2-1 grounding technique right now: notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste. This simple exercise pulls your mind into the present moment and interrupts anxious thought loops. When you\'re ready, try the Pause breathing exercise — the 4-7-8 breathing pattern activates your body\'s natural calming response, slowing your heart rate and easing tension in just a few rounds.');
     } finally {
       setKoraLoading(false);
     }

@@ -90,12 +90,19 @@ export default function ProgressScreen() {
       const recentEmotions = data.journalEntries.slice(0, 5).map(j => j.emotion).join(', ');
       const recentCheckIns = data.checkIns.slice(0, 3);
       const calmDays = recentCheckIns.filter(c => c.reactedCalmly).length;
-      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${trendPercent}% (declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days. Success rate: ${successRate}%. Give a brief, caring 2-3 sentence personalized suggestion to help improve their wellbeing. Include one specific actionable tip like trying a breathing exercise, journaling about gratitude, or doing a mindful pause. Be warm but concise. Don't use bullet points or markdown. Don't mention the percentage.`;
+      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${trendPercent}% (declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days. Success rate: ${successRate}%.
+
+Give a personalized, caring response in exactly 4-5 sentences. Structure it like this:
+1. First, acknowledge how they might be feeling based on their recent emotions and progress data (1 sentence).
+2. Then give ONE specific mental wellness tip they can use right now — for example: "Try the 5-4-3-2-1 grounding technique: notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste" or "Practice cognitive reframing: when you catch a negative thought like 'nothing is going right,' pause and find one small thing that did go well today" or "Do a 2-minute body scan: close your eyes, slowly move attention from your head to your toes, and consciously relax each tense area" or "Try the STOP technique: Stop what you're doing, Take a breath, Observe what you're feeling without judgment, then Proceed with intention" (1-2 sentences).
+3. Finally, suggest using ONE specific KindMind feature with a real explanation of why it helps — for example: "The Pause breathing exercise uses box breathing (4 counts in, 4 hold, 4 out) which stimulates the vagus nerve and shifts your body from fight-or-flight into rest mode" or "Even a 3-minute meditation session has been shown to lower cortisol and help reset your emotional state" or "Writing in your journal about one thing you're grateful for activates the brain's reward pathways, gradually training your mind to notice more positives" or "Talking to me (Kora) can help you untangle complex feelings — sometimes just putting emotions into words reduces their intensity by up to 50%" (1-2 sentences).
+
+Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. Don't mention the percentage. Vary your suggestions — don't always recommend the same thing.`;
       const result = await generateText(prompt);
       setKoraSuggestion(result);
     } catch (error) {
       console.error('[Progress] Kora suggestion error:', error);
-      setKoraSuggestion('It seems like things have been a bit challenging recently. Try a short breathing exercise or write down something you\'re grateful for — small steps can make a big difference.');
+      setKoraSuggestion('Your recent patterns suggest you\'ve been carrying some emotional weight, and it takes real strength to keep showing up. Try the STOP technique right now: Stop what you\'re doing, Take one slow deep breath, Observe what you\'re feeling without trying to fix it, then Proceed with a small intentional action. This simple mindfulness practice interrupts stress spirals and brings you back to the present moment. When you\'re ready, a short meditation session can help — even 3 minutes of focused breathing lowers cortisol and gives your mind a genuine reset.');
     } finally {
       setKoraLoading(false);
     }

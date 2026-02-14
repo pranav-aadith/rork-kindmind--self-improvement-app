@@ -167,7 +167,7 @@ export default function WelcomeScreen() {
 
                   <Text style={styles.sectionTitle}>4. Kora AI Coach</Text>
                   <Text style={styles.sectionText}>
-                    Kora is an AI wellness companion designed to support emotional awareness. Kora is NOT a licensed therapist, counselor, or medical professional. Kora's responses are for informational and supportive purposes only and should not be considered medical, psychological, or professional advice.
+                    Kora is an AI wellness companion designed to support emotional awareness. Kora is NOT a licensed therapist, counselor, or medical professional. Kora&apos;s responses are for informational and supportive purposes only and should not be considered medical, psychological, or professional advice.
                   </Text>
 
                   <Text style={styles.sectionTitle}>5. Voice Input & Transcription</Text>
@@ -212,7 +212,7 @@ export default function WelcomeScreen() {
 
                   <Text style={styles.sectionTitle}>13. Disclaimer of Warranties</Text>
                   <Text style={styles.sectionText}>
-                    KindMind is provided "as is" without warranties of any kind. We do not guarantee uninterrupted access, error-free operation, or specific outcomes from using the app.
+                    KindMind is provided &quot;as is&quot; without warranties of any kind. We do not guarantee uninterrupted access, error-free operation, or specific outcomes from using the app.
                   </Text>
 
                   <Text style={styles.sectionTitle}>14. Limitation of Liability</Text>
@@ -232,7 +232,7 @@ export default function WelcomeScreen() {
 
                   <Text style={styles.sectionTitle}>17. Contact</Text>
                   <Text style={styles.sectionText}>
-                    For questions about these Terms of Service, please contact us through the app's support feature.
+                    For questions about these Terms of Service, please contact us through the app&apos;s support feature.
                   </Text>
                 </View>
               ) : (
@@ -244,7 +244,7 @@ export default function WelcomeScreen() {
 
                   <Text style={styles.sectionTitle}>2. What We Do NOT Collect</Text>
                   <Text style={styles.sectionText}>
-                    We do not collect: precise location data, contacts or address book, photos or media (unless you explicitly share), biometric data, or financial information beyond what's needed for purchases.
+                    We do not collect: precise location data, contacts or address book, photos or media (unless you explicitly share), biometric data, or financial information beyond what&apos;s needed for purchases.
                   </Text>
 
                   <Text style={styles.sectionTitle}>3. How We Use Your Data</Text>
@@ -277,7 +277,7 @@ export default function WelcomeScreen() {
                     You have the right to: access your data, request data deletion, export your data, opt out of non-essential data collection, and close your account at any time.
                   </Text>
 
-                  <Text style={styles.sectionTitle}>9. Children's Privacy (COPPA)</Text>
+                  <Text style={styles.sectionTitle}>9. Children&apos;s Privacy (COPPA)</Text>
                   <Text style={styles.sectionText}>
                     KindMind is not intended for children under 13. We do not knowingly collect personal information from children under 13. If we discover such data has been collected, we will delete it promptly.
                   </Text>
@@ -294,7 +294,7 @@ export default function WelcomeScreen() {
 
                   <Text style={styles.sectionTitle}>12. Contact Us</Text>
                   <Text style={styles.sectionText}>
-                    For privacy-related questions or to exercise your data rights, please contact us through the app's support feature or settings menu.
+                    For privacy-related questions or to exercise your data rights, please contact us through the app&apos;s support feature or settings menu.
                   </Text>
                 </View>
               )}

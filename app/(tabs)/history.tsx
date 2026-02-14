@@ -46,11 +46,6 @@ const getRelativeDate = (timestamp: number): string => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-interface GroupedEntries {
-  date: string;
-  entries: JournalEntry[];
-}
-
 export default function HistoryScreen() {
   const { data } = useKindMind();
   const [searchQuery, setSearchQuery] = useState('');

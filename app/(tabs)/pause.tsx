@@ -36,7 +36,6 @@ export default function PauseScreen() {
   
   const breatheAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const fadeAnim = useRef(new Animated.Value(1)).current;
   const countdownRef = useRef(countdown);
   const breathAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -91,8 +90,6 @@ export default function PauseScreen() {
           duration: 4000,
           useNativeDriver: true,
         });
-
-        const holdAnim = Animated.delay(1000);
 
         const exhaleAnim = Animated.timing(breatheAnim, {
           toValue: 0,

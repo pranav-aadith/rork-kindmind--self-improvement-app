@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Animated,
+  TextInput,
 } from 'react-native';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
@@ -17,6 +18,7 @@ import type { UserGoal, OnboardingAnswers } from '@/types';
 export default function OnboardingScreen() {
   const { data, completeOnboarding } = useKindMind();
   const [step, setStep] = useState(0);
+  const [preferredName, setPreferredName] = useState('');
   const [goals, setGoals] = useState<UserGoal[]>(data.goals);
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     reactionSpeed: '',
@@ -33,7 +35,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     Animated.timing(progressAnim, {
-      toValue: (step + 1) / 6,
+      toValue: (step + 1) / 7,
       duration: 300,
       useNativeDriver: false,
     }).start();
@@ -102,23 +104,25 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = () => {
-    completeOnboarding('', goals, answers);
+    completeOnboarding(preferredName, goals, answers, preferredName);
     router.replace('/(tabs)');
   };
 
   const canContinue = () => {
     switch (step) {
       case 0:
-        return goals.filter(g => g.selected).length > 0;
+        return preferredName.trim().length > 0;
       case 1:
-        return answers.reactionSpeed !== '';
+        return goals.filter(g => g.selected).length > 0;
       case 2:
-        return answers.commonTriggers.length > 0;
+        return answers.reactionSpeed !== '';
       case 3:
-        return answers.relationshipImpact !== '';
+        return answers.commonTriggers.length > 0;
       case 4:
-        return answers.awareness !== '';
+        return answers.relationshipImpact !== '';
       case 5:
+        return answers.awareness !== '';
+      case 6:
         return answers.frequency !== '';
       default:
         return true;
@@ -128,23 +132,25 @@ export default function OnboardingScreen() {
   const renderStep = () => {
     switch (step) {
       case 0:
-        return <GoalsStep goals={goals} toggleGoal={toggleGoal} />;
+        return <NameStep value={preferredName} onChange={setPreferredName} />;
       case 1:
-        return <ReactionSpeedStep value={answers.reactionSpeed} onChange={(v) => setAnswers(p => ({ ...p, reactionSpeed: v }))} />;
+        return <GoalsStep goals={goals} toggleGoal={toggleGoal} />;
       case 2:
-        return <TriggersStep selected={answers.commonTriggers} onToggle={toggleTrigger} />;
+        return <ReactionSpeedStep value={answers.reactionSpeed} onChange={(v) => setAnswers(p => ({ ...p, reactionSpeed: v }))} />;
       case 3:
-        return <RelationshipImpactStep value={answers.relationshipImpact} onChange={(v) => setAnswers(p => ({ ...p, relationshipImpact: v }))} />;
+        return <TriggersStep selected={answers.commonTriggers} onToggle={toggleTrigger} />;
       case 4:
-        return <AwarenessStep value={answers.awareness} onChange={(v) => setAnswers(p => ({ ...p, awareness: v }))} />;
+        return <RelationshipImpactStep value={answers.relationshipImpact} onChange={(v) => setAnswers(p => ({ ...p, relationshipImpact: v }))} />;
       case 5:
+        return <AwarenessStep value={answers.awareness} onChange={(v) => setAnswers(p => ({ ...p, awareness: v }))} />;
+      case 6:
         return <FrequencyStep value={answers.frequency} onChange={(v) => setAnswers(p => ({ ...p, frequency: v }))} />;
       default:
         return null;
     }
   };
 
-  const isLastStep = step === 5;
+  const isLastStep = step === 6;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -154,7 +160,7 @@ export default function OnboardingScreen() {
             <Animated.View style={[styles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
           </View>
           <Text style={styles.progressText}>
-            {`${step + 1} of 6`}
+            {`${step + 1} of 7`}
           </Text>
         </View>
 
@@ -201,6 +207,33 @@ export default function OnboardingScreen() {
         </View>
       </View>
     </SafeAreaView>
+  );
+}
+
+function NameStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepEmoji}>👋</Text>
+      <Text style={styles.stepTitle}>What should we call you?</Text>
+      <Text style={styles.stepSubtitle}>This helps us personalize your experience</Text>
+
+      <View style={styles.nameInputContainer}>
+        <TextInput
+          style={styles.nameInput}
+          value={value}
+          onChangeText={onChange}
+          placeholder="Your first name"
+          placeholderTextColor={Colors.light.textTertiary}
+          autoCapitalize="words"
+          autoCorrect={false}
+          maxLength={20}
+          autoFocus
+        />
+        {value.trim().length > 0 && (
+          <Text style={styles.namePreview}>Welcome, {value.trim()} ✨</Text>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -453,6 +486,30 @@ const styles = StyleSheet.create({
   },
   stepContainer: {
     gap: 20,
+  },
+  stepEmoji: {
+    fontSize: 48,
+    marginBottom: 4,
+  },
+  nameInputContainer: {
+    marginTop: 8,
+  },
+  nameInput: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 20,
+    padding: 20,
+    fontSize: 20,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+    borderWidth: 2,
+    borderColor: Colors.light.border,
+  },
+  namePreview: {
+    fontSize: 16,
+    color: Colors.light.secondary,
+    fontWeight: '600' as const,
+    marginTop: 16,
+    textAlign: 'center',
   },
 
   stepTitle: {

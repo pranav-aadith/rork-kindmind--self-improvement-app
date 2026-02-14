@@ -1,7 +1,8 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo } from 'react';
-import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry } from '@/types';
+import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone } from '@/types';
+import { DEFAULT_MILESTONES } from '@/constants/personalization';
 import { useAuth } from '@/providers/AuthProvider';
 
 const getStorageKey = (userId: string) => `kindmind_data_${userId}`;
@@ -60,6 +61,9 @@ const initialData: UserData = {
   checkIns: [],
   currentStreak: 0,
   longestStreak: 0,
+  dailyIntention: null,
+  milestones: DEFAULT_MILESTONES,
+  preferredName: '',
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
@@ -90,7 +94,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         const newLongest = Math.max(accurateStreak, parsed.longestStreak || 0);
         
         const fallbackName = user?.user_metadata?.full_name || '';
-        const loadedData = {
+        const loadedData: UserData = {
           ...initialData,
           ...parsed,
           username: parsed.username || fallbackName,
@@ -100,6 +104,9 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           journalEntries: parsed.journalEntries || [],
           currentStreak: accurateStreak,
           longestStreak: newLongest,
+          dailyIntention: parsed.dailyIntention || null,
+          milestones: parsed.milestones || DEFAULT_MILESTONES,
+          preferredName: parsed.preferredName || '',
         };
         
         setData(loadedData);
@@ -109,7 +116,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         }
       } else {
         const defaultName = user?.user_metadata?.full_name || '';
-        setData({ ...initialData, username: defaultName });
+        setData({ ...initialData, username: defaultName, milestones: DEFAULT_MILESTONES });
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -130,13 +137,14 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     }
   };
 
-  const completeOnboarding = (username: string, selectedGoals: UserGoal[], answers: OnboardingAnswers) => {
-    const newData = {
+  const completeOnboarding = (username: string, selectedGoals: UserGoal[], answers: OnboardingAnswers, preferredName?: string) => {
+    const newData: UserData = {
       ...data,
       hasCompletedOnboarding: true,
       username,
       goals: selectedGoals,
       onboardingAnswers: answers,
+      preferredName: preferredName || username || '',
     };
     saveData(newData);
   };
@@ -240,6 +248,79 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     saveData(newData);
   };
 
+  const setDailyIntention = (intention: string) => {
+    const today = formatLocalDate(new Date());
+    const newIntention: DailyIntention = {
+      date: today,
+      intention,
+      completed: false,
+    };
+    const newData = { ...data, dailyIntention: newIntention };
+    saveData(newData);
+  };
+
+  const completeDailyIntention = () => {
+    if (!data.dailyIntention) return;
+    const newData = {
+      ...data,
+      dailyIntention: { ...data.dailyIntention, completed: true },
+    };
+    saveData(newData);
+  };
+
+  const checkAndUpdateMilestones = (): Milestone | null => {
+    const currentMilestones = data.milestones || DEFAULT_MILESTONES;
+    let newlyUnlocked: Milestone | null = null;
+
+    const updated = currentMilestones.map(m => {
+      if (m.unlockedAt) return m;
+
+      let currentValue = 0;
+      switch (m.type) {
+        case 'streak': currentValue = data.currentStreak; break;
+        case 'checkins': currentValue = data.checkIns.length; break;
+        case 'triggers': currentValue = data.triggers.length; break;
+        case 'journal': currentValue = data.journalEntries.length; break;
+        default: currentValue = 0;
+      }
+
+      if (currentValue >= m.threshold) {
+        const unlocked = { ...m, unlockedAt: Date.now() };
+        if (!newlyUnlocked) newlyUnlocked = unlocked;
+        return unlocked;
+      }
+      return m;
+    });
+
+    if (newlyUnlocked) {
+      const newData = { ...data, milestones: updated };
+      saveData(newData);
+    }
+
+    return newlyUnlocked;
+  };
+
+  const todaysIntention = useMemo(() => {
+    if (!data.dailyIntention) return null;
+    const today = formatLocalDate(new Date());
+    if (data.dailyIntention.date !== today) return null;
+    return data.dailyIntention;
+  }, [data.dailyIntention]);
+
+  const unlockedMilestones = useMemo(() => {
+    return (data.milestones || []).filter(m => m.unlockedAt !== null);
+  }, [data.milestones]);
+
+  const nextMilestone = useMemo(() => {
+    const locked = (data.milestones || []).filter(m => m.unlockedAt === null);
+    if (locked.length === 0) return null;
+    return locked[0];
+  }, [data.milestones]);
+
+  const displayName = useMemo(() => {
+    return data.preferredName || data.username || 'there';
+  }, [data.preferredName, data.username]);
+
   return {
     data,
     isLoading,
@@ -252,5 +333,12 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     hasCheckedInToday,
     updateUsername,
     checkInsLast30Days,
+    setDailyIntention,
+    completeDailyIntention,
+    checkAndUpdateMilestones,
+    todaysIntention,
+    unlockedMilestones,
+    nextMilestone,
+    displayName,
   };
 });

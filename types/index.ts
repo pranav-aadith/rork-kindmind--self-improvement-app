@@ -40,6 +40,21 @@ export interface DailyCheckIn {
   feltRelaxed: boolean;
 }
 
+export interface DailyIntention {
+  date: string;
+  intention: string;
+  completed: boolean;
+}
+
+export interface Milestone {
+  id: string;
+  type: 'streak' | 'checkins' | 'triggers' | 'journal' | 'meditation';
+  title: string;
+  description: string;
+  threshold: number;
+  unlockedAt: number | null;
+}
+
 export interface UserData {
   hasCompletedOnboarding: boolean;
   username: string;
@@ -50,6 +65,9 @@ export interface UserData {
   checkIns: DailyCheckIn[];
   currentStreak: number;
   longestStreak: number;
+  dailyIntention: DailyIntention | null;
+  milestones: Milestone[];
+  preferredName: string;
 }
 
 export interface KindResponse {

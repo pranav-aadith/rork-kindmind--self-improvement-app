@@ -1016,7 +1016,7 @@ export default function ProgressScreen() {
           
           <View style={styles.dominantEmotionRow}>
             <Text style={styles.dominantEmotionText}>
-              {emotionalTrendsData.dominantEmotion?.emotion || 'Neutral'}
+              Overall Wellbeing
             </Text>
             {emotionalTrendsData.trendPercent !== 0 && (
               <View style={[
@@ -1032,7 +1032,7 @@ export default function ProgressScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.trendsSubtitle}>Average state over the last 7 days</Text>
+          <Text style={styles.trendsSubtitle}>Wellbeing score over the last 7 days</Text>
           
           <View style={styles.graphContainer}>
             <Svg width="100%" height={140} viewBox="0 0 320 140">

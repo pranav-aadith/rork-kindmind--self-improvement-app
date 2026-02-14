@@ -1,6 +1,6 @@
-import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, Camera, User } from 'lucide-react-native';
+import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, Camera, User, MessageCircle, RefreshCw, Heart } from 'lucide-react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,14 @@ import {
   Alert,
   Platform,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
+import { generateText } from '@rork-ai/toolkit-sdk';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
+import { router } from 'expo-router';
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -32,6 +35,7 @@ export default function ProgressScreen() {
   const insightAnim = useRef(new Animated.Value(0)).current;
   const analyticsAnim = useRef(new Animated.Value(0)).current;
   const calendarAnim = useRef(new Animated.Value(0)).current;
+  const koraAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.stagger(100, [
@@ -66,7 +70,36 @@ export default function ProgressScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    Animated.sequence([
+      Animated.delay(550),
+      Animated.spring(koraAnim, { toValue: 1, tension: 50, friction: 8, useNativeDriver: true }),
+    ]).start();
   }, []);
+
+  const [koraSuggestion, setKoraSuggestion] = useState<string | null>(null);
+  const [koraLoading, setKoraLoading] = useState(false);
+
+  const fetchKoraSuggestion = useCallback(async (trendPercent: number) => {
+    if (trendPercent >= 0) {
+      setKoraSuggestion(null);
+      return;
+    }
+    setKoraLoading(true);
+    try {
+      const recentEmotions = data.journalEntries.slice(0, 5).map(j => j.emotion).join(', ');
+      const recentCheckIns = data.checkIns.slice(0, 3);
+      const calmDays = recentCheckIns.filter(c => c.reactedCalmly).length;
+      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${trendPercent}% (declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days. Success rate: ${successRate}%. Give a brief, caring 2-3 sentence personalized suggestion to help improve their wellbeing. Include one specific actionable tip like trying a breathing exercise, journaling about gratitude, or doing a mindful pause. Be warm but concise. Don't use bullet points or markdown. Don't mention the percentage.`;
+      const result = await generateText(prompt);
+      setKoraSuggestion(result);
+    } catch (error) {
+      console.error('[Progress] Kora suggestion error:', error);
+      setKoraSuggestion('It seems like things have been a bit challenging recently. Try a short breathing exercise or write down something you\'re grateful for — small steps can make a big difference.');
+    } finally {
+      setKoraLoading(false);
+    }
+  }, [data.journalEntries, data.checkIns, data.currentStreak, successRate]);
 
   const emotionColors: Record<string, string> = {
     'Happy': '#FFD93D',
@@ -283,6 +316,18 @@ export default function ProgressScreen() {
       trendPercent,
     };
   }, [data.journalEntries, data.checkIns]);
+
+  const handleRefreshKora = useCallback(() => {
+    fetchKoraSuggestion(emotionalTrendsData.trendPercent);
+  }, [fetchKoraSuggestion, emotionalTrendsData.trendPercent]);
+
+  useEffect(() => {
+    if (emotionalTrendsData.trendPercent < 0) {
+      fetchKoraSuggestion(emotionalTrendsData.trendPercent);
+    } else {
+      setKoraSuggestion(null);
+    }
+  }, [emotionalTrendsData.trendPercent]);
 
   const achievements = [
     { id: 1, threshold: 5, title: 'Emotion Naming Guide', description: 'Learn to identify and name your emotions', icon: BookOpen, color: '#6366F1' },
@@ -1142,6 +1187,41 @@ export default function ProgressScreen() {
           </View>
         </Animated.View>
 
+        {(emotionalTrendsData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
+          <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+            <View style={styles.koraHeader}>
+              <View style={styles.koraIconWrap}>
+                <MessageCircle size={18} color={Colors.light.card} />
+              </View>
+              <View style={styles.koraTitleWrap}>
+                <Text style={styles.koraLabel}>Kora says</Text>
+                <Text style={styles.koraSubLabel}>Wellbeing support</Text>
+              </View>
+              <TouchableOpacity onPress={handleRefreshKora} style={styles.koraRefreshBtn} activeOpacity={0.7}>
+                <RefreshCw size={14} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            {koraLoading ? (
+              <View style={styles.koraLoadingWrap}>
+                <ActivityIndicator size="small" color={Colors.light.secondary} />
+                <Text style={styles.koraLoadingText}>Kora is thinking...</Text>
+              </View>
+            ) : (
+              <Text style={styles.koraMessage}>{koraSuggestion}</Text>
+            )}
+            <View style={styles.koraActions}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
+                <Heart size={13} color={Colors.light.secondary} />
+                <Text style={styles.koraActionText}>Breathe</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
+                <MessageCircle size={13} color={Colors.light.secondary} />
+                <Text style={styles.koraActionText}>Talk to Kora</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
         {topJournalEmotions.length > 0 && (
           <>
             <View style={styles.section}>
@@ -1623,6 +1703,79 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  koraCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.light.secondary,
+  },
+  koraHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 10,
+  },
+  koraIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.light.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  koraTitleWrap: {
+    flex: 1,
+  },
+  koraLabel: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+    letterSpacing: -0.2,
+  },
+  koraSubLabel: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+  },
+  koraRefreshBtn: {
+    padding: 6,
+  },
+  koraMessage: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 22,
+  },
+  koraLoadingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  koraLoadingText: {
+    fontSize: 13,
+    color: Colors.light.textTertiary,
+    fontStyle: 'italic' as const,
+  },
+  koraActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 14,
+  },
+  koraActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 10,
+  },
+  koraActionText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.light.secondary,
   },
 
   weeklyInsightCard: {

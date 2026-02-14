@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -11,12 +11,14 @@ import {
   Animated,
   Modal,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { generateText } from '@rork-ai/toolkit-sdk';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
 import { getDailyQuote } from '@/constants/quotes';
-import { getPersonalizedTip, getSmartInsight, INTENTIONS } from '@/constants/personalization';
+import { getSmartInsight, INTENTIONS } from '@/constants/personalization';
 import MeditationModal from '@/components/MeditationModal';
 import JournalModal from '@/components/JournalModal';
 import WidgetModal from '@/components/WidgetModal';
@@ -36,13 +38,106 @@ export default function HomeScreen() {
   } = useKindMind();
 
   const dailyQuote = getDailyQuote();
-  const personalizedTip = useMemo(() => getPersonalizedTip(data.onboardingAnswers), [data.onboardingAnswers]);
   const smartInsight = useMemo(() => getSmartInsight({
     checkIns: data.checkIns,
     triggers: data.triggers,
     journalEntries: data.journalEntries,
     currentStreak: data.currentStreak,
   }), [data.checkIns, data.triggers, data.journalEntries, data.currentStreak]);
+
+  const formatLocalDate = useCallback((date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const wellbeingData = useMemo(() => {
+    const now = new Date();
+    const emotionScores: Record<string, number> = {
+      'Happy': 90, 'Grateful': 85, 'Loved': 85, 'Hopeful': 80, 'Strong': 75,
+      'Calm': 70, 'Thoughtful': 60, 'Tired': 40, 'Sad': 30, 'Anxious': 25,
+      'Frustrated': 20, 'Hurt': 15,
+    };
+
+    const dayScores: number[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      const dateKey = formatLocalDate(date);
+
+      const dayJournals = data.journalEntries.filter(j => {
+        const jDate = new Date(j.timestamp);
+        return formatLocalDate(jDate) === dateKey;
+      });
+
+      const dayCheckIn = data.checkIns.find(c => c.date === dateKey);
+
+      let score = 50;
+      if (dayJournals.length > 0) {
+        score = dayJournals.reduce((sum, j) => sum + (emotionScores[j.emotion] || 50), 0) / dayJournals.length;
+      } else if (dayCheckIn) {
+        const checkInScore = [dayCheckIn.reactedCalmly, dayCheckIn.avoidedSnapping, dayCheckIn.wasKinder, dayCheckIn.noticedPositiveSelfTalk, dayCheckIn.feltRelaxed].filter(Boolean).length;
+        score = 30 + (checkInScore / 5) * 50;
+      }
+      dayScores.push(score);
+    }
+
+    const validScores = dayScores;
+    const avgScore = validScores.reduce((s, v) => s + v, 0) / validScores.length;
+
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(now.getDate() - 13);
+    const lastWeekEnd = new Date(now);
+    lastWeekEnd.setDate(now.getDate() - 7);
+
+    const lastWeekJournals = data.journalEntries.filter(j => {
+      const jDate = new Date(j.timestamp);
+      return jDate >= lastWeekStart && jDate < lastWeekEnd;
+    });
+
+    const lastWeekAvg = lastWeekJournals.length > 0
+      ? lastWeekJournals.reduce((sum, j) => sum + (emotionScores[j.emotion] || 50), 0) / lastWeekJournals.length
+      : 50;
+
+    const trend = avgScore - lastWeekAvg;
+    const trendPercent = lastWeekAvg !== 0 ? Math.round((trend / lastWeekAvg) * 100) : 0;
+
+    return { avgScore, trendPercent };
+  }, [data.journalEntries, data.checkIns, formatLocalDate]);
+
+  const [koraSuggestion, setKoraSuggestion] = useState<string | null>(null);
+  const [koraLoading, setKoraLoading] = useState(false);
+  const [koraKey, setKoraKey] = useState(0);
+
+  const fetchKoraSuggestion = useCallback(async () => {
+    if (wellbeingData.trendPercent >= 0) {
+      setKoraSuggestion(null);
+      return;
+    }
+    setKoraLoading(true);
+    try {
+      const recentEmotions = data.journalEntries.slice(0, 5).map(j => j.emotion).join(', ');
+      const recentCheckIns = data.checkIns.slice(0, 3);
+      const calmDays = recentCheckIns.filter(c => c.reactedCalmly).length;
+      const prompt = `You are Kora, a warm and empathetic AI wellness coach inside the KindMind app. The user's overall wellbeing trend is ${wellbeingData.trendPercent}% (negative means declining). Their recent emotions: ${recentEmotions || 'none recorded'}. Calm days recently: ${calmDays}/${recentCheckIns.length}. Current streak: ${data.currentStreak} days. Give a brief, caring 2-3 sentence suggestion to help improve their wellbeing. Include one specific actionable tip like trying a breathing exercise, journaling about gratitude, or taking a mindful pause. Be warm but concise. Don't use bullet points. Don't mention the percentage.`;
+      const result = await generateText(prompt);
+      setKoraSuggestion(result);
+    } catch (error) {
+      console.error('[Home] Kora suggestion error:', error);
+      setKoraSuggestion('It looks like things have been tough lately. Try taking a few deep breaths right now, and consider journaling about one thing you\'re grateful for today.');
+    } finally {
+      setKoraLoading(false);
+    }
+  }, [wellbeingData.trendPercent, data.journalEntries, data.checkIns, data.currentStreak]);
+
+  useEffect(() => {
+    if (wellbeingData.trendPercent < 0) {
+      fetchKoraSuggestion();
+    } else {
+      setKoraSuggestion(null);
+    }
+  }, [wellbeingData.trendPercent, koraKey]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -51,7 +146,7 @@ export default function HomeScreen() {
   const card1Anim = useRef(new Animated.Value(0)).current;
   const card2Anim = useRef(new Animated.Value(0)).current;
   const card3Anim = useRef(new Animated.Value(0)).current;
-  const tipAnim = useRef(new Animated.Value(0)).current;
+  const koraAnim = useRef(new Animated.Value(0)).current;
   const intentionAnim = useRef(new Animated.Value(0)).current;
   const insightAnim = useRef(new Animated.Value(0)).current;
 
@@ -70,7 +165,7 @@ export default function HomeScreen() {
 
     Animated.sequence([
       Animated.delay(150),
-      Animated.timing(tipAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(koraAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
     ]).start();
 
     Animated.sequence([
@@ -141,15 +236,13 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
-  const handleTipAction = useCallback(() => {
-    if (personalizedTip.action === 'pause') {
-      router.push('/pause');
-    } else if (personalizedTip.action === 'meditation') {
-      setShowMeditationModal(true);
-    } else if (personalizedTip.action === 'journal') {
-      setShowJournalModal(true);
+  const handleRefreshKora = useCallback(() => {
+    setKoraKey(prev => prev + 1);
+    fetchKoraSuggestion();
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [personalizedTip.action]);
+  }, [fetchKoraSuggestion]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -159,27 +252,45 @@ export default function HomeScreen() {
           <Text style={styles.username}>{displayName}</Text>
         </Animated.View>
 
-        <Animated.View style={[styles.tipCard, { opacity: tipAnim, transform: [{ translateY: tipAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
-          <View style={styles.tipHeader}>
-            <View style={styles.tipEmojiWrap}>
-              <Text style={styles.tipEmoji}>{personalizedTip.emoji}</Text>
+        {(wellbeingData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
+          <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
+            <View style={styles.koraHeader}>
+              <View style={styles.koraIconWrap}>
+                <MessageCircle size={18} color={Colors.light.card} />
+              </View>
+              <View style={styles.koraBadge}>
+                <Sparkles size={10} color={Colors.light.card} />
+                <Text style={styles.koraBadgeText}>Kora</Text>
+              </View>
+              <TouchableOpacity onPress={handleRefreshKora} style={styles.koraRefreshBtn} activeOpacity={0.7}>
+                <RefreshCw size={14} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
             </View>
-            <View style={styles.tipBadge}>
-              <Sparkles size={10} color={Colors.light.card} />
-              <Text style={styles.tipBadgeText}>For You</Text>
+            <Text style={styles.koraTitle}>Your wellbeing could use a boost</Text>
+            {koraLoading ? (
+              <View style={styles.koraLoadingWrap}>
+                <ActivityIndicator size="small" color={Colors.light.secondary} />
+                <Text style={styles.koraLoadingText}>Kora is thinking...</Text>
+              </View>
+            ) : (
+              <Text style={styles.koraMessage}>{koraSuggestion}</Text>
+            )}
+            <View style={styles.koraActions}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
+                <Heart size={13} color={Colors.light.secondary} />
+                <Text style={styles.koraActionText}>Breathe</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => setShowJournalModal(true)} activeOpacity={0.7}>
+                <BookOpen size={13} color={Colors.light.secondary} />
+                <Text style={styles.koraActionText}>Journal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
+                <MessageCircle size={13} color={Colors.light.secondary} />
+                <Text style={styles.koraActionText}>Talk to Kora</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-          <Text style={styles.tipTitle}>{personalizedTip.title}</Text>
-          <Text style={styles.tipMessage}>{personalizedTip.message}</Text>
-          {personalizedTip.action && (
-            <TouchableOpacity style={styles.tipActionBtn} onPress={handleTipAction} activeOpacity={0.7}>
-              <Text style={styles.tipActionText}>
-                {personalizedTip.action === 'pause' ? 'Start Breathing' : personalizedTip.action === 'meditation' ? 'Meditate Now' : 'Write Now'}
-              </Text>
-              <ChevronRight size={14} color={Colors.light.secondary} />
-            </TouchableOpacity>
-          )}
-        </Animated.View>
+          </Animated.View>
+        )}
 
         {!hasCheckedInToday && (
           <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin')} activeOpacity={0.7}>
@@ -425,16 +536,19 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 15, fontWeight: '500' as const, color: Colors.light.textSecondary, letterSpacing: 0.3, marginBottom: 4 },
   username: { fontSize: 30, fontWeight: '700' as const, color: Colors.light.text, letterSpacing: -0.5 },
 
-  tipCard: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 18, marginBottom: 16 },
-  tipHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  tipEmojiWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.light.subtle, justifyContent: 'center', alignItems: 'center' },
-  tipEmoji: { fontSize: 22 },
-  tipBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.light.secondary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  tipBadgeText: { fontSize: 10, fontWeight: '700' as const, color: Colors.light.card, letterSpacing: 0.3 },
-  tipTitle: { fontSize: 17, fontWeight: '700' as const, color: Colors.light.text, marginBottom: 6, letterSpacing: -0.2 },
-  tipMessage: { fontSize: 14, color: Colors.light.textSecondary, lineHeight: 21 },
-  tipActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 14, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, backgroundColor: Colors.light.subtle, borderRadius: 10 },
-  tipActionText: { fontSize: 13, fontWeight: '600' as const, color: Colors.light.secondary },
+  koraCard: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 18, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: Colors.light.secondary },
+  koraHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
+  koraIconWrap: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.secondary, justifyContent: 'center', alignItems: 'center' },
+  koraBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.light.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  koraBadgeText: { fontSize: 10, fontWeight: '700' as const, color: Colors.light.card, letterSpacing: 0.3 },
+  koraRefreshBtn: { marginLeft: 'auto' as const, padding: 6 },
+  koraTitle: { fontSize: 16, fontWeight: '700' as const, color: Colors.light.text, marginBottom: 8, letterSpacing: -0.2 },
+  koraMessage: { fontSize: 14, color: Colors.light.textSecondary, lineHeight: 22 },
+  koraLoadingWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  koraLoadingText: { fontSize: 13, color: Colors.light.textTertiary, fontStyle: 'italic' as const },
+  koraActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  koraActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 12, backgroundColor: Colors.light.subtle, borderRadius: 10 },
+  koraActionText: { fontSize: 12, fontWeight: '600' as const, color: Colors.light.secondary },
 
   checkInBanner: { backgroundColor: Colors.light.card, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   checkInLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },

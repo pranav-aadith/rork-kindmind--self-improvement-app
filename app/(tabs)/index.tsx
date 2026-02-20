@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Settings2 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -22,6 +22,8 @@ import { getSmartInsight, INTENTIONS } from '@/constants/personalization';
 import MeditationModal from '@/components/MeditationModal';
 import JournalModal from '@/components/JournalModal';
 import WidgetModal from '@/components/WidgetModal';
+import HomeWidgets from '@/components/HomeWidgets';
+import WidgetConfigModal from '@/components/WidgetConfigModal';
 
 export default function HomeScreen() {
   const {
@@ -35,6 +37,10 @@ export default function HomeScreen() {
     unlockedMilestones,
     nextMilestone,
     displayName,
+    activeWidgets,
+    allWidgets,
+    toggleWidget,
+    reorderWidgets,
   } = useKindMind();
 
   const dailyQuote = getDailyQuote();
@@ -160,6 +166,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const [showMeditationModal, setShowMeditationModal] = useState(false);
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [showWidgetModal, setShowWidgetModal] = useState(false);
+  const [showWidgetConfig, setShowWidgetConfig] = useState(false);
   const [showIntentionPicker, setShowIntentionPicker] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [celebratedMilestone, setCelebratedMilestone] = useState<{ title: string; description: string } | null>(null);
@@ -388,6 +395,27 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           </Animated.View>
         )}
 
+        {activeWidgets.length > 0 && (
+          <>
+            <View style={styles.widgetSectionHeader}>
+              <Text style={styles.sectionTitle}>Widgets</Text>
+              <TouchableOpacity onPress={() => setShowWidgetConfig(true)} style={styles.widgetConfigBtn} activeOpacity={0.7}>
+                <Settings2 size={16} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.widgetsArea}>
+              <HomeWidgets
+                activeWidgetIds={activeWidgets.map(w => w.id)}
+                journalEntries={data.journalEntries}
+                checkIns={data.checkIns}
+                currentStreak={data.currentStreak}
+                onOpenJournal={() => setShowJournalModal(true)}
+                onOpenMeditation={() => setShowMeditationModal(true)}
+              />
+            </View>
+          </>
+        )}
+
         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
         <View style={styles.actionsGrid}>
@@ -531,6 +559,13 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       <MeditationModal visible={showMeditationModal} onClose={() => setShowMeditationModal(false)} />
       <JournalModal visible={showJournalModal} onClose={() => setShowJournalModal(false)} onSave={handleSaveJournal} />
       <WidgetModal visible={showWidgetModal} onClose={() => setShowWidgetModal(false)} quote={dailyQuote} />
+      <WidgetConfigModal
+        visible={showWidgetConfig}
+        onClose={() => setShowWidgetConfig(false)}
+        widgets={allWidgets}
+        onToggle={toggleWidget}
+        onReorder={reorderWidgets}
+      />
     </SafeAreaView>
   );
 }
@@ -598,6 +633,10 @@ const styles = StyleSheet.create({
   insightCard: { backgroundColor: '#E8F4F2', borderRadius: 14, padding: 16, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12 },
   insightEmoji: { fontSize: 24 },
   insightText: { flex: 1, fontSize: 14, color: Colors.light.text, lineHeight: 21, fontWeight: '500' as const },
+
+  widgetSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  widgetConfigBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.subtle, justifyContent: 'center', alignItems: 'center' },
+  widgetsArea: { marginBottom: 24 },
 
   sectionTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.light.text, marginBottom: 14, letterSpacing: -0.3 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },

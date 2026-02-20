@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo } from 'react';
-import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone } from '@/types';
+import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone, WidgetConfig, WidgetType } from '@/types';
 import { DEFAULT_MILESTONES } from '@/constants/personalization';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -51,6 +51,15 @@ const defaultGoals: UserGoal[] = [
   { id: '5', label: 'I want to pause before reacting', selected: false },
 ];
 
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  { id: 'wellbeing', enabled: true, order: 0 },
+  { id: 'streak', enabled: true, order: 1 },
+  { id: 'mood', enabled: true, order: 2 },
+  { id: 'breathing', enabled: true, order: 3 },
+  { id: 'weekly', enabled: true, order: 4 },
+  { id: 'journal', enabled: true, order: 5 },
+];
+
 const initialData: UserData = {
   hasCompletedOnboarding: false,
   username: '',
@@ -64,6 +73,7 @@ const initialData: UserData = {
   dailyIntention: null,
   milestones: DEFAULT_MILESTONES,
   preferredName: '',
+  widgets: DEFAULT_WIDGETS,
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
@@ -107,6 +117,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           dailyIntention: parsed.dailyIntention || null,
           milestones: parsed.milestones || DEFAULT_MILESTONES,
           preferredName: parsed.preferredName || '',
+          widgets: parsed.widgets || DEFAULT_WIDGETS,
         };
         
         setData(loadedData);
@@ -116,7 +127,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
         }
       } else {
         const defaultName = user?.user_metadata?.full_name || '';
-        setData({ ...initialData, username: defaultName, milestones: DEFAULT_MILESTONES });
+        setData({ ...initialData, username: defaultName, milestones: DEFAULT_MILESTONES, widgets: DEFAULT_WIDGETS });
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -321,6 +332,33 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     return data.preferredName || data.username || 'there';
   }, [data.preferredName, data.username]);
 
+  const activeWidgets = useMemo(() => {
+    const widgets = data.widgets || DEFAULT_WIDGETS;
+    return [...widgets].filter(w => w.enabled).sort((a, b) => a.order - b.order);
+  }, [data.widgets]);
+
+  const updateWidgets = (widgets: WidgetConfig[]) => {
+    const newData = { ...data, widgets };
+    saveData(newData);
+  };
+
+  const toggleWidget = (widgetId: WidgetType) => {
+    const current = data.widgets || DEFAULT_WIDGETS;
+    const updated = current.map(w =>
+      w.id === widgetId ? { ...w, enabled: !w.enabled } : w
+    );
+    updateWidgets(updated);
+  };
+
+  const reorderWidgets = (orderedIds: WidgetType[]) => {
+    const current = data.widgets || DEFAULT_WIDGETS;
+    const updated = current.map(w => ({
+      ...w,
+      order: orderedIds.indexOf(w.id),
+    }));
+    updateWidgets(updated);
+  };
+
   return {
     data,
     isLoading,
@@ -340,5 +378,9 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     unlockedMilestones,
     nextMilestone,
     displayName,
+    activeWidgets,
+    allWidgets: data.widgets || DEFAULT_WIDGETS,
+    toggleWidget,
+    reorderWidgets,
   };
 });

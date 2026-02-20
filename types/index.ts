@@ -55,6 +55,14 @@ export interface Milestone {
   unlockedAt: number | null;
 }
 
+export type WidgetType = 'mood' | 'streak' | 'breathing' | 'weekly' | 'wellbeing' | 'journal';
+
+export interface WidgetConfig {
+  id: WidgetType;
+  enabled: boolean;
+  order: number;
+}
+
 export interface UserData {
   hasCompletedOnboarding: boolean;
   username: string;
@@ -68,6 +76,7 @@ export interface UserData {
   dailyIntention: DailyIntention | null;
   milestones: Milestone[];
   preferredName: string;
+  widgets: WidgetConfig[];
 }
 
 export interface KindResponse {

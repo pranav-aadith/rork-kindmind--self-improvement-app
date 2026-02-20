@@ -9,7 +9,7 @@ export default function TabLayout() {
   const { data } = useKindMind();
 
   if (!data.hasCompletedOnboarding) {
-    return <Redirect href="/onboarding" />;
+    return <Redirect href={'/onboarding' as any} />;
   }
 
   return (

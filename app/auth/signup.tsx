@@ -86,7 +86,7 @@ export default function SignupScreen() {
         if (loginError) {
           console.log('[Auth] Auto-login failed:', loginError.message);
           Alert.alert('Account Created', 'Check your email to verify, then sign in.');
-          router.push('/auth/login');
+          router.push('/auth/login' as any);
         } else {
           console.log('[Auth] Auto-login success, session:', !!loginData.session);
         }
@@ -205,7 +205,7 @@ export default function SignupScreen() {
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account?</Text>
-              <Link href="/auth/login" asChild>
+              <Link href={'/auth/login' as any} asChild>
                 <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.linkText}>Sign in</Text>
                 </TouchableOpacity>

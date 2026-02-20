@@ -290,7 +290,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
               <Text style={styles.koraMessage}>{koraSuggestion}</Text>
             )}
             <View style={styles.koraActions}>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause' as any)} activeOpacity={0.7}>
                 <Heart size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Breathe</Text>
               </TouchableOpacity>
@@ -298,7 +298,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
                 <BookOpen size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Journal</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses' as any)} activeOpacity={0.7}>
                 <MessageCircle size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Talk to Kora</Text>
               </TouchableOpacity>
@@ -307,7 +307,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         )}
 
         {!hasCheckedInToday && (
-          <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin')} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin' as any)} activeOpacity={0.7}>
             <View style={styles.checkInLeft}>
               <View style={styles.checkInDot} />
               <View>
@@ -431,7 +431,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
 
           <View style={styles.actionRow}>
             <Animated.View style={[styles.actionCardHalf, { opacity: card2Anim, transform: [{ scale: card2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
-              <TouchableOpacity style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.secondary }]} onPress={() => router.push('/pause')} activeOpacity={0.85}>
+              <TouchableOpacity style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.secondary }]} onPress={() => router.push('/pause' as any)} activeOpacity={0.85}>
                 <Heart size={20} color="#FFF" />
                 <Text style={[styles.actionTitleSmall, { color: '#FFF' }]}>Pause</Text>
               </TouchableOpacity>
@@ -474,7 +474,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           </>
         )}
 
-        <TouchableOpacity style={styles.analyticsCard} onPress={() => router.push('/progress')} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.analyticsCard} onPress={() => router.push('/progress' as any)} activeOpacity={0.7}>
           <View style={styles.analyticsLeft}>
             <BarChart3 size={20} color={Colors.light.secondary} />
             <View>
@@ -489,7 +489,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           <>
             <View style={styles.sectionRow}>
               <Text style={styles.sectionTitle}>Recent Entries</Text>
-              <TouchableOpacity onPress={() => router.push('/progress')}>
+              <TouchableOpacity onPress={() => router.push('/progress' as any)}>
                 <Text style={styles.sectionLink}>View All</Text>
               </TouchableOpacity>
             </View>

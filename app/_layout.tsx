@@ -21,24 +21,24 @@ function RootLayoutNav() {
   useEffect(() => {
     if (authLoading || dataLoading) return;
 
-    const inAuthGroup = segments[0] === 'auth' as string;
-    const inOnboarding = segments[0] === 'onboarding' as string;
-    const inWelcome = segments[0] === 'welcome' as string;
+    const inAuthGroup = segments[0] === 'auth';
+    const inOnboarding = segments[0] === 'onboarding';
+    const inWelcome = segments[0] === 'welcome';
     const inTabs = segments[0] === '(tabs)';
 
     if (!session) {
       if (!inAuthGroup && !inWelcome) {
-        router.replace('/welcome' as any);
+        router.replace('/welcome');
       }
     } else {
       if (inAuthGroup || inWelcome) {
         if (!data.hasCompletedOnboarding) {
-          router.replace('/onboarding' as any);
+          router.replace('/onboarding');
         } else {
           router.replace('/(tabs)');
         }
       } else if (!data.hasCompletedOnboarding && !inOnboarding) {
-        router.replace('/onboarding' as any);
+        router.replace('/onboarding');
       } else if (data.hasCompletedOnboarding && !inTabs) {
         router.replace('/(tabs)');
       }

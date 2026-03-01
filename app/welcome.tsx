@@ -55,7 +55,7 @@ export default function WelcomeScreen() {
   };
 
   const handleContinue = () => {
-    router.replace('/auth/login' as any);
+    router.replace('/auth/login');
   };
 
   return (

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Settings2 } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -22,8 +22,6 @@ import { getSmartInsight, INTENTIONS } from '@/constants/personalization';
 import MeditationModal from '@/components/MeditationModal';
 import JournalModal from '@/components/JournalModal';
 import WidgetModal from '@/components/WidgetModal';
-import HomeWidgets from '@/components/HomeWidgets';
-import WidgetConfigModal from '@/components/WidgetConfigModal';
 
 export default function HomeScreen() {
   const {
@@ -37,10 +35,6 @@ export default function HomeScreen() {
     unlockedMilestones,
     nextMilestone,
     displayName,
-    activeWidgets,
-    allWidgets,
-    toggleWidget,
-    reorderWidgets,
   } = useKindMind();
 
   const dailyQuote = getDailyQuote();
@@ -166,7 +160,6 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const [showMeditationModal, setShowMeditationModal] = useState(false);
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [showWidgetModal, setShowWidgetModal] = useState(false);
-  const [showWidgetConfig, setShowWidgetConfig] = useState(false);
   const [showIntentionPicker, setShowIntentionPicker] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [celebratedMilestone, setCelebratedMilestone] = useState<{ title: string; description: string } | null>(null);
@@ -290,7 +283,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
               <Text style={styles.koraMessage}>{koraSuggestion}</Text>
             )}
             <View style={styles.koraActions}>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause' as any)} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
                 <Heart size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Breathe</Text>
               </TouchableOpacity>
@@ -298,7 +291,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
                 <BookOpen size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Journal</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses' as any)} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
                 <MessageCircle size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Talk to Kora</Text>
               </TouchableOpacity>
@@ -307,7 +300,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         )}
 
         {!hasCheckedInToday && (
-          <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin' as any)} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin')} activeOpacity={0.7}>
             <View style={styles.checkInLeft}>
               <View style={styles.checkInDot} />
               <View>
@@ -395,27 +388,6 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           </Animated.View>
         )}
 
-        {activeWidgets.length > 0 && (
-          <>
-            <View style={styles.widgetSectionHeader}>
-              <Text style={styles.sectionTitle}>Widgets</Text>
-              <TouchableOpacity onPress={() => setShowWidgetConfig(true)} style={styles.widgetConfigBtn} activeOpacity={0.7}>
-                <Settings2 size={16} color={Colors.light.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.widgetsArea}>
-              <HomeWidgets
-                activeWidgetIds={activeWidgets.map(w => w.id)}
-                journalEntries={data.journalEntries}
-                checkIns={data.checkIns}
-                currentStreak={data.currentStreak}
-                onOpenJournal={() => setShowJournalModal(true)}
-                onOpenMeditation={() => setShowMeditationModal(true)}
-              />
-            </View>
-          </>
-        )}
-
         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
         <View style={styles.actionsGrid}>
@@ -431,7 +403,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
 
           <View style={styles.actionRow}>
             <Animated.View style={[styles.actionCardHalf, { opacity: card2Anim, transform: [{ scale: card2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
-              <TouchableOpacity style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.secondary }]} onPress={() => router.push('/pause' as any)} activeOpacity={0.85}>
+              <TouchableOpacity style={[styles.actionCard, styles.actionCardSmall, { backgroundColor: Colors.light.secondary }]} onPress={() => router.push('/pause')} activeOpacity={0.85}>
                 <Heart size={20} color="#FFF" />
                 <Text style={[styles.actionTitleSmall, { color: '#FFF' }]}>Pause</Text>
               </TouchableOpacity>
@@ -474,7 +446,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           </>
         )}
 
-        <TouchableOpacity style={styles.analyticsCard} onPress={() => router.push('/progress' as any)} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.analyticsCard} onPress={() => router.push('/progress')} activeOpacity={0.7}>
           <View style={styles.analyticsLeft}>
             <BarChart3 size={20} color={Colors.light.secondary} />
             <View>
@@ -489,7 +461,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           <>
             <View style={styles.sectionRow}>
               <Text style={styles.sectionTitle}>Recent Entries</Text>
-              <TouchableOpacity onPress={() => router.push('/progress' as any)}>
+              <TouchableOpacity onPress={() => router.push('/progress')}>
                 <Text style={styles.sectionLink}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -559,13 +531,6 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       <MeditationModal visible={showMeditationModal} onClose={() => setShowMeditationModal(false)} />
       <JournalModal visible={showJournalModal} onClose={() => setShowJournalModal(false)} onSave={handleSaveJournal} />
       <WidgetModal visible={showWidgetModal} onClose={() => setShowWidgetModal(false)} quote={dailyQuote} />
-      <WidgetConfigModal
-        visible={showWidgetConfig}
-        onClose={() => setShowWidgetConfig(false)}
-        widgets={allWidgets}
-        onToggle={toggleWidget}
-        onReorder={reorderWidgets}
-      />
     </SafeAreaView>
   );
 }
@@ -633,10 +598,6 @@ const styles = StyleSheet.create({
   insightCard: { backgroundColor: '#E8F4F2', borderRadius: 14, padding: 16, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12 },
   insightEmoji: { fontSize: 24 },
   insightText: { flex: 1, fontSize: 14, color: Colors.light.text, lineHeight: 21, fontWeight: '500' as const },
-
-  widgetSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  widgetConfigBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.subtle, justifyContent: 'center', alignItems: 'center' },
-  widgetsArea: { marginBottom: 24 },
 
   sectionTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.light.text, marginBottom: 14, letterSpacing: -0.3 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },

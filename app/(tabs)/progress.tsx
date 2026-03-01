@@ -1217,11 +1217,11 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
               <Text style={styles.koraMessage}>{koraSuggestion}</Text>
             )}
             <View style={styles.koraActions}>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause' as any)} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
                 <Heart size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Breathe</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses' as any)} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
                 <MessageCircle size={13} color={Colors.light.secondary} />
                 <Text style={styles.koraActionText}>Talk to Kora</Text>
               </TouchableOpacity>

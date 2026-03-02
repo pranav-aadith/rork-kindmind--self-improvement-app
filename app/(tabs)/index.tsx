@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Flame, Minus } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -12,6 +12,7 @@ import {
   Modal,
   Platform,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { generateText } from '@rork-ai/toolkit-sdk';
@@ -144,7 +145,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
     } else {
       setKoraSuggestion(null);
     }
-  }, [wellbeingData.trendPercent, koraKey]);
+  }, [wellbeingData.trendPercent, koraKey, fetchKoraSuggestion]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -163,6 +164,22 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const [showIntentionPicker, setShowIntentionPicker] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [celebratedMilestone, setCelebratedMilestone] = useState<{ title: string; description: string } | null>(null);
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [selectedDayDetail, setSelectedDayDetail] = useState<{ label: string; date: string; status: 'completed' | 'missed' | 'today-pending' | 'today-completed'; completedTime?: string } | null>(null);
+
+  const dimAnim = useRef(new Animated.Value(0)).current;
+  const glowScaleAnim = useRef(new Animated.Value(0.7)).current;
+  const pulseAnim = useRef(new Animated.Value(0.2)).current;
+  const streakFloatAnim = useRef(new Animated.Value(28)).current;
+  const streakOpacityAnim = useRef(new Animated.Value(0)).current;
+  const countAnim = useRef(new Animated.Value(Math.max(data.currentStreak - 1, 0))).current;
+  const affirmationAnim = useRef(new Animated.Value(0)).current;
+  const contractScaleAnim = useRef(new Animated.Value(1)).current;
+  const barGlowAnim = useRef(new Animated.Value(0)).current;
+  const todayPulseAnim = useRef(new Animated.Value(1)).current;
+  const todayShimmerAnim = useRef(new Animated.Value(-36)).current;
+  const previousCheckInRef = useRef<boolean>(hasCheckedInToday);
+  const previousStreakRef = useRef<number>(data.currentStreak);
 
   useEffect(() => {
     Animated.parallel([
@@ -215,7 +232,134 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     }
-  }, [data.checkIns.length, data.triggers.length, data.journalEntries.length, data.currentStreak]);
+  }, [data.checkIns.length, data.triggers.length, data.journalEntries.length, data.currentStreak, checkAndUpdateMilestones]);
+
+  const weekDays = useMemo(() => {
+    const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay());
+
+    return labels.map((label, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      const dateKey = formatLocalDate(date);
+      const checkIn = data.checkIns.find(c => c.date === dateKey);
+      const isToday = dateKey === formatLocalDate(today);
+      const status: 'completed' | 'missed' | 'today-pending' | 'today-completed' = isToday
+        ? checkIn ? 'today-completed' : 'today-pending'
+        : checkIn ? 'completed' : 'missed';
+
+      return {
+        label,
+        dateKey,
+        status,
+        checkIn,
+      };
+    });
+  }, [data.checkIns, formatLocalDate]);
+
+  const handleDayPress = useCallback((item: typeof weekDays[number]) => {
+    const completedTime = item.checkIn
+      ? new Date(Number(item.checkIn.id)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : undefined;
+
+    console.log('[Home] Weekly streak day pressed:', { day: item.label, status: item.status, date: item.dateKey });
+    setSelectedDayDetail({
+      label: item.label,
+      date: item.dateKey,
+      status: item.status,
+      completedTime,
+    });
+  }, []);
+
+  useEffect(() => {
+    const shouldCelebrate = !previousCheckInRef.current && hasCheckedInToday && data.currentStreak > previousStreakRef.current;
+    if (!shouldCelebrate) {
+      previousCheckInRef.current = hasCheckedInToday;
+      previousStreakRef.current = data.currentStreak;
+      return;
+    }
+
+    console.log('[Home] Starting streak celebration animation', { previous: previousStreakRef.current, current: data.currentStreak });
+    setShowStreakCelebration(true);
+    countAnim.setValue(Math.max(data.currentStreak - 1, 0));
+    dimAnim.setValue(0);
+    glowScaleAnim.setValue(0.7);
+    pulseAnim.setValue(0.2);
+    streakFloatAnim.setValue(28);
+    streakOpacityAnim.setValue(0);
+    affirmationAnim.setValue(0);
+    contractScaleAnim.setValue(1);
+
+    Animated.sequence([
+      Animated.timing(dimAnim, { toValue: 0.52, duration: 200, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(glowScaleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 0.25, duration: 240, useNativeDriver: true }),
+        ]),
+      ]),
+      Animated.parallel([
+        Animated.timing(streakOpacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(streakFloatAnim, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(countAnim, { toValue: data.currentStreak + 0.2, duration: 700, useNativeDriver: false }),
+      ]),
+      Animated.spring(countAnim, { toValue: data.currentStreak, friction: 6, tension: 70, useNativeDriver: false }),
+      Animated.timing(affirmationAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.delay(280),
+      Animated.parallel([
+        Animated.timing(contractScaleAnim, { toValue: 0.18, duration: 380, useNativeDriver: true }),
+        Animated.timing(dimAnim, { toValue: 0, duration: 380, useNativeDriver: true }),
+        Animated.timing(affirmationAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+        Animated.timing(streakOpacityAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+      ]),
+    ]).start(() => {
+      setShowStreakCelebration(false);
+      contractScaleAnim.setValue(1);
+    });
+
+    Animated.sequence([
+      Animated.timing(todayPulseAnim, { toValue: 1.14, duration: 280, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1.06, duration: 220, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+
+    if (data.currentStreak > 0 && data.currentStreak % 7 === 0) {
+      Animated.sequence([
+        Animated.timing(barGlowAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+        Animated.timing(barGlowAnim, { toValue: 0, duration: 420, useNativeDriver: true }),
+      ]).start();
+    }
+
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    previousCheckInRef.current = hasCheckedInToday;
+    previousStreakRef.current = data.currentStreak;
+  }, [hasCheckedInToday, data.currentStreak, countAnim, dimAnim, glowScaleAnim, pulseAnim, streakFloatAnim, streakOpacityAnim, affirmationAnim, contractScaleAnim, todayPulseAnim, barGlowAnim]);
+
+  useEffect(() => {
+    if (hasCheckedInToday) {
+      return;
+    }
+
+    todayShimmerAnim.setValue(-36);
+    const shimmerLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(todayShimmerAnim, { toValue: 36, duration: 900, useNativeDriver: true }),
+        Animated.delay(1200),
+      ]),
+    );
+    shimmerLoop.start();
+
+    return () => {
+      shimmerLoop.stop();
+    };
+  }, [hasCheckedInToday, todayShimmerAnim]);
 
   const handleSaveJournal = useCallback((entry: { gratitude: string; reflection: string; emotion: string; emotionEmoji: string }) => {
     addJournalEntry(entry);
@@ -258,6 +402,43 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           <Text style={styles.greeting}>{getTimeOfDay()}</Text>
           <Text style={styles.username}>{displayName}</Text>
         </Animated.View>
+
+        <View style={styles.weekStreakContainer} testID="weekly-streak-bar">
+          <Animated.View style={[styles.weekStreakGlowOverlay, { opacity: barGlowAnim }]} />
+          <View style={styles.weekStreakHeader}>
+            <Text style={styles.weekStreakTitle}>Weekly Rhythm</Text>
+            <View style={styles.weekStreakCountPill}>
+              <Flame size={12} color={Colors.light.card} />
+              <Text style={styles.weekStreakCountText}>{data.currentStreak} streak</Text>
+            </View>
+          </View>
+          <View style={styles.weekDaysRow}>
+            {weekDays.map((item) => {
+              const isToday = item.status === 'today-completed' || item.status === 'today-pending';
+              const isCompleted = item.status === 'completed' || item.status === 'today-completed';
+              const circleStyles = [
+                styles.weekDayCircle,
+                item.status === 'missed' && styles.weekDayCircleMissed,
+                item.status === 'today-pending' && styles.weekDayCirclePending,
+                isCompleted && styles.weekDayCircleCompleted,
+                item.status === 'today-completed' && styles.weekDayCircleTodayCompleted,
+              ];
+
+              return (
+                <Pressable key={item.label} onPress={() => handleDayPress(item)} style={styles.weekDayWrap} testID={`week-day-${item.label.toLowerCase()}`}>
+                  <Animated.View style={[circleStyles, isToday ? { transform: [{ scale: todayPulseAnim }] } : undefined]}>
+                    {item.status === 'today-pending' && (
+                      <Animated.View style={[styles.weekDayShimmer, { transform: [{ translateX: todayShimmerAnim }] }]} />
+                    )}
+                    {(item.status === 'completed' || item.status === 'today-completed') && <Flame size={12} color={Colors.light.card} />}
+                    {item.status === 'missed' && <Minus size={12} color={Colors.light.textTertiary} />}
+                  </Animated.View>
+                  <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{item.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {(wellbeingData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
           <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
@@ -486,6 +667,40 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
+      {showStreakCelebration && (
+        <View style={styles.celebrationOverlay} pointerEvents="none" testID="streak-celebration-overlay">
+          <Animated.View style={[styles.celebrationDim, { opacity: dimAnim }]} />
+          <Animated.View style={[styles.celebrationCore, { transform: [{ scale: contractScaleAnim }] }]}>
+            <Animated.View style={[styles.energyGlow, { transform: [{ scale: glowScaleAnim }] }]} />
+            <Animated.View style={[styles.energyPulse, { opacity: pulseAnim, transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }] }]} />
+            <Animated.View style={[styles.celebrationContent, { opacity: streakOpacityAnim, transform: [{ translateY: streakFloatAnim }] }]}> 
+              <Flame size={38} color={Colors.light.accent} />
+              <Animated.Text style={styles.celebrationCount}>{countAnim.interpolate({ inputRange: [0, 200], outputRange: ['0', '200'] })}</Animated.Text>
+              <Animated.View style={{ opacity: affirmationAnim, transform: [{ translateY: affirmationAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
+                <Text style={styles.celebrationTitle}>{`${data.currentStreak} Day Streak!`}</Text>
+                <Text style={styles.celebrationSubtitle}>You’re building momentum.</Text>
+              </Animated.View>
+            </Animated.View>
+          </Animated.View>
+        </View>
+      )}
+
+      <Modal visible={selectedDayDetail !== null} transparent animationType="fade" onRequestClose={() => setSelectedDayDetail(null)}>
+        <Pressable style={styles.dayDetailOverlay} onPress={() => setSelectedDayDetail(null)} testID="day-detail-overlay">
+          <Pressable style={styles.dayDetailCard} onPress={() => {}} testID="day-detail-card">
+            <Text style={styles.dayDetailTitle}>{selectedDayDetail?.label ?? ''}</Text>
+            <Text style={styles.dayDetailDate}>{selectedDayDetail?.date ?? ''}</Text>
+            <Text style={styles.dayDetailStatus}>
+              {selectedDayDetail?.status === 'today-completed' || selectedDayDetail?.status === 'completed'
+                ? `Completed${selectedDayDetail?.completedTime ? ` at ${selectedDayDetail.completedTime}` : ''}`
+                : selectedDayDetail?.status === 'today-pending'
+                  ? 'Not completed yet'
+                  : 'Missed day'}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <Modal visible={showIntentionPicker} transparent animationType="slide" onRequestClose={() => setShowIntentionPicker(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.intentionModal}>
@@ -584,6 +799,23 @@ const styles = StyleSheet.create({
   quoteActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: Colors.light.subtle, borderRadius: 8 },
   quoteActionText: { fontSize: 12, fontWeight: '500' as const, color: Colors.light.textSecondary },
 
+  weekStreakContainer: { backgroundColor: Colors.light.card, borderRadius: 18, padding: 14, marginBottom: 16, overflow: 'hidden' },
+  weekStreakGlowOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#FFD8A8' },
+  weekStreakHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  weekStreakTitle: { fontSize: 14, fontWeight: '700' as const, color: Colors.light.text, letterSpacing: 0.2 },
+  weekStreakCountPill: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: Colors.light.secondary },
+  weekStreakCountText: { fontSize: 11, fontWeight: '700' as const, color: Colors.light.card },
+  weekDaysRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  weekDayWrap: { alignItems: 'center', gap: 5 },
+  weekDayCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#EAE7E1', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  weekDayCircleCompleted: { backgroundColor: Colors.light.primary, shadowColor: Colors.light.primary, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  weekDayCircleTodayCompleted: { borderWidth: 2, borderColor: Colors.light.accent },
+  weekDayCirclePending: { borderWidth: 1.5, borderColor: Colors.light.secondary, backgroundColor: Colors.light.card },
+  weekDayCircleMissed: { backgroundColor: '#E9E5E0' },
+  weekDayShimmer: { position: 'absolute' as const, width: 14, height: 40, backgroundColor: 'rgba(255,179,102,0.35)', transform: [{ rotate: '20deg' }] },
+  weekDayLabel: { fontSize: 11, color: Colors.light.textSecondary, fontWeight: '500' as const },
+  weekDayLabelToday: { color: Colors.light.text, fontWeight: '700' as const },
+
   streakRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   streakCard: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.light.card, borderRadius: 14, padding: 16, gap: 12 },
   streakIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.light.subtle, justifyContent: 'center', alignItems: 'center' },
@@ -638,6 +870,22 @@ const styles = StyleSheet.create({
   entryText: { fontSize: 14, color: Colors.light.textSecondary, lineHeight: 20 },
 
   bottomSpacer: { height: 30 },
+
+  celebrationOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 200 },
+  celebrationDim: { ...StyleSheet.absoluteFillObject, backgroundColor: '#0C1210' },
+  celebrationCore: { width: 230, height: 230, borderRadius: 115, justifyContent: 'center', alignItems: 'center' },
+  energyGlow: { position: 'absolute' as const, width: 200, height: 200, borderRadius: 100, backgroundColor: '#FFD5A4', opacity: 0.35 },
+  energyPulse: { position: 'absolute' as const, width: 216, height: 216, borderRadius: 108, borderWidth: 3, borderColor: '#FFC98B' },
+  celebrationContent: { alignItems: 'center', gap: 6 },
+  celebrationCount: { fontSize: 56, fontWeight: '800' as const, color: '#FFF3DF', letterSpacing: -1.2 },
+  celebrationTitle: { fontSize: 22, fontWeight: '700' as const, color: '#FFF3DF', textAlign: 'center' as const },
+  celebrationSubtitle: { fontSize: 14, color: 'rgba(255,243,223,0.85)', textAlign: 'center' as const, marginTop: 4 },
+
+  dayDetailOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.28)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  dayDetailCard: { width: '100%', maxWidth: 300, backgroundColor: Colors.light.card, borderRadius: 18, padding: 18 },
+  dayDetailTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.light.text, marginBottom: 4 },
+  dayDetailDate: { fontSize: 13, color: Colors.light.textSecondary, marginBottom: 8 },
+  dayDetailStatus: { fontSize: 14, color: Colors.light.text, lineHeight: 20 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   intentionModal: { backgroundColor: Colors.light.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingBottom: 40, maxHeight: '70%' },

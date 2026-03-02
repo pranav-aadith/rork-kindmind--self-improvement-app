@@ -179,6 +179,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const haloScaleAnim = useRef(new Animated.Value(0.75)).current;
   const haloOpacityAnim = useRef(new Animated.Value(0)).current;
   const countAnim = useRef(new Animated.Value(Math.max(data.currentStreak - 1, 0))).current;
+  const [displayedStreakCount, setDisplayedStreakCount] = useState<number>(Math.max(data.currentStreak - 1, 0));
   const affirmationAnim = useRef(new Animated.Value(0)).current;
   const flameFlickerAnim = useRef(new Animated.Value(1)).current;
   const barGlowAnim = useRef(new Animated.Value(0)).current;
@@ -199,6 +200,13 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const todayFlameFlickerLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   const previousCheckInRef = useRef<boolean>(hasCheckedInToday);
   const previousStreakRef = useRef<number>(data.currentStreak);
+
+  useEffect(() => {
+    const id = countAnim.addListener(({ value }) => {
+      setDisplayedStreakCount(Math.round(value));
+    });
+    return () => countAnim.removeListener(id);
+  }, [countAnim]);
 
   useEffect(() => {
     Animated.parallel([
@@ -813,7 +821,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
               <Animated.View style={{ transform: [{ scale: flameFlickerAnim }] }}>
                 <Flame size={42} color={Colors.light.accent} />
               </Animated.View>
-              <Animated.Text style={styles.celebrationCount}>{countAnim.interpolate({ inputRange: [0, 200], outputRange: ['0', '200'] })}</Animated.Text>
+              <Text style={styles.celebrationCount}>{displayedStreakCount}</Text>
               <Animated.View style={{ opacity: affirmationAnim, transform: [{ translateY: affirmationAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
                 <Text style={styles.celebrationTitle}>{`${data.currentStreak} Day Streak`}</Text>
                 <Text style={styles.celebrationSubtitle}>Keep your flame alive.</Text>

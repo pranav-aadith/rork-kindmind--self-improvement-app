@@ -47,6 +47,7 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const recordingPulse = useRef(new Animated.Value(1)).current;
   const [journalPrompt, setJournalPrompt] = useState('');
+  const [activePrompt, setActivePrompt] = useState('');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   const triggerHaptic = useCallback(() => {
@@ -123,13 +124,14 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
     triggerHaptic();
     onSave({
       gratitude: journalText.trim(),
-      reflection: '',
+      reflection: activePrompt,
       emotion: selectedEmotion.label,
       emotionEmoji: selectedEmotion.emoji,
     });
     setJournalText('');
     setSelectedEmotion(null);
     setJournalPrompt('');
+    setActivePrompt('');
     setInputMode('voice');
     onClose();
   };
@@ -214,6 +216,7 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
     setJournalText('');
     setSelectedEmotion(null);
     setJournalPrompt('');
+    setActivePrompt('');
     setInputMode('voice');
     onClose();
   };
@@ -277,15 +280,28 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
               {journalPrompt !== '' && (
                 <TouchableOpacity
                   style={styles.promptCard}
-                  onPress={() => { triggerHaptic(); setJournalText(journalPrompt); setInputMode('text'); }}
+                  onPress={() => { triggerHaptic(); setActivePrompt(journalPrompt); setJournalText(''); setInputMode('text'); }}
                   activeOpacity={0.7}
                 >
                   <Sparkles size={14} color={Colors.light.accent} />
                   <Text style={styles.promptCardText}>{journalPrompt}</Text>
-                  <Text style={styles.promptCardHint}>Tap to use</Text>
+                  <Text style={styles.promptCardHint}>{activePrompt === journalPrompt ? '✓ In use' : 'Tap to use'}</Text>
                 </TouchableOpacity>
               )}
             </View>
+
+            {activePrompt !== '' && (
+              <View style={styles.activePromptSection}>
+                <View style={styles.activePromptHeader}>
+                  <Sparkles size={13} color={Colors.light.accent} />
+                  <Text style={styles.activePromptLabel}>Prompt</Text>
+                  <TouchableOpacity onPress={() => { setActivePrompt(''); setJournalText(''); }} style={styles.activePromptClear}>
+                    <X size={13} color={Colors.light.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.activePromptText}>{activePrompt}</Text>
+              </View>
+            )}
 
             {inputMode === 'voice' ? (
               <View style={styles.voiceSection}>
@@ -311,14 +327,18 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
               </View>
             ) : (
               <View style={styles.textSection}>
+                {activePrompt !== '' && (
+                  <Text style={styles.responseLabel}>Your Response</Text>
+                )}
                 <TextInput
                   style={styles.journalTextInput}
-                  placeholder="What's on your mind?"
+                  placeholder={activePrompt !== '' ? 'Write your response here...' : "What's on your mind?"}
                   placeholderTextColor={Colors.light.textTertiary}
                   value={journalText}
                   onChangeText={setJournalText}
                   multiline
                   textAlignVertical="top"
+                  autoFocus={activePrompt !== ''}
                 />
               </View>
             )}
@@ -328,6 +348,12 @@ export default function JournalModal({ visible, onClose, onSave }: JournalModalP
                 <Text style={styles.fieldLabel}>Preview</Text>
                 <View style={styles.previewCard}>
                   {selectedEmotion && <Text style={styles.previewEmotion}>{selectedEmotion.emoji} {selectedEmotion.label}</Text>}
+                  {activePrompt !== '' && (
+                    <View style={styles.previewPromptRow}>
+                      <Sparkles size={11} color={Colors.light.accent} />
+                      <Text style={styles.previewPromptText} numberOfLines={2}>{activePrompt}</Text>
+                    </View>
+                  )}
                   <Text style={styles.previewText}>{journalText}</Text>
                 </View>
               </View>
@@ -388,8 +414,16 @@ const styles = StyleSheet.create({
   journalTextInput: { backgroundColor: Colors.light.subtle, borderRadius: 14, padding: 16, fontSize: 15, color: Colors.light.text, minHeight: 140, lineHeight: 22 },
   previewSection: { marginBottom: 20 },
   previewCard: { backgroundColor: Colors.light.card, borderRadius: 14, padding: 16 },
-  previewEmotion: { fontSize: 14, fontWeight: '600' as const, color: Colors.light.text, marginBottom: 6 },
+  previewEmotion: { fontSize: 14, fontWeight: '600' as const, color: Colors.light.text, marginBottom: 8 },
+  previewPromptRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginBottom: 10, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: Colors.light.border },
+  previewPromptText: { flex: 1, fontSize: 12, color: Colors.light.textTertiary, fontStyle: 'italic' as const, lineHeight: 18 },
   previewText: { fontSize: 14, color: Colors.light.textSecondary, lineHeight: 21 },
+  activePromptSection: { backgroundColor: Colors.light.card, borderRadius: 14, padding: 14, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: Colors.light.accent },
+  activePromptHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  activePromptLabel: { fontSize: 11, fontWeight: '700' as const, color: Colors.light.accent, textTransform: 'uppercase' as const, letterSpacing: 0.6, flex: 1 },
+  activePromptClear: { padding: 2 },
+  activePromptText: { fontSize: 15, color: Colors.light.text, fontStyle: 'italic' as const, lineHeight: 22 },
+  responseLabel: { fontSize: 11, fontWeight: '700' as const, color: Colors.light.textSecondary, textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8 },
   footer: { paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 0.5, borderTopColor: Colors.light.border },
   saveEntryBtn: { backgroundColor: Colors.light.primary, borderRadius: 14, paddingVertical: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   saveEntryBtnText: { fontSize: 15, fontWeight: '600' as const, color: '#FFF' },

@@ -168,16 +168,35 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
   const [selectedDayDetail, setSelectedDayDetail] = useState<{ label: string; date: string; status: 'completed' | 'missed' | 'today-pending' | 'today-completed'; completedTime?: string } | null>(null);
 
   const dimAnim = useRef(new Animated.Value(0)).current;
-  const glowScaleAnim = useRef(new Animated.Value(0.7)).current;
-  const pulseAnim = useRef(new Animated.Value(0.2)).current;
-  const streakFloatAnim = useRef(new Animated.Value(28)).current;
+  const warmthTintAnim = useRef(new Animated.Value(0)).current;
+  const emberScaleAnim = useRef(new Animated.Value(0)).current;
+  const emberOpacityAnim = useRef(new Animated.Value(0)).current;
+  const sparkScaleAnim = useRef(new Animated.Value(0)).current;
+  const flameRiseAnim = useRef(new Animated.Value(26)).current;
   const streakOpacityAnim = useRef(new Animated.Value(0)).current;
+  const flameMergeScaleAnim = useRef(new Animated.Value(1)).current;
+  const flameMergeYAnim = useRef(new Animated.Value(0)).current;
+  const haloScaleAnim = useRef(new Animated.Value(0.75)).current;
+  const haloOpacityAnim = useRef(new Animated.Value(0)).current;
   const countAnim = useRef(new Animated.Value(Math.max(data.currentStreak - 1, 0))).current;
   const affirmationAnim = useRef(new Animated.Value(0)).current;
-  const contractScaleAnim = useRef(new Animated.Value(1)).current;
+  const flameFlickerAnim = useRef(new Animated.Value(1)).current;
   const barGlowAnim = useRef(new Animated.Value(0)).current;
   const todayPulseAnim = useRef(new Animated.Value(1)).current;
+  const todayFlameFlickerAnim = useRef(new Animated.Value(1)).current;
   const todayShimmerAnim = useRef(new Animated.Value(-36)).current;
+  const particleRiseAnims = useRef<Animated.Value[]>([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const particleOpacityAnims = useRef<Animated.Value[]>([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const flameFlickerLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const todayFlameFlickerLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   const previousCheckInRef = useRef<boolean>(hasCheckedInToday);
   const previousStreakRef = useRef<number>(data.currentStreak);
 
@@ -281,50 +300,90 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       return;
     }
 
-    console.log('[Home] Starting streak celebration animation', { previous: previousStreakRef.current, current: data.currentStreak });
+    console.log('[Home] Starting calm flame streak celebration', { previous: previousStreakRef.current, current: data.currentStreak });
     setShowStreakCelebration(true);
     countAnim.setValue(Math.max(data.currentStreak - 1, 0));
     dimAnim.setValue(0);
-    glowScaleAnim.setValue(0.7);
-    pulseAnim.setValue(0.2);
-    streakFloatAnim.setValue(28);
+    warmthTintAnim.setValue(0);
+    emberScaleAnim.setValue(0);
+    emberOpacityAnim.setValue(0);
+    sparkScaleAnim.setValue(0);
+    flameRiseAnim.setValue(26);
     streakOpacityAnim.setValue(0);
+    flameMergeScaleAnim.setValue(1);
+    flameMergeYAnim.setValue(0);
+    haloScaleAnim.setValue(0.75);
+    haloOpacityAnim.setValue(0);
     affirmationAnim.setValue(0);
-    contractScaleAnim.setValue(1);
+    particleRiseAnims.forEach((anim) => anim.setValue(0));
+    particleOpacityAnims.forEach((anim) => anim.setValue(0));
+
+    flameFlickerLoopRef.current?.stop();
+    flameFlickerAnim.setValue(1);
 
     Animated.sequence([
-      Animated.timing(dimAnim, { toValue: 0.52, duration: 200, useNativeDriver: true }),
       Animated.parallel([
-        Animated.timing(glowScaleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 0.25, duration: 240, useNativeDriver: true }),
-        ]),
+        Animated.timing(dimAnim, { toValue: 0.42, duration: 200, useNativeDriver: true }),
+        Animated.timing(warmthTintAnim, { toValue: 0.15, duration: 260, useNativeDriver: true }),
       ]),
       Animated.parallel([
-        Animated.timing(streakOpacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(streakFloatAnim, { toValue: 0, duration: 450, useNativeDriver: true }),
-        Animated.timing(countAnim, { toValue: data.currentStreak + 0.2, duration: 700, useNativeDriver: false }),
+        Animated.timing(emberOpacityAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+        Animated.timing(emberScaleAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(sparkScaleAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
       ]),
-      Animated.spring(countAnim, { toValue: data.currentStreak, friction: 6, tension: 70, useNativeDriver: false }),
-      Animated.timing(affirmationAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
-      Animated.delay(280),
       Animated.parallel([
-        Animated.timing(contractScaleAnim, { toValue: 0.18, duration: 380, useNativeDriver: true }),
-        Animated.timing(dimAnim, { toValue: 0, duration: 380, useNativeDriver: true }),
-        Animated.timing(affirmationAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
-        Animated.timing(streakOpacityAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+        Animated.timing(streakOpacityAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
+        Animated.timing(flameRiseAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(countAnim, { toValue: data.currentStreak + 0.18, duration: 860, useNativeDriver: false }),
+      ]),
+      Animated.spring(countAnim, { toValue: data.currentStreak, friction: 7, tension: 65, useNativeDriver: false }),
+      Animated.parallel([
+        Animated.timing(haloOpacityAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(haloScaleAnim, { toValue: 1.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(affirmationAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
+        Animated.timing(warmthTintAnim, { toValue: 0.24, duration: 360, useNativeDriver: true }),
+      ]),
+      Animated.delay(120),
+      Animated.parallel([
+        Animated.timing(flameMergeScaleAnim, { toValue: 0.18, duration: 420, useNativeDriver: true }),
+        Animated.timing(flameMergeYAnim, { toValue: -220, duration: 420, useNativeDriver: true }),
+        Animated.timing(streakOpacityAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(dimAnim, { toValue: 0, duration: 420, useNativeDriver: true }),
+        Animated.timing(haloOpacityAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+        Animated.timing(affirmationAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+        Animated.timing(warmthTintAnim, { toValue: 0, duration: 360, useNativeDriver: true }),
       ]),
     ]).start(() => {
+      flameFlickerLoopRef.current?.stop();
       setShowStreakCelebration(false);
-      contractScaleAnim.setValue(1);
+    });
+
+    flameFlickerLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flameFlickerAnim, { toValue: 0.9, duration: 380, useNativeDriver: true }),
+        Animated.timing(flameFlickerAnim, { toValue: 1.04, duration: 360, useNativeDriver: true }),
+        Animated.timing(flameFlickerAnim, { toValue: 0.96, duration: 340, useNativeDriver: true }),
+        Animated.timing(flameFlickerAnim, { toValue: 1, duration: 360, useNativeDriver: true }),
+      ]),
+    );
+    flameFlickerLoopRef.current.start();
+
+    particleRiseAnims.forEach((riseAnim, index) => {
+      Animated.sequence([
+        Animated.delay(index * 120 + 850),
+        Animated.parallel([
+          Animated.timing(particleOpacityAnims[index], { toValue: 0.85, duration: 180, useNativeDriver: true }),
+          Animated.timing(riseAnim, { toValue: 1, duration: 720, useNativeDriver: true }),
+        ]),
+        Animated.timing(particleOpacityAnims[index], { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]).start();
     });
 
     Animated.sequence([
-      Animated.timing(todayPulseAnim, { toValue: 1.14, duration: 280, useNativeDriver: true }),
-      Animated.timing(todayPulseAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
-      Animated.timing(todayPulseAnim, { toValue: 1.06, duration: 220, useNativeDriver: true }),
-      Animated.timing(todayPulseAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1.12, duration: 260, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1.04, duration: 220, useNativeDriver: true }),
+      Animated.timing(todayPulseAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
 
     if (data.currentStreak > 0 && data.currentStreak % 7 === 0) {
@@ -340,7 +399,28 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
 
     previousCheckInRef.current = hasCheckedInToday;
     previousStreakRef.current = data.currentStreak;
-  }, [hasCheckedInToday, data.currentStreak, countAnim, dimAnim, glowScaleAnim, pulseAnim, streakFloatAnim, streakOpacityAnim, affirmationAnim, contractScaleAnim, todayPulseAnim, barGlowAnim]);
+  }, [
+    hasCheckedInToday,
+    data.currentStreak,
+    countAnim,
+    dimAnim,
+    warmthTintAnim,
+    emberScaleAnim,
+    emberOpacityAnim,
+    sparkScaleAnim,
+    flameRiseAnim,
+    streakOpacityAnim,
+    flameMergeScaleAnim,
+    flameMergeYAnim,
+    haloScaleAnim,
+    haloOpacityAnim,
+    affirmationAnim,
+    flameFlickerAnim,
+    todayPulseAnim,
+    barGlowAnim,
+    particleRiseAnims,
+    particleOpacityAnims,
+  ]);
 
   useEffect(() => {
     if (hasCheckedInToday) {
@@ -360,6 +440,28 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       shimmerLoop.stop();
     };
   }, [hasCheckedInToday, todayShimmerAnim]);
+
+  useEffect(() => {
+    todayFlameFlickerLoopRef.current?.stop();
+    if (!hasCheckedInToday) {
+      todayFlameFlickerAnim.setValue(1);
+      return;
+    }
+
+    todayFlameFlickerLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(todayFlameFlickerAnim, { toValue: 0.92, duration: 500, useNativeDriver: true }),
+        Animated.timing(todayFlameFlickerAnim, { toValue: 1.05, duration: 480, useNativeDriver: true }),
+        Animated.timing(todayFlameFlickerAnim, { toValue: 0.96, duration: 420, useNativeDriver: true }),
+        Animated.timing(todayFlameFlickerAnim, { toValue: 1, duration: 440, useNativeDriver: true }),
+      ]),
+    );
+    todayFlameFlickerLoopRef.current.start();
+
+    return () => {
+      todayFlameFlickerLoopRef.current?.stop();
+    };
+  }, [hasCheckedInToday, todayFlameFlickerAnim]);
 
   const handleSaveJournal = useCallback((entry: { gratitude: string; reflection: string; emotion: string; emotionEmoji: string }) => {
     addJournalEntry(entry);
@@ -430,7 +532,15 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
                     {item.status === 'today-pending' && (
                       <Animated.View style={[styles.weekDayShimmer, { transform: [{ translateX: todayShimmerAnim }] }]} />
                     )}
-                    {(item.status === 'completed' || item.status === 'today-completed') && <Flame size={12} color={Colors.light.card} />}
+                    {(item.status === 'completed' || item.status === 'today-completed') && (
+                      item.status === 'today-completed' ? (
+                        <Animated.View style={{ opacity: todayFlameFlickerAnim, transform: [{ scale: todayFlameFlickerAnim }] }}>
+                          <Flame size={12} color={Colors.light.card} />
+                        </Animated.View>
+                      ) : (
+                        <Flame size={12} color={Colors.light.card} />
+                      )
+                    )}
                     {item.status === 'missed' && <Minus size={12} color={Colors.light.textTertiary} />}
                   </Animated.View>
                   <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{item.label}</Text>
@@ -670,15 +780,43 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       {showStreakCelebration && (
         <View style={styles.celebrationOverlay} pointerEvents="none" testID="streak-celebration-overlay">
           <Animated.View style={[styles.celebrationDim, { opacity: dimAnim }]} />
-          <Animated.View style={[styles.celebrationCore, { transform: [{ scale: contractScaleAnim }] }]}>
-            <Animated.View style={[styles.energyGlow, { transform: [{ scale: glowScaleAnim }] }]} />
-            <Animated.View style={[styles.energyPulse, { opacity: pulseAnim, transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }] }]} />
-            <Animated.View style={[styles.celebrationContent, { opacity: streakOpacityAnim, transform: [{ translateY: streakFloatAnim }] }]}> 
-              <Flame size={38} color={Colors.light.accent} />
+          <Animated.View style={[styles.celebrationWarmTint, { opacity: warmthTintAnim }]} />
+          <Animated.View style={[styles.celebrationCore, { transform: [{ translateY: flameMergeYAnim }, { scale: flameMergeScaleAnim }] }]}> 
+            <Animated.View style={[styles.emberGlow, { opacity: emberOpacityAnim, transform: [{ scale: emberScaleAnim }] }]} />
+            <Animated.View style={[styles.sparkCore, { transform: [{ scale: sparkScaleAnim }] }]} />
+            <Animated.View style={[styles.haloRing, { opacity: haloOpacityAnim, transform: [{ scale: haloScaleAnim }] }]} />
+            {particleRiseAnims.map((particleAnim, index) => (
+              <Animated.View
+                key={`particle-${index}`}
+                style={[
+                  styles.glowParticle,
+                  index === 0 ? styles.glowParticleLeft : index === 1 ? styles.glowParticleCenter : styles.glowParticleRight,
+                  {
+                    opacity: particleOpacityAnims[index],
+                    transform: [
+                      { translateY: particleAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -48] }) },
+                      { scale: particleAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.15] }) },
+                    ],
+                  },
+                ]}
+              />
+            ))}
+            <Animated.View
+              style={[
+                styles.celebrationContent,
+                {
+                  opacity: streakOpacityAnim,
+                  transform: [{ translateY: flameRiseAnim }],
+                },
+              ]}
+            >
+              <Animated.View style={{ transform: [{ scale: flameFlickerAnim }] }}>
+                <Flame size={42} color={Colors.light.accent} />
+              </Animated.View>
               <Animated.Text style={styles.celebrationCount}>{countAnim.interpolate({ inputRange: [0, 200], outputRange: ['0', '200'] })}</Animated.Text>
-              <Animated.View style={{ opacity: affirmationAnim, transform: [{ translateY: affirmationAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
-                <Text style={styles.celebrationTitle}>{`${data.currentStreak} Day Streak!`}</Text>
-                <Text style={styles.celebrationSubtitle}>You’re building momentum.</Text>
+              <Animated.View style={{ opacity: affirmationAnim, transform: [{ translateY: affirmationAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
+                <Text style={styles.celebrationTitle}>{`${data.currentStreak} Day Streak`}</Text>
+                <Text style={styles.celebrationSubtitle}>Keep your flame alive.</Text>
               </Animated.View>
             </Animated.View>
           </Animated.View>
@@ -872,14 +1010,20 @@ const styles = StyleSheet.create({
   bottomSpacer: { height: 30 },
 
   celebrationOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 200 },
-  celebrationDim: { ...StyleSheet.absoluteFillObject, backgroundColor: '#0C1210' },
+  celebrationDim: { ...StyleSheet.absoluteFillObject, backgroundColor: '#0B120F' },
+  celebrationWarmTint: { ...StyleSheet.absoluteFillObject, backgroundColor: '#FFB86A' },
   celebrationCore: { width: 230, height: 230, borderRadius: 115, justifyContent: 'center', alignItems: 'center' },
-  energyGlow: { position: 'absolute' as const, width: 200, height: 200, borderRadius: 100, backgroundColor: '#FFD5A4', opacity: 0.35 },
-  energyPulse: { position: 'absolute' as const, width: 216, height: 216, borderRadius: 108, borderWidth: 3, borderColor: '#FFC98B' },
+  emberGlow: { position: 'absolute' as const, width: 148, height: 148, borderRadius: 74, backgroundColor: '#FFB567', opacity: 0.45 },
+  sparkCore: { position: 'absolute' as const, width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFE1B0', bottom: 88 },
+  haloRing: { position: 'absolute' as const, width: 196, height: 196, borderRadius: 98, borderWidth: 2, borderColor: 'rgba(255,211,160,0.8)' },
+  glowParticle: { position: 'absolute' as const, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFD9A6' },
+  glowParticleLeft: { left: 90, bottom: 90 },
+  glowParticleCenter: { left: 111, bottom: 80 },
+  glowParticleRight: { left: 132, bottom: 92 },
   celebrationContent: { alignItems: 'center', gap: 6 },
-  celebrationCount: { fontSize: 56, fontWeight: '800' as const, color: '#FFF3DF', letterSpacing: -1.2 },
-  celebrationTitle: { fontSize: 22, fontWeight: '700' as const, color: '#FFF3DF', textAlign: 'center' as const },
-  celebrationSubtitle: { fontSize: 14, color: 'rgba(255,243,223,0.85)', textAlign: 'center' as const, marginTop: 4 },
+  celebrationCount: { fontSize: 56, fontWeight: '800' as const, color: '#FFF4E2', letterSpacing: -1.2 },
+  celebrationTitle: { fontSize: 22, fontWeight: '700' as const, color: '#FFF4E2', textAlign: 'center' as const },
+  celebrationSubtitle: { fontSize: 14, color: 'rgba(255,244,226,0.88)', textAlign: 'center' as const, marginTop: 4 },
 
   dayDetailOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.28)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   dayDetailCard: { width: '100%', maxWidth: 300, backgroundColor: Colors.light.card, borderRadius: 18, padding: 18 },

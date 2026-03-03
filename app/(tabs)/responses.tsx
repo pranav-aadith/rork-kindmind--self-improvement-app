@@ -1,9 +1,10 @@
-import { Sparkles, RotateCcw, Send, Mic, MicOff, Keyboard, X } from 'lucide-react-native';
+import { RotateCcw, Send, Mic, MicOff, Keyboard, X } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -398,9 +399,7 @@ export default function ResponsesScreen() {
         <View style={styles.header} testID="kora-header">
           <View style={styles.headerRow}>
             <View style={styles.titleSection}>
-              <View style={styles.koraIndicator}>
-                <View style={styles.koraIndicatorDot} />
-              </View>
+              <Image source={require('@/assets/images/kora-koala.png')} style={styles.koraHeaderImage} />
               <View>
                 <Text style={styles.title}>Kora</Text>
                 <Text style={styles.subtitle}>Your kindness coach</Text>
@@ -428,9 +427,7 @@ export default function ResponsesScreen() {
           >
             <View style={styles.welcomeSection}>
               <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <Sparkles size={32} color={Colors.light.primary} />
-                </View>
+                <Image source={require('@/assets/images/kora-koala.png')} style={styles.koalaAvatar} />
               </View>
               
               <Text style={styles.welcomeTitle}>
@@ -523,9 +520,7 @@ export default function ResponsesScreen() {
                   testID={`kora-msg-${m.role}-${m.id}`}
                 >
                   {!isUser && (
-                    <View style={styles.messageAvatar}>
-                      <Sparkles size={14} color={Colors.light.primary} />
-                    </View>
+                    <Image source={require('@/assets/images/kora-koala.png')} style={styles.messageKoalaAvatar} />
                   )}
                   <View style={[styles.bubble, isUser ? styles.userBubble : styles.koraBubble]}>
                     {m.text.length > 0 ? (
@@ -544,9 +539,7 @@ export default function ResponsesScreen() {
 
             {isSending && (
               <View style={[styles.messageRow, styles.messageRowLeft]} testID="kora-thinking">
-                <View style={styles.messageAvatar}>
-                  <Sparkles size={14} color={Colors.light.primary} />
-                </View>
+                <Image source={require('@/assets/images/kora-koala.png')} style={styles.messageKoalaAvatar} />
                 <View style={[styles.bubble, styles.koraBubble]}>
                   <View style={styles.thinkingRow}>
                     <ActivityIndicator size="small" color={Colors.light.textSecondary} />
@@ -655,19 +648,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  koraIndicator: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.light.secondary + '18',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  koraIndicatorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.light.secondary,
+  koraHeaderImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   title: {
     fontSize: 22,
@@ -711,6 +695,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.secondary + '12',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  koalaAvatar: {
+    width: 100,
+    height: 100,
+  },
+  messageKoalaAvatar: {
+    width: 28,
+    height: 28,
+    marginRight: 6,
   },
   welcomeTitle: {
     fontSize: 24,

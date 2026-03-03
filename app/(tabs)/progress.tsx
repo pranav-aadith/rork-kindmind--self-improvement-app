@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
@@ -1206,9 +1207,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         {(emotionalTrendsData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
           <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
             <View style={styles.koraHeader}>
-              <View style={styles.koraIconWrap}>
-                <MessageCircle size={18} color={Colors.light.card} />
-              </View>
+              <Image source={require('@/assets/images/kora-koala.png')} style={styles.koraCardAvatar} />
               <View style={styles.koraTitleWrap}>
                 <Text style={styles.koraLabel}>Kora says</Text>
                 <Text style={styles.koraSubLabel}>Wellbeing support</Text>
@@ -1747,6 +1746,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  koraCardAvatar: {
+    width: 40,
+    height: 40,
   },
   koraTitleWrap: {
     flex: 1,

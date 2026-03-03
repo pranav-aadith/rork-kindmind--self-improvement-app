@@ -13,6 +13,7 @@ import {
   Platform,
   ActivityIndicator,
   Pressable,
+  Image,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { generateText } from '@rork-ai/toolkit-sdk';
@@ -619,9 +620,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         {(wellbeingData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
           <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
             <View style={styles.koraHeader}>
-              <View style={styles.koraIconWrap}>
-                <MessageCircle size={18} color={Colors.light.card} />
-              </View>
+              <Image source={require('@/assets/images/kora-koala.png')} style={styles.koraCardAvatar} />
               <View style={styles.koraBadge}>
                 <Sparkles size={10} color={Colors.light.card} />
                 <Text style={styles.koraBadgeText}>Kora</Text>
@@ -1092,6 +1091,7 @@ const styles = StyleSheet.create({
   koraCard: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 18, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: Colors.light.secondary },
   koraHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
   koraIconWrap: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.secondary, justifyContent: 'center', alignItems: 'center' },
+  koraCardAvatar: { width: 36, height: 36 },
   koraBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.light.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   koraBadgeText: { fontSize: 10, fontWeight: '700' as const, color: Colors.light.card, letterSpacing: 0.3 },
   koraRefreshBtn: { marginLeft: 'auto' as const, padding: 6 },

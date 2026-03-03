@@ -68,6 +68,8 @@ export interface UserData {
   dailyIntention: DailyIntention | null;
   milestones: Milestone[];
   preferredName: string;
+  xp: number;
+  pauseCompletions: string[];
 }
 
 export interface KindResponse {

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo } from 'react';
 import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone } from '@/types';
 import { DEFAULT_MILESTONES } from '@/constants/personalization';
+import { XP_REWARDS, getLevelInfo } from '@/constants/gamification';
 import { useAuth } from '@/providers/AuthProvider';
 
 const getStorageKey = (userId: string) => `kindmind_data_${userId}`;
@@ -64,12 +65,15 @@ const initialData: UserData = {
   dailyIntention: null,
   milestones: DEFAULT_MILESTONES,
   preferredName: '',
+  xp: 0,
+  pauseCompletions: [],
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
   const { user } = useAuth();
   const [data, setData] = useState<UserData>(initialData);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastXPGain, setLastXPGain] = useState<{ amount: number; reason: string; id: number } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -107,6 +111,8 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           dailyIntention: parsed.dailyIntention || null,
           milestones: parsed.milestones || DEFAULT_MILESTONES,
           preferredName: parsed.preferredName || '',
+          xp: parsed.xp ?? 0,
+          pauseCompletions: parsed.pauseCompletions || [],
         };
         
         setData(loadedData);
@@ -137,6 +143,12 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     }
   };
 
+  const awardXP = (currentData: UserData, amount: number, reason: string): UserData => {
+    console.log(`[KindMind] Awarding ${amount} XP for: ${reason}`);
+    setLastXPGain({ amount, reason, id: Date.now() });
+    return { ...currentData, xp: (currentData.xp ?? 0) + amount };
+  };
+
   const completeOnboarding = (username: string, selectedGoals: UserGoal[], answers: OnboardingAnswers, preferredName?: string) => {
     const newData: UserData = {
       ...data,
@@ -155,10 +167,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
       id: Date.now().toString(),
       timestamp: Date.now(),
     };
-    const newData = {
+    let newData: UserData = {
       ...data,
       triggers: [newTrigger, ...data.triggers],
     };
+    newData = awardXP(newData, XP_REWARDS.TRIGGER, 'Logged a trigger');
     saveData(newData);
   };
 
@@ -168,10 +181,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
       id: Date.now().toString(),
       timestamp: Date.now(),
     };
-    const newData = {
+    let newData: UserData = {
       ...data,
       journalEntries: [newEntry, ...data.journalEntries],
     };
+    newData = awardXP(newData, XP_REWARDS.JOURNAL, 'Journal entry written');
     saveData(newData);
   };
 
@@ -193,12 +207,47 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     const newStreak = calculateAccurateStreak(updatedCheckIns);
     const newLongest = Math.max(newStreak, data.longestStreak);
 
-    const newData = {
+    let newData: UserData = {
       ...data,
       checkIns: updatedCheckIns,
       currentStreak: newStreak,
       longestStreak: newLongest,
     };
+
+    newData = awardXP(newData, XP_REWARDS.CHECK_IN, 'Daily check-in completed');
+
+    if (newStreak === 7) {
+      newData = awardXP(newData, XP_REWARDS.STREAK_7, '7-day streak bonus!');
+    } else if (newStreak === 14) {
+      newData = awardXP(newData, XP_REWARDS.STREAK_14, '14-day streak bonus!');
+    } else if (newStreak === 30) {
+      newData = awardXP(newData, XP_REWARDS.STREAK_30, '30-day streak bonus!');
+    }
+
+    saveData(newData);
+  };
+
+  const addPauseCompletion = () => {
+    const today = formatLocalDate(new Date());
+    const alreadyToday = data.pauseCompletions.includes(today);
+    
+    let newData: UserData = {
+      ...data,
+      pauseCompletions: alreadyToday
+        ? data.pauseCompletions
+        : [today, ...data.pauseCompletions],
+    };
+
+    if (!alreadyToday) {
+      newData = awardXP(newData, XP_REWARDS.PAUSE, 'Breathing practice completed');
+    }
+
+    saveData(newData);
+  };
+
+  const addMeditationCompletion = () => {
+    let newData: UserData = { ...data };
+    newData = awardXP(newData, XP_REWARDS.MEDITATION, 'Meditation session completed');
     saveData(newData);
   };
 
@@ -240,6 +289,16 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     return data.checkIns.some(c => c.date === today);
   }, [data.checkIns]);
 
+  const hasPausedToday = useMemo(() => {
+    const today = formatLocalDate(new Date());
+    return (data.pauseCompletions || []).includes(today);
+  }, [data.pauseCompletions]);
+
+  const hasJournaledToday = useMemo(() => {
+    const today = formatLocalDate(new Date());
+    return data.journalEntries.some(j => formatLocalDate(new Date(j.timestamp)) === today);
+  }, [data.journalEntries]);
+
   const updateUsername = (newUsername: string) => {
     const newData = {
       ...data,
@@ -255,16 +314,21 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
       intention,
       completed: false,
     };
-    const newData = { ...data, dailyIntention: newIntention };
+    let newData: UserData = { ...data, dailyIntention: newIntention };
+    const alreadySetToday = data.dailyIntention?.date === today;
+    if (!alreadySetToday) {
+      newData = awardXP(newData, XP_REWARDS.INTENTION_SET, 'Daily intention set');
+    }
     saveData(newData);
   };
 
   const completeDailyIntention = () => {
     if (!data.dailyIntention) return;
-    const newData = {
+    let newData: UserData = {
       ...data,
       dailyIntention: { ...data.dailyIntention, completed: true },
     };
+    newData = awardXP(newData, XP_REWARDS.INTENTION_COMPLETE, 'Daily intention completed');
     saveData(newData);
   };
 
@@ -321,6 +385,10 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     return data.preferredName || data.username || 'there';
   }, [data.preferredName, data.username]);
 
+  const levelInfo = useMemo(() => {
+    return getLevelInfo(data.xp ?? 0);
+  }, [data.xp]);
+
   return {
     data,
     isLoading,
@@ -328,9 +396,13 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     addTrigger,
     addJournalEntry,
     addCheckIn,
+    addPauseCompletion,
+    addMeditationCompletion,
     topEmotions,
     successRate,
     hasCheckedInToday,
+    hasPausedToday,
+    hasJournaledToday,
     updateUsername,
     checkInsLast30Days,
     setDailyIntention,
@@ -340,5 +412,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     unlockedMilestones,
     nextMilestone,
     displayName,
+    levelInfo,
+    lastXPGain,
   };
 });

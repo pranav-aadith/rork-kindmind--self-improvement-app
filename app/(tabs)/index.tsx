@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Flame, Minus } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Flame, Minus, Zap, Wind, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -28,6 +28,8 @@ export default function HomeScreen() {
   const {
     data,
     hasCheckedInToday,
+    hasPausedToday,
+    hasJournaledToday,
     addJournalEntry,
     setDailyIntention,
     completeDailyIntention,
@@ -36,6 +38,8 @@ export default function HomeScreen() {
     unlockedMilestones,
     nextMilestone,
     displayName,
+    levelInfo,
+    lastXPGain,
   } = useKindMind();
 
   const dailyQuote = getDailyQuote();
@@ -147,6 +151,13 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
     }
   }, [wellbeingData.trendPercent, koraKey, fetchKoraSuggestion]);
 
+  const xpToastAnim = useRef(new Animated.Value(0)).current;
+  const xpBarAnim = useRef(new Animated.Value(0)).current;
+  const xpBarWidthAnim = useRef(new Animated.Value(0)).current;
+  const [xpToastText, setXpToastText] = useState<string>('');
+  const prevXPRef = useRef<number>(data.xp ?? 0);
+  const lastXPGainIdRef = useRef<number | null>(null);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const quoteAnim = useRef(new Animated.Value(0)).current;
@@ -207,6 +218,25 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
     });
     return () => countAnim.removeListener(id);
   }, [countAnim]);
+
+  useEffect(() => {
+    if (!lastXPGain || lastXPGain.id === lastXPGainIdRef.current) return;
+    lastXPGainIdRef.current = lastXPGain.id;
+    setXpToastText(`+${lastXPGain.amount} XP`);
+    xpToastAnim.setValue(0);
+    Animated.sequence([
+      Animated.spring(xpToastAnim, { toValue: 1, tension: 60, friction: 7, useNativeDriver: true }),
+      Animated.delay(1200),
+      Animated.timing(xpToastAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, [lastXPGain, xpToastAnim]);
+
+  useEffect(() => {
+    const targetWidth = levelInfo.progressPercent / 100;
+    Animated.spring(xpBarWidthAnim, { toValue: targetWidth, tension: 40, friction: 8, useNativeDriver: false }).start();
+    Animated.spring(xpBarAnim, { toValue: 1, tension: 50, friction: 8, useNativeDriver: true }).start();
+    prevXPRef.current = data.xp ?? 0;
+  }, [data.xp, levelInfo.progressPercent, xpBarWidthAnim, xpBarAnim]);
 
   useEffect(() => {
     Animated.parallel([
@@ -513,6 +543,34 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
           <Text style={styles.username}>{displayName}</Text>
         </Animated.View>
 
+        <Animated.View style={[styles.xpLevelCard, { opacity: xpBarAnim, transform: [{ translateY: xpBarAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]} testID="xp-level-bar">
+          <View style={styles.xpLevelRow}>
+            <View style={styles.xpLevelLeft}>
+              <View style={[styles.xpLevelBadge, { backgroundColor: levelInfo.current.color + '22' }]}>
+                <Text style={styles.xpLevelEmoji}>{levelInfo.current.emoji}</Text>
+              </View>
+              <View>
+                <Text style={styles.xpLevelName}>Level {levelInfo.current.level} · {levelInfo.current.name}</Text>
+                <Text style={styles.xpLevelXpText}>{data.xp ?? 0} XP total</Text>
+              </View>
+            </View>
+            <View style={styles.xpProgressText}>
+              <Text style={styles.xpProgressNumbers}>{levelInfo.xpInLevel}<Text style={styles.xpProgressMax}> / {levelInfo.xpForNextLevel}</Text></Text>
+            </View>
+          </View>
+          <View style={styles.xpBarTrack}>
+            <Animated.View
+              style={[
+                styles.xpBarFill,
+                {
+                  width: xpBarWidthAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+                  backgroundColor: levelInfo.current.color,
+                },
+              ]}
+            />
+          </View>
+        </Animated.View>
+
         <View style={styles.weekStreakContainer} testID="weekly-streak-bar">
           <Animated.View style={[styles.weekStreakGlowOverlay, { opacity: barGlowAnim }]} />
           <View style={styles.weekStreakHeader}>
@@ -686,6 +744,80 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
             <Text style={styles.insightText}>{smartInsight.message}</Text>
           </Animated.View>
         )}
+
+        <View style={styles.challengesSection}>
+          <View style={styles.challengesSectionHeader}>
+            <View style={styles.challengesTitleRow}>
+              <Zap size={16} color='#F5C548' />
+              <Text style={styles.challengesTitle}>Daily Quests</Text>
+            </View>
+            <Text style={styles.challengesDoneText}>
+              {[hasCheckedInToday, hasJournaledToday, hasPausedToday, !!todaysIntention].filter(Boolean).length}/4
+            </Text>
+          </View>
+
+          {[
+            {
+              id: 'checkin',
+              icon: <Check size={14} color='#8DC8C4' />,
+              label: 'Daily Check-In',
+              xp: 30,
+              done: hasCheckedInToday,
+              color: '#8DC8C4',
+              action: () => router.push('/checkin'),
+            },
+            {
+              id: 'journal',
+              icon: <BookOpen size={14} color='#B5A8D6' />,
+              label: 'Write in Journal',
+              xp: 25,
+              done: hasJournaledToday,
+              color: '#B5A8D6',
+              action: () => setShowJournalModal(true),
+            },
+            {
+              id: 'pause',
+              icon: <Wind size={14} color='#7CB98A' />,
+              label: 'Breathing Practice',
+              xp: 15,
+              done: hasPausedToday,
+              color: '#7CB98A',
+              action: () => router.push('/pause'),
+            },
+            {
+              id: 'intention',
+              icon: <Star size={14} color='#F5A623' />,
+              label: 'Set Your Intention',
+              xp: 10,
+              done: !!todaysIntention,
+              color: '#F5A623',
+              action: () => setShowIntentionPicker(true),
+            },
+          ].map(challenge => (
+            <TouchableOpacity
+              key={challenge.id}
+              style={[styles.challengeRow, challenge.done && styles.challengeRowDone]}
+              onPress={challenge.done ? undefined : challenge.action}
+              activeOpacity={challenge.done ? 1 : 0.7}
+              testID={`challenge-${challenge.id}`}
+            >
+              <View style={[styles.challengeIconWrap, { backgroundColor: challenge.color + '22' }]}>
+                {challenge.icon}
+              </View>
+              <Text style={[styles.challengeLabel, challenge.done && styles.challengeLabelDone]}>{challenge.label}</Text>
+              <View style={styles.challengeRight}>
+                <View style={[styles.challengeXpPill, challenge.done && styles.challengeXpPillDone]}>
+                  <Zap size={9} color={challenge.done ? '#B0ABAB' : '#F5C548'} />
+                  <Text style={[styles.challengeXpText, challenge.done && styles.challengeXpTextDone]}>+{challenge.xp} XP</Text>
+                </View>
+                {challenge.done
+                  ? <View style={styles.challengeCheck}><Check size={12} color='#FFF' /></View>
+                  : <ChevronRight size={16} color={Colors.light.textTertiary} />
+                }
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -892,11 +1024,64 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
       <MeditationModal visible={showMeditationModal} onClose={() => setShowMeditationModal(false)} />
       <JournalModal visible={showJournalModal} onClose={() => setShowJournalModal(false)} onSave={handleSaveJournal} />
       <WidgetModal visible={showWidgetModal} onClose={() => setShowWidgetModal(false)} quote={dailyQuote} />
+
+      {xpToastText !== '' && (
+        <Animated.View
+          style={[
+            styles.xpToast,
+            {
+              opacity: xpToastAnim,
+              transform: [
+                { translateY: xpToastAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) },
+                { scale: xpToastAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+          testID="xp-toast"
+        >
+          <Zap size={14} color='#F5C548' />
+          <Text style={styles.xpToastText}>{xpToastText}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  xpLevelCard: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 14, marginBottom: 14, overflow: 'hidden' as const },
+  xpLevelRow: { flexDirection: 'row' as const, alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  xpLevelLeft: { flexDirection: 'row' as const, alignItems: 'center', gap: 10 },
+  xpLevelBadge: { width: 38, height: 38, borderRadius: 11, justifyContent: 'center' as const, alignItems: 'center' as const },
+  xpLevelEmoji: { fontSize: 20 },
+  xpLevelName: { fontSize: 14, fontWeight: '700' as const, color: Colors.light.text, letterSpacing: -0.2 },
+  xpLevelXpText: { fontSize: 11, color: Colors.light.textSecondary, marginTop: 1 },
+  xpProgressText: { alignItems: 'flex-end' as const },
+  xpProgressNumbers: { fontSize: 13, fontWeight: '700' as const, color: Colors.light.text },
+  xpProgressMax: { fontSize: 11, fontWeight: '400' as const, color: Colors.light.textSecondary },
+  xpBarTrack: { height: 7, backgroundColor: Colors.light.subtle, borderRadius: 4, overflow: 'hidden' as const },
+  xpBarFill: { height: '100%', borderRadius: 4 },
+
+  challengesSection: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 16, marginBottom: 20, gap: 10 },
+  challengesSectionHeader: { flexDirection: 'row' as const, alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  challengesTitleRow: { flexDirection: 'row' as const, alignItems: 'center', gap: 6 },
+  challengesTitle: { fontSize: 15, fontWeight: '700' as const, color: Colors.light.text },
+  challengesDoneText: { fontSize: 13, fontWeight: '700' as const, color: Colors.light.secondary },
+  challengeRow: { flexDirection: 'row' as const, alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 12, backgroundColor: Colors.light.background, borderRadius: 12 },
+  challengeRowDone: { opacity: 0.6 },
+  challengeIconWrap: { width: 28, height: 28, borderRadius: 8, justifyContent: 'center' as const, alignItems: 'center' as const },
+  challengeLabel: { flex: 1, fontSize: 13, fontWeight: '500' as const, color: Colors.light.text },
+  challengeLabelDone: { textDecorationLine: 'line-through' as const, color: Colors.light.textSecondary },
+  challengeRight: { flexDirection: 'row' as const, alignItems: 'center', gap: 6 },
+  challengeXpPill: { flexDirection: 'row' as const, alignItems: 'center', gap: 3, backgroundColor: '#FEF9E7', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 },
+  challengeXpPillDone: { backgroundColor: Colors.light.subtle },
+  challengeXpText: { fontSize: 10, fontWeight: '700' as const, color: '#F5C548' },
+  challengeXpTextDone: { color: Colors.light.textTertiary },
+  challengeCheck: { width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.light.secondary, justifyContent: 'center' as const, alignItems: 'center' as const },
+
+  xpToast: { position: 'absolute' as const, bottom: 100, alignSelf: 'center' as const, flexDirection: 'row' as const, alignItems: 'center', gap: 6, backgroundColor: '#1A1A1A', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
+  xpToastText: { fontSize: 15, fontWeight: '700' as const, color: '#F5C548', letterSpacing: 0.3 },
+
   safeArea: { flex: 1, backgroundColor: Colors.light.background },
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 20 },

@@ -1,4 +1,4 @@
-import { Flame, Target, ChevronLeft, ChevronRight, BookOpen, Calendar, Bell, Sparkles, BarChart3, Lock, Check, Camera, User, MessageCircle, RefreshCw, Heart } from 'lucide-react-native';
+import { Flame, Target, ChevronLeft, ChevronRight, Sparkles, Lock, Check, Camera, User, MessageCircle, RefreshCw, Heart } from 'lucide-react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
@@ -18,6 +18,7 @@ import * as Print from 'expo-print';
 import { generateText } from '@rork-ai/toolkit-sdk';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
+import { BADGE_DEFINITIONS } from '@/constants/gamification';
 import { router } from 'expo-router';
 
 const formatLocalDate = (date: Date): string => {
@@ -28,7 +29,7 @@ const formatLocalDate = (date: Date): string => {
 };
 
 export default function ProgressScreen() {
-  const { data, checkInsLast30Days, successRate } = useKindMind();
+  const { data, checkInsLast30Days, successRate, levelInfo } = useKindMind();
 
   const headerAnim = useRef(new Animated.Value(0)).current;
   const statsAnim = useRef(new Animated.Value(0)).current;
@@ -336,13 +337,22 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
     }
   }, [emotionalTrendsData.trendPercent]);
 
-  const achievements = [
-    { id: 1, threshold: 5, title: 'Emotion Naming Guide', description: 'Learn to identify and name your emotions', icon: BookOpen, color: '#6366F1' },
-    { id: 2, threshold: 7, title: 'Weekly Reflection Summary', description: 'Access your weekly emotional insights', icon: Calendar, color: '#8B5CF6' },
-    { id: 3, threshold: 10, title: 'Custom Reminder Message', description: 'Set personalized check-in reminders', icon: Bell, color: '#EC4899' },
-    { id: 4, threshold: 20, title: 'Personal Intention Space', description: 'Create your mindfulness intentions', icon: Sparkles, color: '#F59E0B' },
-    { id: 5, threshold: 30, title: 'Monthly Reflection View', description: 'Deep dive into monthly patterns', icon: BarChart3, color: '#10B981' },
-  ];
+  const badgeProgress = React.useMemo(() => {
+    return BADGE_DEFINITIONS.map(badge => {
+      let currentValue = 0;
+      switch (badge.type) {
+        case 'streak': currentValue = data.currentStreak; break;
+        case 'checkins': currentValue = data.checkIns.length; break;
+        case 'triggers': currentValue = data.triggers.length; break;
+        case 'journal': currentValue = data.journalEntries.length; break;
+        case 'xp': currentValue = data.xp ?? 0; break;
+        default: currentValue = 0;
+      }
+      const isUnlocked = currentValue >= badge.threshold;
+      const progress = Math.min(currentValue / badge.threshold, 1);
+      return { ...badge, isUnlocked, progress, currentValue };
+    });
+  }, [data]);
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [isTakingScreenshot, setIsTakingScreenshot] = React.useState(false);
 
@@ -778,14 +788,13 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
             ` : ''}
 
             <div class="section">
-              <h2 class="section-title">🧩 Achievements Progress</h2>
-              ${achievements.map(achievement => {
-                const isUnlocked = checkInsLast30Days >= achievement.threshold;
+              <h2 class="section-title">🧩 Badges Progress</h2>
+              ${badgeProgress.map(badge => {
                 return `
                   <div class="achievement-item">
-                    <span class="achievement-name">${isUnlocked ? '✓' : '🔒'} ${achievement.title}</span>
-                    <span class="achievement-status ${isUnlocked ? 'unlocked' : 'locked'}">
-                      ${isUnlocked ? 'Unlocked!' : `${checkInsLast30Days}/${achievement.threshold}`}
+                    <span class="achievement-name">${badge.isUnlocked ? badge.emoji + ' ' : '🔒 '} ${badge.title}</span>
+                    <span class="achievement-status ${badge.isUnlocked ? 'unlocked' : 'locked'}">
+                      ${badge.isUnlocked ? 'Unlocked!' : `${badge.currentValue}/${badge.threshold}`}
                     </span>
                   </div>
                 `;
@@ -864,7 +873,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         </body>
       </html>
     `;
-  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate, currentMonth, checkInsByDate, achievements]);
+  }, [data, weeklyAnalytics, topJournalEmotions, checkInsLast30Days, successRate, currentMonth, checkInsByDate, badgeProgress]);
 
   const handleScreenshot = React.useCallback(async () => {
     setIsTakingScreenshot(true);
@@ -1268,53 +1277,59 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>🧩 Achievements</Text>
+              <Text style={styles.sectionTitle}>Badges</Text>
               <Text style={styles.sectionSubtitle}>
-                Unlock tools as you grow (resets every 30 days)
+                {badgeProgress.filter(b => b.isUnlocked).length} of {BADGE_DEFINITIONS.length} unlocked
               </Text>
+            </View>
+            <View style={styles.levelPill}>
+              <Text style={styles.levelPillEmoji}>{levelInfo.current.emoji}</Text>
+              <Text style={styles.levelPillText}>Lv.{levelInfo.current.level}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.achievementsContainer}>
-          {achievements.map((achievement) => {
-            const isUnlocked = checkInsLast30Days >= achievement.threshold;
-            const progress = Math.min(checkInsLast30Days / achievement.threshold, 1);
-            const IconComponent = achievement.icon;
-
-            return (
-              <View key={achievement.id} style={[styles.achievementCard, isUnlocked && styles.achievementUnlocked]}>
-                <View style={[styles.achievementIconContainer, { backgroundColor: isUnlocked ? achievement.color + '20' : Colors.light.border }]}>
-                  {isUnlocked ? (
-                    <IconComponent size={24} color={achievement.color} />
-                  ) : (
-                    <Lock size={24} color={Colors.light.textSecondary} />
-                  )}
-                </View>
-                <View style={styles.achievementContent}>
-                  <View style={styles.achievementHeader}>
-                    <Text style={[styles.achievementTitle, !isUnlocked && styles.achievementTitleLocked]}>
-                      {achievement.title}
-                    </Text>
-                    {isUnlocked && (
-                      <View style={styles.unlockedBadge}>
-                        <Check size={12} color="#fff" />
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.achievementDescription}>{achievement.description}</Text>
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: isUnlocked ? achievement.color : Colors.light.primary }]} />
-                    </View>
-                    <Text style={styles.progressText}>
-                      {isUnlocked ? 'Unlocked!' : `${checkInsLast30Days}/${achievement.threshold}`}
-                    </Text>
-                  </View>
-                </View>
+        <View style={styles.badgeGrid}>
+          {badgeProgress.map((badge) => (
+            <View
+              key={badge.id}
+              style={[
+                styles.badgeCard,
+                badge.isUnlocked ? styles.badgeCardUnlocked : styles.badgeCardLocked,
+                badge.isUnlocked && { borderColor: badge.color + '40' },
+              ]}
+            >
+              <View style={[
+                styles.badgeEmojiWrap,
+                { backgroundColor: badge.isUnlocked ? badge.bgColor : Colors.light.subtle },
+              ]}>
+                {badge.isUnlocked
+                  ? <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
+                  : <Lock size={16} color={Colors.light.textTertiary} />
+                }
               </View>
-            );
-          })}
+              <Text
+                style={[styles.badgeName, !badge.isUnlocked && styles.badgeNameLocked]}
+                numberOfLines={2}
+              >
+                {badge.title}
+              </Text>
+              <Text style={styles.badgeDesc} numberOfLines={2}>{badge.description}</Text>
+              {!badge.isUnlocked && (
+                <View style={styles.badgeProgressWrap}>
+                  <View style={styles.badgeProgressTrack}>
+                    <View style={[styles.badgeProgressFill, { width: `${badge.progress * 100}%` as unknown as number, backgroundColor: badge.color }]} />
+                  </View>
+                  <Text style={styles.badgeProgressLabel}>{badge.currentValue}/{badge.threshold}</Text>
+                </View>
+              )}
+              {badge.isUnlocked && (
+                <View style={[styles.badgeUnlockedBadge, { backgroundColor: badge.color }]}>
+                  <Check size={8} color='#FFF' />
+                </View>
+              )}
+            </View>
+          ))}
         </View>
 
         <View style={styles.section}>
@@ -1917,6 +1932,100 @@ const styles = StyleSheet.create({
     width: 32,
     textAlign: 'center',
   },
+  levelPill: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    backgroundColor: Colors.light.primary + '22',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  levelPillEmoji: {
+    fontSize: 14,
+  },
+  levelPillText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    color: Colors.light.primary,
+  },
+  badgeGrid: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 10,
+    marginBottom: 32,
+  },
+  badgeCard: {
+    width: '47%' as unknown as number,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    position: 'relative' as const,
+    overflow: 'hidden' as const,
+  },
+  badgeCardUnlocked: {
+    backgroundColor: Colors.light.card,
+  },
+  badgeCardLocked: {
+    backgroundColor: Colors.light.card,
+    borderColor: Colors.light.border,
+    opacity: 0.75,
+  },
+  badgeEmojiWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginBottom: 10,
+  },
+  badgeEmoji: {
+    fontSize: 22,
+  },
+  badgeName: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: Colors.light.text,
+    marginBottom: 3,
+    lineHeight: 17,
+  },
+  badgeNameLocked: {
+    color: Colors.light.textSecondary,
+  },
+  badgeDesc: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+    lineHeight: 15,
+    marginBottom: 8,
+  },
+  badgeProgressWrap: {
+    gap: 4,
+  },
+  badgeProgressTrack: {
+    height: 4,
+    backgroundColor: Colors.light.subtle,
+    borderRadius: 2,
+    overflow: 'hidden' as const,
+  },
+  badgeProgressFill: {
+    height: '100%' as unknown as number,
+    borderRadius: 2,
+  },
+  badgeProgressLabel: {
+    fontSize: 10,
+    color: Colors.light.textTertiary,
+    fontWeight: '500' as const,
+  },
+  badgeUnlockedBadge: {
+    position: 'absolute' as const,
+    top: 10,
+    right: 10,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
   achievementsContainer: {
     gap: 12,
     marginBottom: 32,
@@ -1925,8 +2034,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.card,
     borderRadius: 14,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
     gap: 14,
   },
   achievementUnlocked: {
@@ -1936,21 +2045,21 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   achievementContent: {
     flex: 1,
   },
   achievementHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     marginBottom: 4,
   },
   achievementTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.light.text,
     flex: 1,
   },
@@ -1968,12 +2077,12 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 10,
   },
   progressBar: {
@@ -1981,17 +2090,17 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: Colors.light.border,
     borderRadius: 3,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
   },
   progressFill: {
-    height: '100%',
+    height: '100%' as unknown as number,
     borderRadius: 3,
   },
   progressText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.light.textSecondary,
     minWidth: 60,
-    textAlign: 'right',
+    textAlign: 'right' as const,
   },
 });

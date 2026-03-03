@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
+import { useKindMind } from '@/providers/KindMindProvider';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CIRCLE_SIZE = SCREEN_WIDTH * 0.65;
@@ -28,6 +29,7 @@ const DURATIONS: { value: Duration; label: string }[] = [
 
 export default function PauseScreen() {
   const insets = useSafeAreaInsets();
+  const { addPauseCompletion } = useKindMind();
   const [phase, setPhase] = useState<Phase>('ready');
   const [selectedDuration, setSelectedDuration] = useState<Duration>(60);
   const [countdown, setCountdown] = useState(60);
@@ -67,8 +69,9 @@ export default function PauseScreen() {
 
   const completePractice = useCallback(() => {
     setSessionsCompleted(prev => prev + 1);
+    addPauseCompletion();
     triggerHaptic();
-  }, [triggerHaptic]);
+  }, [triggerHaptic, addPauseCompletion]);
 
   const startNewSession = useCallback(() => {
     setPhase('ready');

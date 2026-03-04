@@ -1,7 +1,8 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useMemo } from 'react';
-import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone } from '@/types';
+import type { UserData, UserGoal, TriggerEntry, DailyCheckIn, OnboardingAnswers, JournalEntry, DailyIntention, Milestone, HomeSectionId } from '@/types';
+import { DEFAULT_SECTION_ORDER } from '@/types';
 import { DEFAULT_MILESTONES } from '@/constants/personalization';
 import { XP_REWARDS, getLevelInfo } from '@/constants/gamification';
 import { useAuth } from '@/providers/AuthProvider';
@@ -67,6 +68,7 @@ const initialData: UserData = {
   preferredName: '',
   xp: 0,
   pauseCompletions: [],
+  homeSectionOrder: DEFAULT_SECTION_ORDER,
 };
 
 export const [KindMindProvider, useKindMind] = createContextHook(() => {
@@ -113,6 +115,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           preferredName: parsed.preferredName || '',
           xp: parsed.xp ?? 0,
           pauseCompletions: parsed.pauseCompletions || [],
+          homeSectionOrder: parsed.homeSectionOrder || DEFAULT_SECTION_ORDER,
         };
         
         setData(loadedData);
@@ -389,6 +392,11 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     return getLevelInfo(data.xp ?? 0);
   }, [data.xp]);
 
+  const updateSectionOrder = (newOrder: HomeSectionId[]) => {
+    const newData = { ...data, homeSectionOrder: newOrder };
+    saveData(newData);
+  };
+
   return {
     data,
     isLoading,
@@ -414,5 +422,6 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
     displayName,
     levelInfo,
     lastXPGain,
+    updateSectionOrder,
   };
 });

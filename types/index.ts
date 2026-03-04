@@ -55,6 +55,12 @@ export interface Milestone {
   unlockedAt: number | null;
 }
 
+export type HomeSectionId = 'xpLevel' | 'weeklyRhythm' | 'kora' | 'checkIn' | 'intention' | 'quote' | 'stats' | 'insight' | 'dailyQuests';
+
+export const DEFAULT_SECTION_ORDER: HomeSectionId[] = [
+  'xpLevel', 'weeklyRhythm', 'kora', 'checkIn', 'intention', 'quote', 'stats', 'insight', 'dailyQuests',
+];
+
 export interface UserData {
   hasCompletedOnboarding: boolean;
   username: string;
@@ -70,6 +76,7 @@ export interface UserData {
   preferredName: string;
   xp: number;
   pauseCompletions: string[];
+  homeSectionOrder?: HomeSectionId[];
 }
 
 export interface KindResponse {

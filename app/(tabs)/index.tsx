@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Flame, Minus, Zap, Wind, Star } from 'lucide-react-native';
+import { Heart, BookOpen, Flower, BarChart3, Timer, ChevronRight, LayoutGrid, Sparkles, Check, Trophy, Target, MessageCircle, RefreshCw, Flame, Minus, Zap, Wind, Star, GripVertical, ArrowUp, ArrowDown } from 'lucide-react-native';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -19,6 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { generateText } from '@rork-ai/toolkit-sdk';
 import { useKindMind } from '@/providers/KindMindProvider';
 import Colors from '@/constants/colors';
+import type { HomeSectionId } from '@/types';
+import { DEFAULT_SECTION_ORDER } from '@/types';
 import { getDailyQuote } from '@/constants/quotes';
 import { getSmartInsight, INTENTIONS } from '@/constants/personalization';
 import MeditationModal from '@/components/MeditationModal';
@@ -41,7 +43,77 @@ export default function HomeScreen() {
     displayName,
     levelInfo,
     lastXPGain,
+    updateSectionOrder,
   } = useKindMind();
+
+  const [editMode, setEditMode] = useState(false);
+  const [sectionOrder, setSectionOrder] = useState<HomeSectionId[]>(data.homeSectionOrder || DEFAULT_SECTION_ORDER);
+  const editModeAnim = useRef(new Animated.Value(0)).current;
+  const wobbleAnims = useRef<Record<string, Animated.Value>>({}).current;
+  const wobbleLoopsRef = useRef<Record<string, Animated.CompositeAnimation>>({});
+
+  useEffect(() => {
+    if (data.homeSectionOrder) {
+      setSectionOrder(data.homeSectionOrder);
+    }
+  }, [data.homeSectionOrder]);
+
+  const enterEditMode = useCallback(() => {
+    console.log('[Home] Entering edit mode for section reorder');
+    setEditMode(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Animated.spring(editModeAnim, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true }).start();
+
+    sectionOrder.forEach((id) => {
+      if (!wobbleAnims[id]) wobbleAnims[id] = new Animated.Value(0);
+      wobbleAnims[id].setValue(0);
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(wobbleAnims[id], { toValue: 1, duration: 120, useNativeDriver: true }),
+          Animated.timing(wobbleAnims[id], { toValue: -1, duration: 120, useNativeDriver: true }),
+          Animated.timing(wobbleAnims[id], { toValue: 0.6, duration: 100, useNativeDriver: true }),
+          Animated.timing(wobbleAnims[id], { toValue: -0.6, duration: 100, useNativeDriver: true }),
+          Animated.timing(wobbleAnims[id], { toValue: 0, duration: 80, useNativeDriver: true }),
+          Animated.delay(600 + Math.random() * 400),
+        ])
+      );
+      wobbleLoopsRef.current[id] = loop;
+      setTimeout(() => loop.start(), Math.random() * 300);
+    });
+  }, [editModeAnim, sectionOrder, wobbleAnims]);
+
+  const exitEditMode = useCallback(() => {
+    console.log('[Home] Exiting edit mode, saving order:', sectionOrder);
+    Object.values(wobbleLoopsRef.current).forEach(loop => loop.stop());
+    Object.values(wobbleAnims).forEach(anim => anim.setValue(0));
+    wobbleLoopsRef.current = {};
+    Animated.timing(editModeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+    setEditMode(false);
+    updateSectionOrder(sectionOrder);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [editModeAnim, sectionOrder, updateSectionOrder, wobbleAnims]);
+
+  const moveSectionUp = useCallback((id: HomeSectionId) => {
+    setSectionOrder(prev => {
+      const idx = prev.indexOf(id);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const moveSectionDown = useCallback((id: HomeSectionId) => {
+    setSectionOrder(prev => {
+      const idx = prev.indexOf(id);
+      if (idx < 0 || idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
 
   const dailyQuote = getDailyQuote();
   const smartInsight = useMemo(() => getSmartInsight({
@@ -536,287 +608,418 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
     }
   }, [fetchKoraSuggestion]);
 
+  const getWobbleTransform = useCallback((id: HomeSectionId) => {
+    if (!editMode || !wobbleAnims[id]) return undefined;
+    return [{ rotate: wobbleAnims[id].interpolate({ inputRange: [-1, 0, 1], outputRange: ['-0.6deg', '0deg', '0.6deg'] }) }];
+  }, [editMode, wobbleAnims]);
+
+  const renderEditControls = useCallback((id: HomeSectionId, index: number) => {
+    if (!editMode) return null;
+    const isFirst = index === 0;
+    const isLast = index === sectionOrder.length - 1;
+    return (
+      <Animated.View style={[styles.editControlsRow, { opacity: editModeAnim }]}>
+        <View style={styles.editGripHandle}>
+          <GripVertical size={16} color={Colors.light.textTertiary} />
+        </View>
+        <View style={styles.editArrows}>
+          <TouchableOpacity
+            onPress={() => moveSectionUp(id)}
+            style={[styles.editArrowBtn, isFirst && styles.editArrowBtnDisabled]}
+            activeOpacity={0.6}
+            disabled={isFirst}
+          >
+            <ArrowUp size={14} color={isFirst ? Colors.light.border : Colors.light.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => moveSectionDown(id)}
+            style={[styles.editArrowBtn, isLast && styles.editArrowBtnDisabled]}
+            activeOpacity={0.6}
+            disabled={isLast}
+          >
+            <ArrowDown size={14} color={isLast ? Colors.light.border : Colors.light.text} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  }, [editMode, editModeAnim, sectionOrder.length, moveSectionUp, moveSectionDown]);
+
+  const renderSection = useCallback((id: HomeSectionId, index: number) => {
+    const wobbleTransform = getWobbleTransform(id);
+    const wrapStyle = editMode ? [styles.editSectionWrap, wobbleTransform ? { transform: wobbleTransform } : undefined] : undefined;
+
+    switch (id) {
+      case 'xpLevel':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.xpLevelCard, { opacity: xpBarAnim, transform: [{ translateY: xpBarAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]} testID="xp-level-bar">
+                <View style={styles.xpLevelRow}>
+                  <View style={styles.xpLevelLeft}>
+                    <View style={[styles.xpLevelBadge, { backgroundColor: levelInfo.current.color + '22' }]}>
+                      <Text style={styles.xpLevelEmoji}>{levelInfo.current.emoji}</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.xpLevelName}>Level {levelInfo.current.level} · {levelInfo.current.name}</Text>
+                      <Text style={styles.xpLevelXpText}>{data.xp ?? 0} XP total</Text>
+                    </View>
+                  </View>
+                  <View style={styles.xpProgressText}>
+                    <Text style={styles.xpProgressNumbers}>{levelInfo.xpInLevel}<Text style={styles.xpProgressMax}> / {levelInfo.xpForNextLevel}</Text></Text>
+                  </View>
+                </View>
+                <View style={styles.xpBarTrack}>
+                  <Animated.View
+                    style={[
+                      styles.xpBarFill,
+                      {
+                        width: xpBarWidthAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+                        backgroundColor: levelInfo.current.color,
+                      },
+                    ]}
+                  />
+                </View>
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'weeklyRhythm':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <View style={styles.weekStreakContainer} testID="weekly-streak-bar">
+                <Animated.View style={[styles.weekStreakGlowOverlay, { opacity: barGlowAnim }]} />
+                <View style={styles.weekStreakHeader}>
+                  <Text style={styles.weekStreakTitle}>Weekly Rhythm</Text>
+                  <View style={styles.weekStreakCountPill}>
+                    <Flame size={12} color={Colors.light.card} />
+                    <Text style={styles.weekStreakCountText}>{data.currentStreak} streak</Text>
+                  </View>
+                </View>
+                <View style={styles.weekDaysRow}>
+                  {weekDays.map((item) => {
+                    const isToday = item.status === 'today-completed' || item.status === 'today-pending';
+                    const isCompleted = item.status === 'completed' || item.status === 'today-completed';
+                    const circleStyles = [
+                      styles.weekDayCircle,
+                      item.status === 'missed' && styles.weekDayCircleMissed,
+                      item.status === 'today-pending' && styles.weekDayCirclePending,
+                      isCompleted && styles.weekDayCircleCompleted,
+                      item.status === 'today-completed' && styles.weekDayCircleTodayCompleted,
+                    ];
+                    return (
+                      <Pressable key={item.label} onPress={() => handleDayPress(item)} style={styles.weekDayWrap} testID={`week-day-${item.label.toLowerCase()}`}>
+                        <Animated.View style={[circleStyles, isToday ? { transform: [{ scale: todayPulseAnim }] } : undefined]}>
+                          {item.status === 'today-pending' && (
+                            <Animated.View style={[styles.weekDayShimmer, { transform: [{ translateX: todayShimmerAnim }] }]} />
+                          )}
+                          {(item.status === 'completed' || item.status === 'today-completed') && (
+                            item.status === 'today-completed' ? (
+                              <Animated.View style={{ opacity: todayFlameFlickerAnim, transform: [{ scale: todayFlameFlickerAnim }] }}>
+                                <Flame size={12} color={Colors.light.card} />
+                              </Animated.View>
+                            ) : (
+                              <Flame size={12} color={Colors.light.card} />
+                            )
+                          )}
+                          {item.status === 'missed' && <Minus size={12} color={Colors.light.textTertiary} />}
+                        </Animated.View>
+                        <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{item.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'kora':
+        if (!(wellbeingData.trendPercent < 0 && (koraSuggestion || koraLoading))) return null;
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
+                <View style={styles.koraHeader}>
+                  <Image source={require('@/assets/images/kora-koala.png')} style={styles.koraCardAvatar} />
+                  <View style={styles.koraBadge}>
+                    <Sparkles size={10} color={Colors.light.card} />
+                    <Text style={styles.koraBadgeText}>Kora</Text>
+                  </View>
+                  <TouchableOpacity onPress={handleRefreshKora} style={styles.koraRefreshBtn} activeOpacity={0.7}>
+                    <RefreshCw size={14} color={Colors.light.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.koraTitle}>Your wellbeing could use a boost</Text>
+                {koraLoading ? (
+                  <View style={styles.koraLoadingWrap}>
+                    <ActivityIndicator size="small" color={Colors.light.secondary} />
+                    <Text style={styles.koraLoadingText}>Kora is thinking...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.koraMessage}>{koraSuggestion}</Text>
+                )}
+                <View style={styles.koraActions}>
+                  <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
+                    <Heart size={13} color={Colors.light.secondary} />
+                    <Text style={styles.koraActionText}>Breathe</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.koraActionBtn} onPress={() => setShowJournalModal(true)} activeOpacity={0.7}>
+                    <BookOpen size={13} color={Colors.light.secondary} />
+                    <Text style={styles.koraActionText}>Journal</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
+                    <MessageCircle size={13} color={Colors.light.secondary} />
+                    <Text style={styles.koraActionText}>Talk to Kora</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'checkIn':
+        if (hasCheckedInToday) return null;
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin')} activeOpacity={0.7}>
+                <View style={styles.checkInLeft}>
+                  <View style={styles.checkInDot} />
+                  <View>
+                    <Text style={styles.bannerTitle}>Daily Check-In</Text>
+                    <Text style={styles.bannerText}>How was your day?</Text>
+                  </View>
+                </View>
+                <ChevronRight size={20} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'intention':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.intentionSection, { opacity: intentionAnim, transform: [{ translateY: intentionAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
+                {todaysIntention ? (
+                  <View style={styles.intentionCard}>
+                    <View style={styles.intentionHeader}>
+                      <Target size={16} color={Colors.light.primary} />
+                      <Text style={styles.intentionLabel}>{"Today's Intention"}</Text>
+                    </View>
+                    <Text style={styles.intentionText}>{todaysIntention.intention}</Text>
+                    {!todaysIntention.completed ? (
+                      <TouchableOpacity style={styles.intentionCompleteBtn} onPress={handleCompleteIntention} activeOpacity={0.7}>
+                        <Check size={14} color={Colors.light.card} />
+                        <Text style={styles.intentionCompleteBtnText}>Mark Complete</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.intentionCompletedBadge}>
+                        <Check size={12} color={Colors.light.secondary} />
+                        <Text style={styles.intentionCompletedText}>Completed</Text>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <TouchableOpacity style={styles.setIntentionCard} onPress={() => setShowIntentionPicker(true)} activeOpacity={0.7}>
+                    <View style={styles.intentionHeader}>
+                      <Target size={16} color={Colors.light.primary} />
+                      <Text style={styles.intentionLabel}>{"Set Today's Intention"}</Text>
+                    </View>
+                    <Text style={styles.setIntentionHint}>Choose a focus for your day</Text>
+                    <ChevronRight size={16} color={Colors.light.textTertiary} style={styles.intentionChevron} />
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'quote':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }]}>
+                <View style={styles.quoteAccent} />
+                <View style={styles.quoteContent}>
+                  <Text style={styles.quoteText}>{dailyQuote}</Text>
+                  <View style={styles.quoteActions}>
+                    <TouchableOpacity style={styles.quoteActionBtn} onPress={() => setShowWidgetModal(true)} activeOpacity={0.7}>
+                      <LayoutGrid size={14} color={Colors.light.textSecondary} />
+                      <Text style={styles.quoteActionText}>Image</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'stats':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.streakRow, { opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+                <View style={styles.streakCard}>
+                  <View style={styles.streakIconWrap}>
+                    <Flower size={20} color={Colors.light.secondary} />
+                  </View>
+                  <View>
+                    <Text style={styles.streakNumber}>{data.currentStreak}</Text>
+                    <Text style={styles.streakLabel}>day streak</Text>
+                  </View>
+                </View>
+                {nextMilestone && (
+                  <View style={styles.milestoneCard}>
+                    <View style={styles.milestoneIconWrap}>
+                      <Trophy size={18} color={Colors.light.accent} />
+                    </View>
+                    <View style={styles.milestoneInfo}>
+                      <Text style={styles.milestoneTitle}>Next: {nextMilestone.title}</Text>
+                      <Text style={styles.milestoneDesc}>{nextMilestone.description}</Text>
+                    </View>
+                  </View>
+                )}
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'insight':
+        if (!smartInsight) return null;
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <Animated.View style={[styles.insightCard, { opacity: insightAnim, transform: [{ translateY: insightAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
+                <Text style={styles.insightEmoji}>{smartInsight.emoji}</Text>
+                <Text style={styles.insightText}>{smartInsight.message}</Text>
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      case 'dailyQuests':
+        return (
+          <Animated.View key={id} style={wrapStyle}>
+            {renderEditControls(id, index)}
+            <Pressable onLongPress={editMode ? undefined : enterEditMode} delayLongPress={500}>
+              <View style={styles.challengesSection}>
+                <View style={styles.challengesSectionHeader}>
+                  <View style={styles.challengesTitleRow}>
+                    <Zap size={16} color='#F5C548' />
+                    <Text style={styles.challengesTitle}>Daily Quests</Text>
+                  </View>
+                  <Text style={styles.challengesDoneText}>
+                    {[hasCheckedInToday, hasJournaledToday, hasPausedToday, !!todaysIntention].filter(Boolean).length}/4
+                  </Text>
+                </View>
+                {[
+                  {
+                    id: 'checkin',
+                    icon: <Check size={14} color='#8DC8C4' />,
+                    label: 'Daily Check-In',
+                    xp: 30,
+                    done: hasCheckedInToday,
+                    color: '#8DC8C4',
+                    action: () => router.push('/checkin'),
+                  },
+                  {
+                    id: 'journal',
+                    icon: <BookOpen size={14} color='#B5A8D6' />,
+                    label: 'Write in Journal',
+                    xp: 25,
+                    done: hasJournaledToday,
+                    color: '#B5A8D6',
+                    action: () => setShowJournalModal(true),
+                  },
+                  {
+                    id: 'pause',
+                    icon: <Wind size={14} color='#7CB98A' />,
+                    label: 'Breathing Practice',
+                    xp: 15,
+                    done: hasPausedToday,
+                    color: '#7CB98A',
+                    action: () => router.push('/pause'),
+                  },
+                  {
+                    id: 'intention',
+                    icon: <Star size={14} color='#F5A623' />,
+                    label: 'Set Your Intention',
+                    xp: 10,
+                    done: !!todaysIntention,
+                    color: '#F5A623',
+                    action: () => setShowIntentionPicker(true),
+                  },
+                ].map(challenge => (
+                  <TouchableOpacity
+                    key={challenge.id}
+                    style={[styles.challengeRow, challenge.done && styles.challengeRowDone]}
+                    onPress={challenge.done ? undefined : challenge.action}
+                    activeOpacity={challenge.done ? 1 : 0.7}
+                    testID={`challenge-${challenge.id}`}
+                  >
+                    <View style={[styles.challengeIconWrap, { backgroundColor: challenge.color + '22' }]}>
+                      {challenge.icon}
+                    </View>
+                    <Text style={[styles.challengeLabel, challenge.done && styles.challengeLabelDone]}>{challenge.label}</Text>
+                    <View style={styles.challengeRight}>
+                      <View style={[styles.challengeXpPill, challenge.done && styles.challengeXpPillDone]}>
+                        <Zap size={9} color={challenge.done ? '#B0ABAB' : '#F5C548'} />
+                        <Text style={[styles.challengeXpText, challenge.done && styles.challengeXpTextDone]}>+{challenge.xp} XP</Text>
+                      </View>
+                      {challenge.done
+                        ? <View style={styles.challengeCheck}><Check size={12} color='#FFF' /></View>
+                        : <ChevronRight size={16} color={Colors.light.textTertiary} />
+                      }
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
+          </Animated.View>
+        );
+
+      default:
+        return null;
+    }
+  }, [editMode, getWobbleTransform, renderEditControls, enterEditMode, xpBarAnim, xpBarWidthAnim, levelInfo, data, barGlowAnim, weekDays, handleDayPress, todayPulseAnim, todayShimmerAnim, todayFlameFlickerAnim, wellbeingData, koraSuggestion, koraLoading, koraAnim, handleRefreshKora, hasCheckedInToday, intentionAnim, todaysIntention, handleCompleteIntention, quoteAnim, dailyQuote, statsAnim, nextMilestone, smartInsight, insightAnim, hasJournaledToday, hasPausedToday]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} scrollEnabled={!editMode || true}>
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.greeting}>{getTimeOfDay()}</Text>
-          <Text style={styles.username}>{displayName}</Text>
-        </Animated.View>
-
-        <Animated.View style={[styles.xpLevelCard, { opacity: xpBarAnim, transform: [{ translateY: xpBarAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]} testID="xp-level-bar">
-          <View style={styles.xpLevelRow}>
-            <View style={styles.xpLevelLeft}>
-              <View style={[styles.xpLevelBadge, { backgroundColor: levelInfo.current.color + '22' }]}>
-                <Text style={styles.xpLevelEmoji}>{levelInfo.current.emoji}</Text>
-              </View>
-              <View>
-                <Text style={styles.xpLevelName}>Level {levelInfo.current.level} · {levelInfo.current.name}</Text>
-                <Text style={styles.xpLevelXpText}>{data.xp ?? 0} XP total</Text>
-              </View>
-            </View>
-            <View style={styles.xpProgressText}>
-              <Text style={styles.xpProgressNumbers}>{levelInfo.xpInLevel}<Text style={styles.xpProgressMax}> / {levelInfo.xpForNextLevel}</Text></Text>
-            </View>
-          </View>
-          <View style={styles.xpBarTrack}>
-            <Animated.View
-              style={[
-                styles.xpBarFill,
-                {
-                  width: xpBarWidthAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                  backgroundColor: levelInfo.current.color,
-                },
-              ]}
-            />
-          </View>
-        </Animated.View>
-
-        <View style={styles.weekStreakContainer} testID="weekly-streak-bar">
-          <Animated.View style={[styles.weekStreakGlowOverlay, { opacity: barGlowAnim }]} />
-          <View style={styles.weekStreakHeader}>
-            <Text style={styles.weekStreakTitle}>Weekly Rhythm</Text>
-            <View style={styles.weekStreakCountPill}>
-              <Flame size={12} color={Colors.light.card} />
-              <Text style={styles.weekStreakCountText}>{data.currentStreak} streak</Text>
-            </View>
-          </View>
-          <View style={styles.weekDaysRow}>
-            {weekDays.map((item) => {
-              const isToday = item.status === 'today-completed' || item.status === 'today-pending';
-              const isCompleted = item.status === 'completed' || item.status === 'today-completed';
-              const circleStyles = [
-                styles.weekDayCircle,
-                item.status === 'missed' && styles.weekDayCircleMissed,
-                item.status === 'today-pending' && styles.weekDayCirclePending,
-                isCompleted && styles.weekDayCircleCompleted,
-                item.status === 'today-completed' && styles.weekDayCircleTodayCompleted,
-              ];
-
-              return (
-                <Pressable key={item.label} onPress={() => handleDayPress(item)} style={styles.weekDayWrap} testID={`week-day-${item.label.toLowerCase()}`}>
-                  <Animated.View style={[circleStyles, isToday ? { transform: [{ scale: todayPulseAnim }] } : undefined]}>
-                    {item.status === 'today-pending' && (
-                      <Animated.View style={[styles.weekDayShimmer, { transform: [{ translateX: todayShimmerAnim }] }]} />
-                    )}
-                    {(item.status === 'completed' || item.status === 'today-completed') && (
-                      item.status === 'today-completed' ? (
-                        <Animated.View style={{ opacity: todayFlameFlickerAnim, transform: [{ scale: todayFlameFlickerAnim }] }}>
-                          <Flame size={12} color={Colors.light.card} />
-                        </Animated.View>
-                      ) : (
-                        <Flame size={12} color={Colors.light.card} />
-                      )
-                    )}
-                    {item.status === 'missed' && <Minus size={12} color={Colors.light.textTertiary} />}
-                  </Animated.View>
-                  <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{item.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        {(wellbeingData.trendPercent < 0 && (koraSuggestion || koraLoading)) && (
-          <Animated.View style={[styles.koraCard, { opacity: koraAnim, transform: [{ translateY: koraAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
-            <View style={styles.koraHeader}>
-              <Image source={require('@/assets/images/kora-koala.png')} style={styles.koraCardAvatar} />
-              <View style={styles.koraBadge}>
-                <Sparkles size={10} color={Colors.light.card} />
-                <Text style={styles.koraBadgeText}>Kora</Text>
-              </View>
-              <TouchableOpacity onPress={handleRefreshKora} style={styles.koraRefreshBtn} activeOpacity={0.7}>
-                <RefreshCw size={14} color={Colors.light.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.koraTitle}>Your wellbeing could use a boost</Text>
-            {koraLoading ? (
-              <View style={styles.koraLoadingWrap}>
-                <ActivityIndicator size="small" color={Colors.light.secondary} />
-                <Text style={styles.koraLoadingText}>Kora is thinking...</Text>
-              </View>
-            ) : (
-              <Text style={styles.koraMessage}>{koraSuggestion}</Text>
-            )}
-            <View style={styles.koraActions}>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/pause')} activeOpacity={0.7}>
-                <Heart size={13} color={Colors.light.secondary} />
-                <Text style={styles.koraActionText}>Breathe</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => setShowJournalModal(true)} activeOpacity={0.7}>
-                <BookOpen size={13} color={Colors.light.secondary} />
-                <Text style={styles.koraActionText}>Journal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.koraActionBtn} onPress={() => router.push('/responses')} activeOpacity={0.7}>
-                <MessageCircle size={13} color={Colors.light.secondary} />
-                <Text style={styles.koraActionText}>Talk to Kora</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        )}
-
-        {!hasCheckedInToday && (
-          <TouchableOpacity style={styles.checkInBanner} onPress={() => router.push('/checkin')} activeOpacity={0.7}>
-            <View style={styles.checkInLeft}>
-              <View style={styles.checkInDot} />
-              <View>
-                <Text style={styles.bannerTitle}>Daily Check-In</Text>
-                <Text style={styles.bannerText}>How was your day?</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={Colors.light.textSecondary} />
-          </TouchableOpacity>
-        )}
-
-        <Animated.View style={[styles.intentionSection, { opacity: intentionAnim, transform: [{ translateY: intentionAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
-          {todaysIntention ? (
-            <View style={styles.intentionCard}>
-              <View style={styles.intentionHeader}>
-                <Target size={16} color={Colors.light.primary} />
-                <Text style={styles.intentionLabel}>{"Today's Intention"}</Text>
-              </View>
-              <Text style={styles.intentionText}>{todaysIntention.intention}</Text>
-              {!todaysIntention.completed ? (
-                <TouchableOpacity style={styles.intentionCompleteBtn} onPress={handleCompleteIntention} activeOpacity={0.7}>
-                  <Check size={14} color={Colors.light.card} />
-                  <Text style={styles.intentionCompleteBtnText}>Mark Complete</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.intentionCompletedBadge}>
-                  <Check size={12} color={Colors.light.secondary} />
-                  <Text style={styles.intentionCompletedText}>Completed</Text>
-                </View>
-              )}
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.setIntentionCard} onPress={() => setShowIntentionPicker(true)} activeOpacity={0.7}>
-              <View style={styles.intentionHeader}>
-                <Target size={16} color={Colors.light.primary} />
-                <Text style={styles.intentionLabel}>{"Set Today's Intention"}</Text>
-              </View>
-              <Text style={styles.setIntentionHint}>Choose a focus for your day</Text>
-              <ChevronRight size={16} color={Colors.light.textTertiary} style={styles.intentionChevron} />
-            </TouchableOpacity>
-          )}
-        </Animated.View>
-
-        <Animated.View style={[styles.quoteCard, { opacity: quoteAnim, transform: [{ scale: quoteAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }]}>
-          <View style={styles.quoteAccent} />
-          <View style={styles.quoteContent}>
-            <Text style={styles.quoteText}>{dailyQuote}</Text>
-            <View style={styles.quoteActions}>
-              <TouchableOpacity style={styles.quoteActionBtn} onPress={() => setShowWidgetModal(true)} activeOpacity={0.7}>
-                <LayoutGrid size={14} color={Colors.light.textSecondary} />
-                <Text style={styles.quoteActionText}>Image</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-
-        <Animated.View style={[styles.streakRow, { opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
-          <View style={styles.streakCard}>
-            <View style={styles.streakIconWrap}>
-              <Flower size={20} color={Colors.light.secondary} />
-            </View>
+          <View style={styles.headerRow}>
             <View>
-              <Text style={styles.streakNumber}>{data.currentStreak}</Text>
-              <Text style={styles.streakLabel}>day streak</Text>
+              <Text style={styles.greeting}>{getTimeOfDay()}</Text>
+              <Text style={styles.username}>{displayName}</Text>
             </View>
+            {editMode && (
+              <Animated.View style={{ opacity: editModeAnim, transform: [{ scale: editModeAnim }] }}>
+                <TouchableOpacity style={styles.editDoneBtn} onPress={exitEditMode} activeOpacity={0.7}>
+                  <Text style={styles.editDoneBtnText}>Done</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
           </View>
-
-          {nextMilestone && (
-            <View style={styles.milestoneCard}>
-              <View style={styles.milestoneIconWrap}>
-                <Trophy size={18} color={Colors.light.accent} />
-              </View>
-              <View style={styles.milestoneInfo}>
-                <Text style={styles.milestoneTitle}>Next: {nextMilestone.title}</Text>
-                <Text style={styles.milestoneDesc}>{nextMilestone.description}</Text>
-              </View>
-            </View>
+          {editMode && (
+            <Animated.View style={[styles.editHintRow, { opacity: editModeAnim }]}>
+              <GripVertical size={13} color={Colors.light.textTertiary} />
+              <Text style={styles.editHintText}>Use arrows to reorder sections</Text>
+            </Animated.View>
           )}
         </Animated.View>
 
-        {smartInsight && (
-          <Animated.View style={[styles.insightCard, { opacity: insightAnim, transform: [{ translateY: insightAnim.interpolate({ inputRange: [0, 1], outputRange: [15, 0] }) }] }]}>
-            <Text style={styles.insightEmoji}>{smartInsight.emoji}</Text>
-            <Text style={styles.insightText}>{smartInsight.message}</Text>
-          </Animated.View>
-        )}
-
-        <View style={styles.challengesSection}>
-          <View style={styles.challengesSectionHeader}>
-            <View style={styles.challengesTitleRow}>
-              <Zap size={16} color='#F5C548' />
-              <Text style={styles.challengesTitle}>Daily Quests</Text>
-            </View>
-            <Text style={styles.challengesDoneText}>
-              {[hasCheckedInToday, hasJournaledToday, hasPausedToday, !!todaysIntention].filter(Boolean).length}/4
-            </Text>
-          </View>
-
-          {[
-            {
-              id: 'checkin',
-              icon: <Check size={14} color='#8DC8C4' />,
-              label: 'Daily Check-In',
-              xp: 30,
-              done: hasCheckedInToday,
-              color: '#8DC8C4',
-              action: () => router.push('/checkin'),
-            },
-            {
-              id: 'journal',
-              icon: <BookOpen size={14} color='#B5A8D6' />,
-              label: 'Write in Journal',
-              xp: 25,
-              done: hasJournaledToday,
-              color: '#B5A8D6',
-              action: () => setShowJournalModal(true),
-            },
-            {
-              id: 'pause',
-              icon: <Wind size={14} color='#7CB98A' />,
-              label: 'Breathing Practice',
-              xp: 15,
-              done: hasPausedToday,
-              color: '#7CB98A',
-              action: () => router.push('/pause'),
-            },
-            {
-              id: 'intention',
-              icon: <Star size={14} color='#F5A623' />,
-              label: 'Set Your Intention',
-              xp: 10,
-              done: !!todaysIntention,
-              color: '#F5A623',
-              action: () => setShowIntentionPicker(true),
-            },
-          ].map(challenge => (
-            <TouchableOpacity
-              key={challenge.id}
-              style={[styles.challengeRow, challenge.done && styles.challengeRowDone]}
-              onPress={challenge.done ? undefined : challenge.action}
-              activeOpacity={challenge.done ? 1 : 0.7}
-              testID={`challenge-${challenge.id}`}
-            >
-              <View style={[styles.challengeIconWrap, { backgroundColor: challenge.color + '22' }]}>
-                {challenge.icon}
-              </View>
-              <Text style={[styles.challengeLabel, challenge.done && styles.challengeLabelDone]}>{challenge.label}</Text>
-              <View style={styles.challengeRight}>
-                <View style={[styles.challengeXpPill, challenge.done && styles.challengeXpPillDone]}>
-                  <Zap size={9} color={challenge.done ? '#B0ABAB' : '#F5C548'} />
-                  <Text style={[styles.challengeXpText, challenge.done && styles.challengeXpTextDone]}>+{challenge.xp} XP</Text>
-                </View>
-                {challenge.done
-                  ? <View style={styles.challengeCheck}><Check size={12} color='#FFF' /></View>
-                  : <ChevronRight size={16} color={Colors.light.textTertiary} />
-                }
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {sectionOrder.map((id, index) => renderSection(id, index))}
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -1085,8 +1288,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 20 },
   header: { paddingTop: 20, paddingBottom: 24 },
+  headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const },
   greeting: { fontSize: 15, fontWeight: '500' as const, color: Colors.light.textSecondary, letterSpacing: 0.3, marginBottom: 4 },
   username: { fontSize: 30, fontWeight: '700' as const, color: Colors.light.text, letterSpacing: -0.5 },
+
+  editDoneBtn: { backgroundColor: Colors.light.primary, borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, marginTop: 4 },
+  editDoneBtnText: { fontSize: 14, fontWeight: '700' as const, color: Colors.light.card, letterSpacing: 0.2 },
+  editHintRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6, marginTop: 10, backgroundColor: Colors.light.subtle, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  editHintText: { fontSize: 12, fontWeight: '500' as const, color: Colors.light.textSecondary },
+  editSectionWrap: { borderWidth: 2, borderColor: Colors.light.primary + '40', borderRadius: 18, borderStyle: 'dashed' as const, marginBottom: 4, padding: 2 },
+  editControlsRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 4 },
+  editGripHandle: { opacity: 0.5 },
+  editArrows: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+  editArrowBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.subtle, justifyContent: 'center' as const, alignItems: 'center' as const },
+  editArrowBtnDisabled: { opacity: 0.35 },
 
   koraCard: { backgroundColor: Colors.light.card, borderRadius: 16, padding: 18, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: Colors.light.secondary },
   koraHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },

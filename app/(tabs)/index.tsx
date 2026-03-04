@@ -707,7 +707,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
             <View style={styles.quoteActions}>
               <TouchableOpacity style={styles.quoteActionBtn} onPress={() => setShowWidgetModal(true)} activeOpacity={0.7}>
                 <LayoutGrid size={14} color={Colors.light.textSecondary} />
-                <Text style={styles.quoteActionText}>Widget</Text>
+                <Text style={styles.quoteActionText}>Image</Text>
               </TouchableOpacity>
             </View>
           </View>

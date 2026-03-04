@@ -155,7 +155,7 @@ export default function WidgetModal({ visible, onClose, quote }: WidgetModalProp
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X size={22} color={Colors.light.text} />
             </TouchableOpacity>
-            <Text style={styles.title}>Quote Widget</Text>
+            <Text style={styles.title}>Quote Image</Text>
             <View style={styles.closeBtn} />
           </View>
 

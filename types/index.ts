@@ -75,6 +75,7 @@ export interface UserData {
   milestones: Milestone[];
   preferredName: string;
   xp: number;
+  totalXpEarned: number;
   pauseCompletions: string[];
   homeSectionOrder?: HomeSectionId[];
 }

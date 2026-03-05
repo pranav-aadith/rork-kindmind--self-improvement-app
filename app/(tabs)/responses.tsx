@@ -1,4 +1,4 @@
-import { RotateCcw, Send, Mic, MicOff, Keyboard, X } from 'lucide-react-native';
+import { RotateCcw, Send, Mic, MicOff, Keyboard, X, Zap } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
@@ -95,7 +95,7 @@ function extractText(parts: unknown): string {
 }
 
 export default function ResponsesScreen() {
-  const { data } = useKindMind();
+  const { data, spendXPForKora } = useKindMind();
   const scrollRef = useRef<ScrollView | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -181,6 +181,7 @@ export default function ResponsesScreen() {
       console.log('[Kora] send', { length: trimmed.length, hasAnswers: !!answers, username });
 
       setIsSending(true);
+      spendXPForKora();
       try {
         const prompt = buildKoraPrompt({
           username,
@@ -197,7 +198,7 @@ export default function ResponsesScreen() {
         setIsSending(false);
       }
     },
-    [answers, sendMessage, username]
+    [answers, sendMessage, spendXPForKora, username]
   );
 
   const onPressQuickPrompt = useCallback(
@@ -406,16 +407,26 @@ export default function ResponsesScreen() {
               </View>
             </View>
 
-            {hasAnyMessages && (
-              <TouchableOpacity
-                style={styles.resetButton}
-                onPress={onReset}
-                activeOpacity={0.7}
-                testID="kora-reset"
-              >
-                <RotateCcw size={18} color={Colors.light.textSecondary} />
-              </TouchableOpacity>
-            )}
+            <View style={styles.headerRight}>
+              <View style={styles.xpBadge}>
+                <Zap size={13} color="#F5C548" fill="#F5C548" />
+                <Text style={styles.xpBadgeText}>{data.xp ?? 0} XP</Text>
+              </View>
+              {hasAnyMessages && (
+                <TouchableOpacity
+                  style={styles.resetButton}
+                  onPress={onReset}
+                  activeOpacity={0.7}
+                  testID="kora-reset"
+                >
+                  <RotateCcw size={18} color={Colors.light.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          <View style={styles.xpCostRow}>
+            <Zap size={11} color={Colors.light.textSecondary} />
+            <Text style={styles.xpCostText}>Each message costs 20 XP</Text>
           </View>
         </View>
 
@@ -664,6 +675,40 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.light.textSecondary,
     marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  xpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF9E7',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#F5C54840',
+  },
+  xpBadgeText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: '#D4A017',
+  },
+  xpCostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  xpCostText: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    color: Colors.light.textSecondary,
+    opacity: 0.7,
   },
   resetButton: {
     width: 36,

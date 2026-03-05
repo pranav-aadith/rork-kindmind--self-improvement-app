@@ -67,6 +67,7 @@ const initialData: UserData = {
   milestones: DEFAULT_MILESTONES,
   preferredName: '',
   xp: 0,
+  totalXpEarned: 0,
   pauseCompletions: [],
   homeSectionOrder: DEFAULT_SECTION_ORDER,
 };
@@ -114,6 +115,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
           milestones: parsed.milestones || DEFAULT_MILESTONES,
           preferredName: parsed.preferredName || '',
           xp: parsed.xp ?? 0,
+          totalXpEarned: parsed.totalXpEarned ?? parsed.xp ?? 0,
           pauseCompletions: parsed.pauseCompletions || [],
           homeSectionOrder: parsed.homeSectionOrder || DEFAULT_SECTION_ORDER,
         };
@@ -149,7 +151,21 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
   const awardXP = (currentData: UserData, amount: number, reason: string): UserData => {
     console.log(`[KindMind] Awarding ${amount} XP for: ${reason}`);
     setLastXPGain({ amount, reason, id: Date.now() });
-    return { ...currentData, xp: (currentData.xp ?? 0) + amount };
+    return {
+      ...currentData,
+      xp: (currentData.xp ?? 0) + amount,
+      totalXpEarned: (currentData.totalXpEarned ?? currentData.xp ?? 0) + amount,
+    };
+  };
+
+  const spendXPForKora = () => {
+    const cost = 20;
+    const currentXP = data.xp ?? 0;
+    const newXP = Math.max(0, currentXP - cost);
+    console.log(`[KindMind] Spending ${cost} XP for Kora message. ${currentXP} -> ${newXP}`);
+    const newData: UserData = { ...data, xp: newXP };
+    saveData(newData);
+    setLastXPGain({ amount: -cost, reason: 'Kora message', id: Date.now() });
   };
 
   const completeOnboarding = (username: string, selectedGoals: UserGoal[], answers: OnboardingAnswers, preferredName?: string) => {
@@ -400,6 +416,7 @@ export const [KindMindProvider, useKindMind] = createContextHook(() => {
   return {
     data,
     isLoading,
+    spendXPForKora,
     completeOnboarding,
     addTrigger,
     addJournalEntry,

@@ -346,7 +346,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
         case 'checkins': currentValue = data.checkIns.length; break;
         case 'triggers': currentValue = data.triggers.length; break;
         case 'journal': currentValue = data.journalEntries.length; break;
-        case 'xp': currentValue = data.xp ?? 0; break;
+        case 'xp': currentValue = data.totalXpEarned ?? data.xp ?? 0; break;
         default: currentValue = 0;
       }
       const isUnlocked = currentValue >= badge.threshold;
@@ -1032,7 +1032,7 @@ Be warm, specific, and genuinely helpful. Don't use bullet points or markdown. D
               disabled={isTakingScreenshot}
             >
               <Camera size={20} color={Colors.light.card} />
-              <Text style={styles.screenshotButtonText}>{isTakingScreenshot ? 'Generating...' : 'Export PDF'}</Text>
+              <Text style={styles.screenshotButtonText}>{isTakingScreenshot ? 'Generating...' : 'Send Progress'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

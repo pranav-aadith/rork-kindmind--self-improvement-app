@@ -178,7 +178,34 @@ export default function ResponsesScreen() {
       const trimmed = raw.trim();
       if (!trimmed || !sendMessage) return;
 
-      console.log('[Kora] send', { length: trimmed.length, hasAnswers: !!answers, username });
+      const currentXP = data.xp ?? 0;
+      console.log('[Kora] send', { length: trimmed.length, hasAnswers: !!answers, username, currentXP });
+
+      if (currentXP < 20) {
+        console.log('[Kora] Not enough XP to send. Current XP:', currentXP);
+        const userMsg = {
+          id: `user-${Date.now()}`,
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: trimmed }],
+        };
+        const koraMsg = {
+          id: `kora-${Date.now() + 1}`,
+          role: 'assistant' as const,
+          parts: [
+            {
+              type: 'text' as const,
+              text: "You don't have enough XP to chat with me right now 🐨\n\nEach message costs 20 XP — here's how to earn more:\n\n• Complete your daily check-in ✅\n• Write a journal entry 📓\n• Finish a breathing session 🌬️\n• Log a trigger 🔍\n\nKeep up those healthy habits and I'll be right here when you're ready! 💛",
+            },
+          ],
+        };
+        if (setMessages) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setMessages((prev: any[]) => [...prev, userMsg, koraMsg] as any);
+        }
+        setInput('');
+        setShowKeyboard(false);
+        return;
+      }
 
       setIsSending(true);
       spendXPForKora();
@@ -198,7 +225,7 @@ export default function ResponsesScreen() {
         setIsSending(false);
       }
     },
-    [answers, sendMessage, spendXPForKora, username]
+    [answers, data.xp, sendMessage, setMessages, spendXPForKora, username]
   );
 
   const onPressQuickPrompt = useCallback(

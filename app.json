@@ -50,13 +50,6 @@
       "expo-font",
       "expo-web-browser",
       [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "string | string[]",
-          "enableGooglePay": "boolean"
-        }
-      ],
-      [
         "expo-audio",
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
